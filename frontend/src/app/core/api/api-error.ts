@@ -1,4 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { AbstractControl } from '@angular/forms';
 
 /** Turn a backend error ({ detail: string | [{ msg }] }) into a message for the user. */
 export function apiErrorMessage(err: unknown): string {
@@ -33,4 +34,24 @@ export function fieldErrorsFrom(err: unknown): Record<string, string> {
     }
   }
   return out;
+}
+
+/**
+ * Put 422 messages on their form controls (as a `server` error) and return the message to show
+ * elsewhere, or null when every problem sat on a field.
+ */
+export function placeServerErrors(
+  form: { get(name: string): AbstractControl | null },
+  err: unknown,
+): string | null {
+  let placed = false;
+  for (const [name, message] of Object.entries(fieldErrorsFrom(err))) {
+    const control = form.get(name);
+    if (control) {
+      control.setErrors({ server: message });
+      control.markAsTouched();
+      placed = true;
+    }
+  }
+  return placed ? null : apiErrorMessage(err);
 }

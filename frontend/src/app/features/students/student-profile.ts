@@ -28,6 +28,7 @@ import {
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { USERNAME_HINT, suggestUsername, usernameFormat } from '../../core/auth/identity';
+import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { canWriteStudents } from '../../core/auth/permissions';
 import { StudentAttendance } from '../attendance/student-attendance';
 import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
@@ -96,10 +97,19 @@ export class StudentProfile {
     email: ['', Validators.email],
     is_primary: [false],
   });
+  protected readonly passwordHint = PASSWORD_HINT;
+  protected readonly minLength = PASSWORD_MIN_LENGTH;
   protected readonly loginForm = this.fb.group({
     username: ['', [Validators.required, usernameFormat]],
     email: ['', Validators.email],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(PASSWORD_MIN_LENGTH),
+        Validators.maxLength(PASSWORD_MAX_LENGTH),
+      ],
+    ],
   });
   protected readonly enrolForm = this.fb.group({
     academic_year_id: [0],

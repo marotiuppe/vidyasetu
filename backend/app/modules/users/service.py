@@ -5,8 +5,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import ColumnElement
 
 from app.core.errors import IdentityInUse
+from app.core.password_policy import enforce_password
 from app.core.security import hash_password
 from app.core.tenant import scope_users
+from app.modules.auth.service import revoke_user_sessions
 from app.modules.branches.models import Branch
 from app.modules.users.identity import suggest_username
 from app.modules.users.models import BRANCH_ROLES, Role, User
@@ -110,6 +112,9 @@ async def derive_unique_username(db: AsyncSession, email: str) -> str:
 async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
     if data.role not in CREATABLE.get(actor.role, set()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not allowed to create this role")
+    enforce_password(
+        data.password, username=data.username, email=data.email, full_name=data.full_name
+    )
 
     school_id: int | None
     branch_id: int | None = None
@@ -149,6 +154,8 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
         phone=data.phone,
         password_hash=hash_password(data.password),
         role=data.role,
+        # The admin knows this password, so the user must replace it at first sign-in.
+        must_change_password=True,
     )
     db.add(user)
     try:
@@ -187,6 +194,8 @@ async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpd
     )
     for field, value in changes.items():
         setattr(target, field, value)
+    if changes.get("is_active") is False:
+        await revoke_user_sessions(db, target)
     try:
         await db.commit()
     except IntegrityError:
@@ -197,5 +206,23 @@ async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpd
 
 async def reset_password(db: AsyncSession, actor: User, user_id: int, new_password: str) -> None:
     target = await _get_manageable(db, actor, user_id)
+    enforce_password(
+        new_password,
+        username=target.username,
+        email=target.email,
+        full_name=target.full_name,
+    )
     target.password_hash = hash_password(new_password)
+    target.must_change_password = True
+    target.failed_login_count = 0
+    target.locked_until = None
+    await revoke_user_sessions(db, target)
+    await db.commit()
+
+
+async def unlock_user(db: AsyncSession, actor: User, user_id: int) -> None:
+    """Clear the failed-sign-in counter and any lock (same scope rules as a password reset)."""
+    target = await _get_manageable(db, actor, user_id)
+    target.failed_login_count = 0
+    target.locked_until = None
     await db.commit()

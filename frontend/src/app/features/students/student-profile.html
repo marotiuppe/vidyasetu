@@ -35,14 +35,18 @@
             <label class="field">
               First name
               <input class="input" formControlName="first_name" autocomplete="off" />
-              @if (studentForm.controls.first_name.touched && studentForm.controls.first_name.invalid) {
+              @if (
+                studentForm.controls.first_name.touched && studentForm.controls.first_name.invalid
+              ) {
                 <span class="field-error">First name is required.</span>
               }
             </label>
             <label class="field">
               Last name
               <input class="input" formControlName="last_name" autocomplete="off" />
-              @if (studentForm.controls.last_name.touched && studentForm.controls.last_name.invalid) {
+              @if (
+                studentForm.controls.last_name.touched && studentForm.controls.last_name.invalid
+              ) {
                 <span class="field-error">Last name is required.</span>
               }
             </label>
@@ -57,14 +61,20 @@
             <label class="field">
               Date of birth
               <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
-              @if (studentForm.controls.date_of_birth.touched && studentForm.controls.date_of_birth.invalid) {
+              @if (
+                studentForm.controls.date_of_birth.touched &&
+                studentForm.controls.date_of_birth.invalid
+              ) {
                 <span class="field-error">Date of birth is required.</span>
               }
             </label>
             <label class="field">
               Admission date
               <input class="input" type="date" formControlName="admission_date" />
-              @if (studentForm.controls.admission_date.touched && studentForm.controls.admission_date.invalid) {
+              @if (
+                studentForm.controls.admission_date.touched &&
+                studentForm.controls.admission_date.invalid
+              ) {
                 <span class="field-error">Admission date is required.</span>
               }
             </label>
@@ -107,11 +117,26 @@
           </span>
         </div>
         <dl class="facts">
-          <div><dt>Gender</dt><dd>{{ titleCase(s.gender) }}</dd></div>
-          <div><dt>Date of birth</dt><dd>{{ s.date_of_birth }}</dd></div>
-          <div><dt>Admission date</dt><dd>{{ s.admission_date }}</dd></div>
-          <div><dt>Previous school</dt><dd>{{ s.previous_school || 'Not recorded' }}</dd></div>
-          <div class="wide"><dt>Address</dt><dd>{{ s.address || 'Not recorded' }}</dd></div>
+          <div>
+            <dt>Gender</dt>
+            <dd>{{ titleCase(s.gender) }}</dd>
+          </div>
+          <div>
+            <dt>Date of birth</dt>
+            <dd>{{ s.date_of_birth }}</dd>
+          </div>
+          <div>
+            <dt>Admission date</dt>
+            <dd>{{ s.admission_date }}</dd>
+          </div>
+          <div>
+            <dt>Previous school</dt>
+            <dd>{{ s.previous_school || 'Not recorded' }}</dd>
+          </div>
+          <div class="wide">
+            <dt>Address</dt>
+            <dd>{{ s.address || 'Not recorded' }}</dd>
+          </div>
         </dl>
       }
     </section>
@@ -121,16 +146,27 @@
       <div class="card-head">
         <h2 class="card-title" id="guardians-title">Guardians</h2>
         @if (canWrite && panel() !== 'guardian-add') {
-          <button type="button" class="btn btn-ghost btn-sm" (click)="addGuardian()">Add guardian</button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="addGuardian()">
+            Add guardian
+          </button>
         }
       </div>
 
       @if (panel() === 'guardian-add') {
-        <form class="panel" [formGroup]="guardianForm" (ngSubmit)="saveGuardian(s, null)" novalidate>
+        <form
+          class="panel"
+          [formGroup]="guardianForm"
+          (ngSubmit)="saveGuardian(s, null)"
+          novalidate
+        >
           <ng-container [ngTemplateOutlet]="guardianFields" />
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Add guardian</button>
-            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+              Add guardian
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">
+              Cancel
+            </button>
           </div>
         </form>
       }
@@ -141,7 +177,10 @@
             <span class="row-main">
               <strong>{{ g.full_name }}</strong>
               <span class="row-sub">
-                {{ titleCase(g.relation) }} · {{ g.phone }}@if (g.email) { · {{ g.email }} }
+                {{ titleCase(g.relation) }} · {{ g.phone }}
+                @if (g.email) {
+                  · {{ g.email }}
+                }
               </span>
             </span>
             @if (g.is_primary) {
@@ -152,23 +191,44 @@
             }
             @if (canWrite) {
               <span class="row-actions">
-                <button type="button" class="btn btn-ghost btn-sm" (click)="editGuardian(g)">Edit</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="editGuardian(g)">
+                  Edit
+                </button>
                 @if (!g.is_primary) {
-                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="makePrimary(g)">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="busy()"
+                    (click)="makePrimary(g)"
+                  >
                     Make primary
                   </button>
                 }
                 @if (g.has_login) {
-                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="removeGuardianLogin(g)">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="busy()"
+                    (click)="removeGuardianLogin(g)"
+                  >
                     Remove login
                   </button>
                 } @else {
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="startGuardianLogin(g)">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    (click)="startGuardianLogin(g)"
+                  >
                     Create parent login
                   </button>
                 }
                 @if (s.guardians.length > 1) {
-                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="removeGuardian(g)">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="busy()"
+                    (click)="removeGuardian(g)"
+                  >
                     Remove
                   </button>
                 }
@@ -176,23 +236,41 @@
             }
 
             @if (panel() === 'guardian-edit-' + g.id) {
-              <form class="panel" [formGroup]="guardianForm" (ngSubmit)="saveGuardian(s, g)" novalidate>
+              <form
+                class="panel"
+                [formGroup]="guardianForm"
+                (ngSubmit)="saveGuardian(s, g)"
+                novalidate
+              >
                 <ng-container [ngTemplateOutlet]="guardianFields" />
                 <div class="form-actions">
-                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Save</button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">
+                    Cancel
+                  </button>
                 </div>
               </form>
             }
             @if (panel() === 'guardian-login-' + g.id) {
-              <form class="panel" [formGroup]="loginForm" (ngSubmit)="saveGuardianLogin(g)" novalidate>
+              <form
+                class="panel"
+                [formGroup]="loginForm"
+                (ngSubmit)="saveGuardianLogin(g)"
+                novalidate
+              >
                 <ng-container [ngTemplateOutlet]="loginFields" />
                 <p class="hint">
                   Creates a parent login. The username is what the parent signs in with.
                 </p>
                 <div class="form-actions">
-                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Create login</button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+                    Create login
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">
+                    Cancel
+                  </button>
                 </div>
               </form>
             }
@@ -208,7 +286,9 @@
       <div class="card-head">
         <h2 class="card-title" id="enrol-title">Enrolment</h2>
         @if (canWrite && panel() !== 'enrol') {
-          <button type="button" class="btn btn-ghost btn-sm" (click)="startEnrol(s)">Change class</button>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="startEnrol(s)">
+            Change class
+          </button>
         }
       </div>
 
@@ -245,23 +325,35 @@
             <label class="field">
               Roll number (optional)
               <input class="input" type="number" min="1" formControlName="roll_no" />
-              <span class="hint">Assigned automatically when a section is chosen and this is blank.</span>
+              <span class="hint"
+                >Assigned automatically when a section is chosen and this is blank.</span
+              >
             </label>
           </div>
           @if (panelError(); as message) {
             <p class="form-error" role="alert">{{ message }}</p>
           }
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Save enrolment</button>
-            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+              Save enrolment
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">
+              Cancel
+            </button>
           </div>
         </form>
       }
 
       @if (s.current_enrollment; as e) {
         <p class="current">
-          <strong>Current:</strong> {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
-          @if (e.roll_no !== null) { · Roll {{ e.roll_no }} } · {{ e.academic_year_name }}
+          <strong>Current:</strong> {{ e.class_name }}
+          @if (e.section_name) {
+            - {{ e.section_name }}
+          }
+          @if (e.roll_no !== null) {
+            · Roll {{ e.roll_no }}
+          }
+          · {{ e.academic_year_name }}
         </p>
       } @else {
         <p class="empty">Not enrolled in a class.</p>
@@ -275,8 +367,13 @@
               <span class="row-main">
                 <span>{{ e.academic_year_name }}</span>
                 <span class="row-sub">
-                  {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
-                  @if (e.roll_no !== null) { · Roll {{ e.roll_no }} }
+                  {{ e.class_name }}
+                  @if (e.section_name) {
+                    - {{ e.section_name }}
+                  }
+                  @if (e.roll_no !== null) {
+                    · Roll {{ e.roll_no }}
+                  }
                 </span>
               </span>
             </li>
@@ -297,8 +394,12 @@
           <form class="panel" [formGroup]="loginForm" (ngSubmit)="saveStudentLogin(s)" novalidate>
             <ng-container [ngTemplateOutlet]="loginFields" />
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Create login</button>
-              <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+                Create login
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">
+                Cancel
+              </button>
             </div>
           </form>
         } @else {
@@ -335,14 +436,24 @@
     </label>
     <label class="field">
       Phone
-      <input class="input" type="tel" [formControl]="guardianForm.controls.phone" autocomplete="off" />
+      <input
+        class="input"
+        type="tel"
+        [formControl]="guardianForm.controls.phone"
+        autocomplete="off"
+      />
       @if (guardianForm.controls.phone.touched && guardianForm.controls.phone.invalid) {
         <span class="field-error">Use 7 to 20 digits, spaces, + or -.</span>
       }
     </label>
     <label class="field">
       Email (optional)
-      <input class="input" type="email" [formControl]="guardianForm.controls.email" autocomplete="off" />
+      <input
+        class="input"
+        type="email"
+        [formControl]="guardianForm.controls.email"
+        autocomplete="off"
+      />
       @if (guardianForm.controls.email.touched && guardianForm.controls.email.invalid) {
         <span class="field-error">Enter a valid email address.</span>
       }
@@ -371,10 +482,16 @@
         aria-describedby="login-username-hint"
       />
       <span class="hint" id="login-username-hint">{{ usernameHint }}</span>
-      @if (loginForm.controls.username.touched && loginForm.controls.username.hasError('required')) {
+      @if (
+        loginForm.controls.username.touched && loginForm.controls.username.hasError('required')
+      ) {
         <span class="field-error" role="alert">Username is required.</span>
-      } @else if (loginForm.controls.username.dirty && loginForm.controls.username.hasError('username')) {
-        <span class="field-error" role="alert">Use 3 to 50 allowed characters, with at least one letter.</span>
+      } @else if (
+        loginForm.controls.username.dirty && loginForm.controls.username.hasError('username')
+      ) {
+        <span class="field-error" role="alert"
+          >Use 3 to 50 allowed characters, with at least one letter.</span
+        >
       }
       @if (loginForm.controls.username.getError('server'); as message) {
         <span class="field-error" role="alert">{{ message }}</span>
@@ -382,7 +499,12 @@
     </label>
     <label class="field">
       Email (optional)
-      <input class="input" type="email" [formControl]="loginForm.controls.email" autocomplete="off" />
+      <input
+        class="input"
+        type="email"
+        [formControl]="loginForm.controls.email"
+        autocomplete="off"
+      />
       @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
         <span class="field-error">Enter a valid email address.</span>
       }
@@ -399,8 +521,18 @@
         autocomplete="new-password"
         required
       />
-      @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
-        <span class="field-error">Use at least 8 characters.</span>
+      <span class="hint">{{ passwordHint }}</span>
+      @if (
+        loginForm.controls.password.touched && loginForm.controls.password.hasError('required')
+      ) {
+        <span class="field-error">Enter a password.</span>
+      } @else if (
+        loginForm.controls.password.touched && loginForm.controls.password.hasError('minlength')
+      ) {
+        <span class="field-error">Use at least {{ minLength }} characters.</span>
+      }
+      @if (loginForm.controls.password.getError('server'); as message) {
+        <span class="field-error" role="alert">{{ message }}</span>
       }
     </label>
   </div>

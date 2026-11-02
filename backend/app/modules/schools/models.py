@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, LargeBinary, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin, utcnow
@@ -16,6 +16,11 @@ class School(TimestampMixin, Base):
     code: Mapped[str] = mapped_column(String(50), unique=True)
     board: Mapped[str] = mapped_column(String(50), default="CBSE")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Sign-in lockout set by the school owner (limits are enforced by the schema).
+    login_max_attempts: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
+    login_lockout_minutes: Mapped[int] = mapped_column(
+        Integer, default=60, server_default="60"
+    )
 
 
 class SchoolLogo(Base):

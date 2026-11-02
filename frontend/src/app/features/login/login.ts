@@ -1,12 +1,21 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { Icon } from '../../core/ui/icon';
+
+const DEFAULT_RETRY_SECONDS = 60;
 
 @Component({
   selector: 'sms-login',
@@ -18,6 +27,7 @@ import { Icon } from '../../core/ui/icon';
 export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     identifier: ['', [Validators.required]],
@@ -27,10 +37,16 @@ export class Login {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
+  protected readonly passwordChanged = inject(ActivatedRoute).snapshot.queryParamMap.has('changed');
   protected readonly resetEnabled = signal(false);
   protected readonly resetInfo = signal(false);
+  /** Seconds left before another sign-in attempt is allowed (rate limit). */
+  protected readonly retryIn = signal(0);
+  protected readonly blocked = computed(() => this.retryIn() > 0);
+  private retryTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
+    this.destroyRef.onDestroy(() => this.stopRetryTimer());
     this.auth
       .options()
       .pipe(
@@ -52,7 +68,7 @@ export class Login {
   }
 
   protected submit(): void {
-    if (this.form.invalid || this.loading()) {
+    if (this.form.invalid || this.loading() || this.blocked()) {
       this.form.markAllAsTouched();
       return;
     }
@@ -63,6 +79,10 @@ export class Login {
       next: () => void this.router.navigate(['/']),
       error: (err: unknown) => {
         this.loading.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 429) {
+          this.startRetryCountdown(retryAfterSeconds(err));
+          return;
+        }
         this.error.set(
           err instanceof HttpErrorResponse && err.status === 401
             ? 'Invalid credentials. Check your username, mobile or email and password.'
@@ -71,4 +91,29 @@ export class Login {
       },
     });
   }
+
+  private startRetryCountdown(seconds: number): void {
+    this.stopRetryTimer();
+    this.error.set(null);
+    this.retryIn.set(Math.max(1, seconds));
+    this.retryTimer = setInterval(() => {
+      this.retryIn.update((n) => n - 1);
+      if (this.retryIn() <= 0) {
+        this.stopRetryTimer();
+      }
+    }, 1000);
+  }
+
+  private stopRetryTimer(): void {
+    if (this.retryTimer !== null) {
+      clearInterval(this.retryTimer);
+      this.retryTimer = null;
+    }
+  }
+}
+
+/** Seconds from the Retry-After header; a default when it is missing or not a number. */
+function retryAfterSeconds(err: HttpErrorResponse): number {
+  const seconds = Number(err.headers.get('Retry-After'));
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : DEFAULT_RETRY_SECONDS;
 }

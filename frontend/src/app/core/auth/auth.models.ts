@@ -19,6 +19,10 @@ export interface User {
   school_id: number | null;
   branch_id: number | null;
   is_active: boolean;
+  /** Set after an admin reset or a first sign-in: the user must choose a new password first. */
+  must_change_password: boolean;
+  /** Too many wrong passwords. Only meaningful in the admin users list. */
+  is_locked: boolean;
 }
 
 export interface TokenResponse {

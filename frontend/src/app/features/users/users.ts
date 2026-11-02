@@ -17,10 +17,11 @@ import {
 import { catchError, debounceTime, of, startWith, switchMap, tap } from 'rxjs';
 
 import { AdminApi, Branch, School } from '../../core/api/admin.api';
-import { apiErrorMessage, fieldErrorsFrom } from '../../core/api/api-error';
+import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { Role, User } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { MOBILE_HINT, USERNAME_HINT, mobileFormat, usernameFormat } from '../../core/auth/identity';
+import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { ROLE_LABELS } from '../../core/layout/nav';
 
 const BRANCH_BOUND: Role[] = [
@@ -51,6 +52,8 @@ export class Users {
   protected readonly allRoles = ALL_ROLES;
   protected readonly usernameHint = USERNAME_HINT;
   protected readonly mobileHint = MOBILE_HINT;
+  protected readonly passwordHint = PASSWORD_HINT;
+  protected readonly minLength = PASSWORD_MIN_LENGTH;
 
   protected readonly users = signal<User[]>([]);
   protected readonly branches = signal<Branch[]>([]);
@@ -109,7 +112,14 @@ export class Users {
     username: ['', [Validators.required, usernameFormat]],
     email: ['', Validators.email],
     phone: ['', mobileFormat],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(PASSWORD_MIN_LENGTH),
+        Validators.maxLength(PASSWORD_MAX_LENGTH),
+      ],
+    ],
   });
   protected readonly editForm = this.fb.group({
     full_name: ['', Validators.required],
@@ -119,7 +129,11 @@ export class Users {
   });
   protected readonly resetControl = new FormControl('', {
     nonNullable: true,
-    validators: [Validators.required, Validators.minLength(8)],
+    validators: [
+      Validators.required,
+      Validators.minLength(PASSWORD_MIN_LENGTH),
+      Validators.maxLength(PASSWORD_MAX_LENGTH),
+    ],
   });
 
   constructor() {
@@ -225,7 +239,7 @@ export class Users {
         },
         error: (err: unknown) => {
           this.submitting.set(false);
-          this.formError.set(this.placeErrors(this.form, err));
+          this.formError.set(placeServerErrors(this.form, err));
         },
       });
   }
@@ -261,7 +275,7 @@ export class Users {
         this.editingId.set(null);
         this.notice.set('User updated.');
       },
-      (err) => this.editError.set(this.placeErrors(this.editForm, err)),
+      (err) => this.editError.set(placeServerErrors(this.editForm, err)),
     );
   }
 
@@ -279,30 +293,21 @@ export class Users {
     this.run(user.id, this.api.resetPassword(user.id, this.resetControl.value), () => {
       this.resetControl.reset('');
       this.resettingId.set(null);
-      this.notice.set(`Password reset for ${user.full_name}.`);
+      this.notice.set(
+        `Password reset for ${user.full_name}. They will have to choose a new password at their next sign-in.`,
+      );
+    });
+  }
+
+  protected unlock(user: User): void {
+    this.run(user.id, this.api.unlockUser(user.id), () => {
+      this.notice.set(`${user.full_name} can sign in again.`);
     });
   }
 
   protected closePanels(): void {
     this.editingId.set(null);
     this.resettingId.set(null);
-  }
-
-  /**
-   * Put 422 messages on their fields. Returns the message to show next to the form
-   * (for example a 409 duplicate), or null when every problem sits on a field.
-   */
-  private placeErrors(form: { get(name: string): unknown }, err: unknown): string | null {
-    let placed = false;
-    for (const [name, message] of Object.entries(fieldErrorsFrom(err))) {
-      const control = form.get(name);
-      if (control instanceof FormControl) {
-        control.setErrors({ server: message });
-        control.markAsTouched();
-        placed = true;
-      }
-    }
-    return placed ? null : apiErrorMessage(err);
   }
 
   private run(

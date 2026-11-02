@@ -8,6 +8,11 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+def as_utc(dt: datetime) -> datetime:
+    """SQLite returns naive datetimes; values are always stored in UTC, so tag them as such."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+
+
 class Base(DeclarativeBase):
     pass
 

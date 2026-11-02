@@ -59,3 +59,13 @@ async def reset_password(
 ) -> Response:
     await service.reset_password(db, actor, user_id, data.new_password)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{user_id}/unlock",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(_managers)],
+)
+async def unlock_user(user_id: int, db: DbSession, actor: CurrentUser) -> Response:
+    await service.unlock_user(db, actor, user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

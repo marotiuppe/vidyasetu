@@ -6,7 +6,9 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from app.core.config import get_settings
 from app.core.deps import CurrentUser, DbSession, require_roles
+from app.core.password_policy import enforce_password
 from app.core.security import hash_password
 from app.modules.schools import service
 from app.modules.schools.models import School, SchoolLogo
@@ -64,8 +66,21 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
     """Create a new school together with its owner account."""
     email = data.owner_email.lower()
     username = data.owner_username or await derive_unique_username(db, email)
+    enforce_password(
+        data.owner_password,
+        username=username,
+        email=email,
+        full_name=data.owner_full_name,
+    )
     await ensure_identity_available(db, username=username, email=email)
-    school = School(name=data.name, code=data.code, board=data.board)
+    settings = get_settings()
+    school = School(
+        name=data.name,
+        code=data.code,
+        board=data.board,
+        login_max_attempts=settings.login_max_attempts_default,
+        login_lockout_minutes=settings.login_lockout_minutes_default,
+    )
     db.add(school)
     try:
         await db.flush()
@@ -77,6 +92,7 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
                 full_name=data.owner_full_name,
                 password_hash=hash_password(data.owner_password),
                 role=Role.SCHOOL_OWNER,
+                must_change_password=True,
             )
         )
         await db.commit()

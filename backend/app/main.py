@@ -2,15 +2,23 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
 from app.core.config import get_settings
-from app.core.errors import IdentityInUse
+from app.core.errors import ApiError, IdentityInUse
+from app.core.middleware import (
+    BodySizeLimitMiddleware,
+    ErrorBoundaryMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.academics.router import router as academics_router
@@ -63,18 +71,72 @@ app = FastAPI(
 )
 
 
+_HTTP_CODES = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
+    409: "conflict",
+    413: "payload_too_large",
+    415: "unsupported_media_type",
+    422: "unprocessable",
+    429: "rate_limited",
+}
+
+
 @app.exception_handler(IdentityInUse)
 async def _identity_in_use(_: Request, exc: IdentityInUse) -> JSONResponse:
     return JSONResponse(status_code=409, content={"detail": exc.detail, "code": exc.code})
 
 
+@app.exception_handler(ApiError)
+async def _api_error(_: Request, exc: ApiError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "code": exc.code},
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail, "code": _HTTP_CODES.get(exc.status_code, "error")},
+        headers=getattr(exc, "headers", None),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    """Field errors only: the submitted values and error context are never echoed back."""
+    errors = [
+        {
+            "loc": list(err["loc"]),
+            "msg": str(err["msg"]).removeprefix("Value error, "),
+        }
+        for err in exc.errors()
+    ]
+    return JSONResponse(
+        status_code=422, content={"detail": errors, "code": "validation_error"}
+    )
+
+
+# Added last = outermost. Outer to inner: security headers and request id, trusted hosts,
+# CORS, error boundary, body size limit, rate limit, then the routes.
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
+app.add_middleware(ErrorBoundaryMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
 )
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts)
+app.add_middleware(SecurityHeadersMiddleware)
 
 api = APIRouter(prefix="/api/v1")
 api.include_router(auth_router)

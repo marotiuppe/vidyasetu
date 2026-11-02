@@ -8,8 +8,9 @@ import {
 } from '@angular/forms';
 
 import { AdminApi } from '../../core/api/admin.api';
-import { apiErrorMessage } from '../../core/api/api-error';
+import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { ROLE_LABELS } from '../../core/layout/nav';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
@@ -30,6 +31,8 @@ export class Account {
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly auth = inject(AuthService);
   protected readonly roleLabels = ROLE_LABELS;
+  protected readonly passwordHint = PASSWORD_HINT;
+  protected readonly minLength = PASSWORD_MIN_LENGTH;
 
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -38,7 +41,14 @@ export class Account {
   protected readonly form = this.fb.group(
     {
       current_password: ['', Validators.required],
-      new_password: ['', [Validators.required, Validators.minLength(8)]],
+      new_password: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(PASSWORD_MIN_LENGTH),
+          Validators.maxLength(PASSWORD_MAX_LENGTH),
+        ],
+      ],
       confirm: ['', Validators.required],
     },
     { validators: passwordsMatch },
@@ -54,14 +64,11 @@ export class Account {
     const { current_password, new_password } = this.form.getRawValue();
     this.submitting.set(true);
     this.api.changePassword(current_password, new_password).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.form.reset();
-        this.done.set(true);
-      },
+      // The server ends every session when the password changes: sign in again.
+      next: () => this.auth.passwordChanged(),
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.error.set(apiErrorMessage(err));
+        this.error.set(placeServerErrors(this.form, err));
       },
     });
   }

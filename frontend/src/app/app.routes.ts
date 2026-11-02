@@ -1,12 +1,24 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, publicOnlyMatch, roleGuard } from './core/auth/auth.guard';
+import {
+  authGuard,
+  mustChangePasswordGuard,
+  publicOnlyMatch,
+  roleGuard,
+} from './core/auth/auth.guard';
 import { STUDENT_WRITER_ROLES } from './core/auth/permissions';
 
 export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
+  },
+  {
+    // Forced (or voluntary) password change. Outside the shell so nothing else is reachable from it.
+    path: 'change-password',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/password/change-password').then((m) => m.ChangePassword),
   },
   {
     // Public landing page for visitors; signed-in users fall through to the shell (dashboard).
@@ -20,6 +32,8 @@ export const routes: Routes = [
     // Give each child route `data: { title }` for the breadcrumb.
     path: '',
     canActivate: [authGuard],
+    // Checked on every child navigation: a user who must change the password stays on that screen.
+    canActivateChild: [mustChangePasswordGuard],
     loadComponent: () => import('./core/layout/shell').then((m) => m.Shell),
     children: [
       {
@@ -42,7 +56,8 @@ export const routes: Routes = [
       {
         path: 'students/:id',
         data: { title: 'Student profile' },
-        loadComponent: () => import('./features/students/student-profile').then((m) => m.StudentProfile),
+        loadComponent: () =>
+          import('./features/students/student-profile').then((m) => m.StudentProfile),
       },
       {
         path: 'attendance',
@@ -82,7 +97,15 @@ export const routes: Routes = [
         path: 'fees',
         data: { title: 'Fees' },
         canActivate: [
-          roleGuard('school_owner', 'management', 'accountant', 'clerk', 'headmaster', 'parent', 'student'),
+          roleGuard(
+            'school_owner',
+            'management',
+            'accountant',
+            'clerk',
+            'headmaster',
+            'parent',
+            'student',
+          ),
         ],
         loadComponent: () => import('./features/fees/fees').then((m) => m.Fees),
       },

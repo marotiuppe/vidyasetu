@@ -16,6 +16,10 @@ export interface School {
   board: string;
   is_active: boolean;
   logo_url: string | null;
+  /** Wrong passwords allowed before the account is locked (3 to 10). */
+  login_max_attempts: number;
+  /** How long a locked account stays locked, in minutes (5 to 1440). */
+  login_lockout_minutes: number;
 }
 
 export interface NewSchool {
@@ -39,6 +43,14 @@ export interface NewUser {
   branch_id?: number | null;
 }
 
+/** Fields a school owner can change on their own school. */
+export interface SchoolUpdate {
+  name?: string;
+  board?: string;
+  login_max_attempts?: number;
+  login_lockout_minutes?: number;
+}
+
 export interface UserFilters {
   q?: string;
   role?: Role | '';
@@ -57,13 +69,18 @@ export class AdminApi {
     return this.http.post<School>(`${API}/schools`, body);
   }
 
-  updateSchool(id: number, body: { name?: string; board?: string; is_active?: boolean }): Observable<School> {
+  updateSchool(
+    id: number,
+    body: { name?: string; board?: string; is_active?: boolean },
+  ): Observable<School> {
     return this.http.patch<School>(`${API}/schools/${id}`, body);
   }
 
   /** Send the image bytes as the raw body; the server re-encodes it. */
   uploadLogo(id: number, file: File): Observable<School> {
-    return this.http.put<School>(`${API}/schools/${id}/logo`, file, { headers: { 'Content-Type': file.type } });
+    return this.http.put<School>(`${API}/schools/${id}/logo`, file, {
+      headers: { 'Content-Type': file.type },
+    });
   }
 
   removeLogo(id: number): Observable<void> {
@@ -74,7 +91,7 @@ export class AdminApi {
     return this.http.get<School>(`${API}/schools/me`);
   }
 
-  updateMySchool(body: { name?: string; board?: string }): Observable<School> {
+  updateMySchool(body: SchoolUpdate): Observable<School> {
     return this.http.patch<School>(`${API}/schools/me`, body);
   }
 
@@ -82,7 +99,11 @@ export class AdminApi {
     return this.http.get<Branch[]>(`${API}/branches`);
   }
 
-  createBranch(body: { name: string; code: string; school_id?: number | null }): Observable<Branch> {
+  createBranch(body: {
+    name: string;
+    code: string;
+    school_id?: number | null;
+  }): Observable<Branch> {
     return this.http.post<Branch>(`${API}/branches`, body);
   }
 
@@ -106,6 +127,11 @@ export class AdminApi {
     body: { full_name?: string; email?: string | null; phone?: string | null; is_active?: boolean },
   ): Observable<User> {
     return this.http.patch<User>(`${API}/users/${id}`, body);
+  }
+
+  /** Clear a sign-in lock caused by too many wrong passwords. */
+  unlockUser(id: number): Observable<void> {
+    return this.http.post<void>(`${API}/users/${id}/unlock`, {});
   }
 
   resetPassword(id: number, newPassword: string): Observable<void> {

@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.core.errors import IdentityInUse
+from app.core.password_policy import enforce_password
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
@@ -722,15 +723,20 @@ async def create_guardian_login(
     # Several students (siblings) can share one parent login: an existing one is linked to this
     # guardian too and its password is left untouched.
     if user is None:
+        username = await _login_username(db, data)
+        enforce_password(
+            data.password, username=username, email=email, full_name=guardian.full_name
+        )
         user = User(
             school_id=student.school_id,
             branch_id=None,
-            username=await _login_username(db, data),
+            username=username,
             email=email,
             full_name=guardian.full_name,
             phone=await _parent_phone(db, guardian.phone, student.school_id),
             password_hash=hash_password(data.password),
             role=Role.PARENT,
+            must_change_password=True,
         )
         db.add(user)
         await db.flush()
@@ -755,14 +761,17 @@ async def create_student_login(
     if email is not None:
         await ensure_identity_available(db, email=email)
     username = await _login_username(db, data)
+    full_name = f"{student.first_name} {student.last_name}"
+    enforce_password(data.password, username=username, email=email, full_name=full_name)
     user = User(
         school_id=student.school_id,
         branch_id=student.branch_id,
         username=username,
         email=email,
-        full_name=f"{student.first_name} {student.last_name}",
+        full_name=full_name,
         password_hash=hash_password(data.password),
         role=Role.STUDENT,
+        must_change_password=True,
     )
     db.add(user)
     try:

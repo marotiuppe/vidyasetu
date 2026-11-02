@@ -73,10 +73,31 @@ export class AuthService {
     void this.router.navigate(['/login']);
   }
 
+  /** After a password change the server has ended all sessions: go to sign-in with a notice. */
+  passwordChanged(): void {
+    this.clear();
+    void this.router.navigate(['/login'], { queryParams: { changed: 1 } });
+  }
+
   /** Clear local session without calling the server (used when refresh fails). */
   clear(): void {
     this.accessToken = null;
     this.currentUser.set(null);
+  }
+
+  /** Re-read the signed-in user (for example after changing the password). */
+  reloadUser(): Observable<User> {
+    return this.http.get<User>(`${API}/me`).pipe(
+      map((user) => {
+        this.currentUser.update((current) => (current ? user : current));
+        return user;
+      }),
+    );
+  }
+
+  /** Called when the server says a password change is required before anything else. */
+  requirePasswordChange(): void {
+    this.currentUser.update((user) => (user ? { ...user, must_change_password: true } : user));
   }
 
   private accept(res: TokenResponse): User {

@@ -210,7 +210,8 @@ class LoginCreate(BaseModel):
 
     username: Annotated[_OptUsername, BeforeValidator(_blank_to_none)] = None
     email: OptEmail = None
-    password: str = Field(min_length=8, max_length=128)
+    # Policy is checked by the service, which knows the derived username and the person's name.
+    password: str = Field(max_length=128)
 
     @field_validator("username")
     @classmethod

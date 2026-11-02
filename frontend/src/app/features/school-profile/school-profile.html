@@ -1,7 +1,9 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">School profile</h1>
-    <p class="page-subtitle">Your school name, board and logo. The logo appears in the sidebar for everyone at your school.</p>
+    <p class="page-subtitle">
+      Your school name, board and logo. The logo appears in the sidebar for everyone at your school.
+    </p>
   </div>
 </div>
 
@@ -28,6 +30,52 @@
             <span class="field-error">Board is required.</span>
           }
         </label>
+        <label class="field">
+          Failed sign-in attempts allowed
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            step="1"
+            min="3"
+            max="10"
+            formControlName="login_max_attempts"
+            aria-describedby="lockout-help"
+          />
+          @if (
+            form.controls.login_max_attempts.touched && form.controls.login_max_attempts.invalid
+          ) {
+            <span class="field-error" role="alert">Enter a whole number from 3 to 10.</span>
+          }
+          @if (form.controls.login_max_attempts.getError('server'); as message) {
+            <span class="field-error" role="alert">{{ message }}</span>
+          }
+        </label>
+        <label class="field">
+          Lockout time (minutes)
+          <input
+            class="input"
+            type="number"
+            inputmode="numeric"
+            step="1"
+            min="5"
+            max="1440"
+            formControlName="login_lockout_minutes"
+            aria-describedby="lockout-help"
+          />
+          @if (
+            form.controls.login_lockout_minutes.touched &&
+            form.controls.login_lockout_minutes.invalid
+          ) {
+            <span class="field-error" role="alert">Enter a whole number from 5 to 1440.</span>
+          }
+          @if (form.controls.login_lockout_minutes.getError('server'); as message) {
+            <span class="field-error" role="alert">{{ message }}</span>
+          }
+        </label>
+        <p class="hint" id="lockout-help">
+          After this many wrong passwords the account cannot sign in for the lockout time.
+        </p>
         @if (detailsError(); as message) {
           <p class="form-error" role="alert">{{ message }}</p>
         }
@@ -60,7 +108,12 @@
           <p class="notice" role="status">{{ message }}</p>
         }
         <div class="actions">
-          <button type="button" class="btn btn-primary" [disabled]="logoBusy() || !logoFile()" (click)="uploadLogo()">
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="logoBusy() || !logoFile()"
+            (click)="uploadLogo()"
+          >
             {{ logoBusy() ? 'Working…' : 'Upload logo' }}
           </button>
         </div>

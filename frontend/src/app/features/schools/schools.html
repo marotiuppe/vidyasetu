@@ -3,7 +3,12 @@
     <h1 class="page-title">Schools</h1>
     <p class="page-subtitle">Every school on the platform, each with its own owner account.</p>
   </div>
-  <button type="button" class="btn btn-primary" [attr.aria-expanded]="showForm()" (click)="toggleForm()">
+  <button
+    type="button"
+    class="btn btn-primary"
+    [attr.aria-expanded]="showForm()"
+    (click)="toggleForm()"
+  >
     {{ showForm() ? 'Close' : 'New school' }}
   </button>
 </div>
@@ -23,7 +28,12 @@
           </label>
           <label class="field">
             Code
-            <input class="input" formControlName="code" autocomplete="off" placeholder="short-code" />
+            <input
+              class="input"
+              formControlName="code"
+              autocomplete="off"
+              placeholder="short-code"
+            />
             @if (form.controls.code.touched && form.controls.code.invalid) {
               <span class="field-error">Use lowercase letters, digits, hyphen or underscore.</span>
             }
@@ -57,10 +67,17 @@
               aria-describedby="owner-username-hint"
             />
             <span class="hint" id="owner-username-hint">{{ usernameHint }}</span>
-            @if (form.controls.owner_username.touched && form.controls.owner_username.hasError('required')) {
+            @if (
+              form.controls.owner_username.touched &&
+              form.controls.owner_username.hasError('required')
+            ) {
               <span class="field-error">Username is required.</span>
-            } @else if (form.controls.owner_username.touched && form.controls.owner_username.invalid) {
-              <span class="field-error">Use 3 to 50 allowed characters, with at least one letter.</span>
+            } @else if (
+              form.controls.owner_username.touched && form.controls.owner_username.invalid
+            ) {
+              <span class="field-error"
+                >Use 3 to 50 allowed characters, with at least one letter.</span
+              >
             }
           </label>
           <label class="field">
@@ -72,9 +89,27 @@
           </label>
           <label class="field">
             Owner password
-            <input class="input" type="password" formControlName="owner_password" autocomplete="new-password" />
-            @if (form.controls.owner_password.touched && form.controls.owner_password.invalid) {
-              <span class="field-error">Use at least 8 characters.</span>
+            <input
+              class="input"
+              type="password"
+              formControlName="owner_password"
+              autocomplete="new-password"
+              aria-describedby="owner-password-hint"
+            />
+            <span class="hint" id="owner-password-hint">{{ passwordHint }}</span>
+            @if (
+              form.controls.owner_password.touched &&
+              form.controls.owner_password.hasError('required')
+            ) {
+              <span class="field-error">Enter a password.</span>
+            } @else if (
+              form.controls.owner_password.touched &&
+              form.controls.owner_password.hasError('minlength')
+            ) {
+              <span class="field-error">Use at least {{ minLength }} characters.</span>
+            }
+            @if (form.controls.owner_password.getError('server'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
         </div>
@@ -125,11 +160,19 @@
               <strong>{{ school.name }}</strong>
               <span class="row-sub">Code {{ school.code }} · Board {{ school.board }}</span>
             </span>
-            <span class="badge" [class.badge-success]="school.is_active" [class.badge-muted]="!school.is_active">
+            <span
+              class="badge"
+              [class.badge-success]="school.is_active"
+              [class.badge-muted]="!school.is_active"
+            >
               {{ school.is_active ? 'Active' : 'Inactive' }}
             </span>
             @if (confirmId() === school.id) {
-              <span class="row-actions" role="group" [attr.aria-label]="'Confirm for ' + school.name">
+              <span
+                class="row-actions"
+                role="group"
+                [attr.aria-label]="'Confirm for ' + school.name"
+              >
                 <span class="row-sub">
                   {{
                     school.is_active
@@ -145,7 +188,9 @@
                 >
                   Confirm
                 </button>
-                <button type="button" class="btn btn-ghost btn-sm" (click)="cancelToggle()">Cancel</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="cancelToggle()">
+                  Cancel
+                </button>
               </span>
             } @else {
               <span class="row-actions">

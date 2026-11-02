@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AdminApi, School } from '../../core/api/admin.api';
-import { apiErrorMessage } from '../../core/api/api-error';
+import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { SchoolService } from '../../core/api/school.service';
 import { LogoPicker } from '../../core/ui/logo-picker';
 
@@ -35,6 +35,8 @@ export class SchoolProfile {
   protected readonly form = this.fb.group({
     name: ['', Validators.required],
     board: ['', Validators.required],
+    login_max_attempts: [5, [Validators.required, Validators.min(3), Validators.max(10)]],
+    login_lockout_minutes: [15, [Validators.required, Validators.min(5), Validators.max(1440)]],
   });
 
   constructor() {
@@ -55,22 +57,29 @@ export class SchoolProfile {
       this.form.markAllAsTouched();
       return;
     }
-    const { name, board } = this.form.getRawValue();
+    const { name, board, login_max_attempts, login_lockout_minutes } = this.form.getRawValue();
     this.saving.set(true);
     this.detailsError.set(null);
     this.detailsNotice.set(null);
-    this.api.updateMySchool({ name: name.trim(), board: board.trim() }).subscribe({
-      next: (s) => {
-        this.apply(s);
-        this.saving.set(false);
-        this.detailsNotice.set('School details saved.');
-        this.schoolService.load();
-      },
-      error: (err: unknown) => {
-        this.saving.set(false);
-        this.detailsError.set(apiErrorMessage(err));
-      },
-    });
+    this.api
+      .updateMySchool({
+        name: name.trim(),
+        board: board.trim(),
+        login_max_attempts: Number(login_max_attempts),
+        login_lockout_minutes: Number(login_lockout_minutes),
+      })
+      .subscribe({
+        next: (s) => {
+          this.apply(s);
+          this.saving.set(false);
+          this.detailsNotice.set('School details saved.');
+          this.schoolService.load();
+        },
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.detailsError.set(placeServerErrors(this.form, err));
+        },
+      });
   }
 
   protected uploadLogo(): void {
@@ -119,6 +128,11 @@ export class SchoolProfile {
 
   private apply(s: School): void {
     this.school.set(s);
-    this.form.reset({ name: s.name, board: s.board });
+    this.form.reset({
+      name: s.name,
+      board: s.board,
+      login_max_attempts: s.login_max_attempts,
+      login_lockout_minutes: s.login_lockout_minutes,
+    });
   }
 }

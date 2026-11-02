@@ -17,6 +17,8 @@ class SchoolOut(BaseModel):
     board: str
     is_active: bool
     logo_url: str | None = None
+    login_max_attempts: int
+    login_lockout_minutes: int
 
 
 class SchoolCreate(BaseModel):
@@ -27,7 +29,8 @@ class SchoolCreate(BaseModel):
     # Optional; derived from the owner's email when omitted. Immutable once created.
     owner_username: Annotated[str, StringConstraints(max_length=254)] | None = None
     owner_full_name: str = Field(min_length=1, max_length=200)
-    owner_password: str = Field(min_length=8, max_length=128)
+    # Policy is checked by the router once the owner's username is known.
+    owner_password: str = Field(max_length=128)
 
     @field_validator("owner_username")
     @classmethod
@@ -50,8 +53,13 @@ class SchoolOwnerUpdate(BaseModel):
 
     name: _Name | None = None
     board: _Board | None = None
+    # Sign-in lockout: failed attempts allowed before a lock, and how long the lock lasts.
+    login_max_attempts: int | None = Field(default=None, ge=3, le=10)
+    login_lockout_minutes: int | None = Field(default=None, ge=5, le=1440)
 
-    _no_null = field_validator("name", "board")(_not_null)
+    _no_null = field_validator(
+        "name", "board", "login_max_attempts", "login_lockout_minutes"
+    )(_not_null)
 
 
 class SchoolUpdate(SchoolOwnerUpdate):

@@ -37,6 +37,8 @@ class UserOut(BaseModel):
     school_id: int | None
     branch_id: int | None
     is_active: bool
+    must_change_password: bool
+    is_locked: bool
 
 
 class UserCreate(BaseModel):
@@ -44,7 +46,8 @@ class UserCreate(BaseModel):
     email: OptEmail = None
     full_name: str = Field(min_length=1, max_length=200)
     phone: OptPhone = None
-    password: str = Field(min_length=8, max_length=128)
+    # Policy (length, common passwords, no username or name) is checked by the service.
+    password: str = Field(max_length=128)
     role: Role
     # Super admin must give school_id; school owner's school is implied.
     school_id: int | None = None
@@ -87,4 +90,4 @@ class UserUpdate(BaseModel):
 
 
 class PasswordReset(BaseModel):
-    new_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(max_length=128)

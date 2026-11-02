@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
+import { CanActivateChildFn, CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { Role } from './auth.models';
@@ -35,3 +35,14 @@ export const roleGuard =
     const auth = inject(AuthService);
     return auth.hasRole(...roles) ? true : inject(Router).createUrlTree(['/']);
   };
+
+/**
+ * Keep a user who must change the password inside the forced password screen.
+ * Applied to the shell's children, so every app page is blocked (logout stays on that screen).
+ */
+export const mustChangePasswordGuard: CanActivateChildFn = () => {
+  const auth = inject(AuthService);
+  return auth.user()?.must_change_password
+    ? inject(Router).createUrlTree(['/change-password'])
+    : true;
+};

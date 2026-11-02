@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AdminApi, School } from '../../core/api/admin.api';
-import { apiErrorMessage } from '../../core/api/api-error';
+import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { USERNAME_HINT, usernameFormat } from '../../core/auth/identity';
+import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { LogoPicker } from '../../core/ui/logo-picker';
 
 @Component({
@@ -49,12 +50,22 @@ export class Schools {
     owner_full_name: ['', Validators.required],
     owner_username: ['', [Validators.required, usernameFormat]],
     owner_email: ['', [Validators.required, Validators.email]],
-    owner_password: ['', [Validators.required, Validators.minLength(8)]],
+    owner_password: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(PASSWORD_MIN_LENGTH),
+        Validators.maxLength(PASSWORD_MAX_LENGTH),
+      ],
+    ],
   });
 
   constructor() {
     this.load();
   }
+
+  protected readonly passwordHint = PASSWORD_HINT;
+  protected readonly minLength = PASSWORD_MIN_LENGTH;
 
   protected toggleForm(): void {
     this.showForm.update((v) => !v);
@@ -93,7 +104,7 @@ export class Schools {
       },
       error: (err: unknown) => {
         this.submitting.set(false);
-        this.formError.set(apiErrorMessage(err));
+        this.formError.set(placeServerErrors(this.form, err));
       },
     });
   }

@@ -1,9 +1,20 @@
 import enum
+from datetime import datetime
 
-from sqlalchemy import Boolean, Enum, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Integer,
+    String,
+    UniqueConstraint,
+    false,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TimestampMixin
+from app.db.base import Base, TimestampMixin, as_utc, utcnow
 
 
 class Role(enum.StrEnum):
@@ -58,3 +69,16 @@ class User(TimestampMixin, Base):
         )
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Set for admin-created accounts and resets; cleared when the user changes their password.
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
+    )
+    # Bumped to invalidate every outstanding access token (password change, reset, deactivation).
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    # Failed sign-ins since the last success or lock; the lock applies until locked_until.
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def is_locked(self) -> bool:
+        return self.locked_until is not None and as_utc(self.locked_until) > utcnow()

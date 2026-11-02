@@ -129,9 +129,18 @@
               formControlName="password"
               autocomplete="new-password"
               required
+              aria-describedby="new-user-password-hint"
             />
-            @if (form.controls.password.touched && form.controls.password.invalid) {
-              <span class="field-error" role="alert">Use at least 8 characters.</span>
+            <span class="hint" id="new-user-password-hint">{{ passwordHint }}</span>
+            @if (form.controls.password.touched && form.controls.password.hasError('required')) {
+              <span class="field-error" role="alert">Enter a password.</span>
+            } @else if (
+              form.controls.password.touched && form.controls.password.hasError('minlength')
+            ) {
+              <span class="field-error" role="alert">Use at least {{ minLength }} characters.</span>
+            }
+            @if (form.controls.password.getError('server'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
         </div>
@@ -196,6 +205,9 @@
                   · {{ user.email }}
                 }
               </span>
+              @if (user.must_change_password) {
+                <span class="hint">Must change password at next sign-in</span>
+              }
             </span>
             <span class="row-main">
               <span>{{ roleLabels[user.role] }}</span>
@@ -208,7 +220,20 @@
             >
               {{ user.is_active ? 'Active' : 'Inactive' }}
             </span>
+            @if (user.is_locked) {
+              <span class="badge badge-warn">Locked</span>
+            }
             <span class="row-actions">
+              @if (user.is_locked) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [disabled]="busyId() === user.id"
+                  (click)="unlock(user)"
+                >
+                  Unlock
+                </button>
+              }
               <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">
                 Edit
               </button>
@@ -302,8 +327,13 @@
                     [formControl]="resetControl"
                     autocomplete="new-password"
                   />
-                  @if (resetControl.touched && resetControl.invalid) {
-                    <span class="field-error">Use at least 8 characters.</span>
+                  <span class="hint">{{ passwordHint }}</span>
+                  @if (resetControl.touched && resetControl.hasError('required')) {
+                    <span class="field-error" role="alert">Enter a new password.</span>
+                  } @else if (resetControl.touched && resetControl.hasError('minlength')) {
+                    <span class="field-error" role="alert"
+                      >Use at least {{ minLength }} characters.</span
+                    >
                   }
                 </label>
                 <div class="form-actions">

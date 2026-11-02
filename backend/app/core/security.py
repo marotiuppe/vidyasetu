@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
@@ -56,27 +57,52 @@ def _decode(token: str, expected: TokenType) -> dict[str, Any] | None:
     return data
 
 
-def decode_token(token: str, expected: TokenType) -> int | None:
-    """Return the user id if the token is valid and of the expected type."""
-    data = _decode(token, expected)
+@dataclass(frozen=True)
+class AccessClaims:
+    user_id: int
+    # Must equal the user's token_version; bumped to kill every outstanding access token.
+    token_version: int
+
+
+def decode_access_token(token: str) -> AccessClaims | None:
+    """Return the user id and token version of a valid access token.
+
+    Access tokens issued before the ``tv`` claim existed count as version 0.
+    """
+    data = _decode(token, "access")
     if data is None:
         return None
     try:
-        return int(data["sub"])
+        user_id = int(data["sub"])
+        version = data.get("tv", 0)
+        if not isinstance(version, int) or isinstance(version, bool):
+            return None
     except (KeyError, ValueError, TypeError):
         return None
+    return AccessClaims(user_id=user_id, token_version=version)
 
 
-def decode_refresh_token(token: str) -> tuple[int, bool] | None:
-    """Return (user id, remember_me) for a valid refresh token.
+@dataclass(frozen=True)
+class RefreshClaims:
+    user_id: int
+    remember_me: bool
+    jti: str
 
-    Refresh tokens issued before the ``rem`` claim existed count as remembered.
+
+def decode_refresh_token(token: str) -> RefreshClaims | None:
+    """Return the claims of a valid refresh token.
+
+    Tokens without a ``jti`` (issued before server-side refresh tokens) are rejected, so those
+    sessions end and the user signs in again.
     """
     data = _decode(token, "refresh")
     if data is None:
         return None
     try:
         user_id = int(data["sub"])
+        jti = data["jti"]
     except (KeyError, ValueError, TypeError):
         return None
-    return user_id, data.get("rem", True) is True
+    if not isinstance(jti, str) or not jti:
+        return None
+    return RefreshClaims(user_id=user_id, remember_me=data.get("rem", True) is True, jti=jti)
