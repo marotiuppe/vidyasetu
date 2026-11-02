@@ -82,14 +82,14 @@ Create folders only when the first file in them is needed.
 
 ## Working method (phases and agents)
 
-- The phase table in `README.md` is the roadmap. Work one phase at a time; update its status when done.
+- The phase table in `docs/roadmap.md` is the roadmap (keep it there, not in the README). Work one phase at a time; update its status when a phase starts and when it is done.
 - Per phase: the main session agrees the data model and API contract first, then runs a **backend agent** (`backend/` only, including its Alembic migration) and a **frontend agent** (`frontend/` only) in parallel. Agents never touch the other side's folder, never commit or push, and never create files outside the app (no tests, notes or scratch files in the repo).
 - Only one agent may create an Alembic migration per phase, and it must chain from the current head.
 - The main session reviews the result, runs lint/build and a manual check, updates docs, then commits and pushes (see the memory rule on commit and push).
 
 ## Modules (build order)
 
-The numbered list below is the original module outline; `README.md` has the authoritative phase order.
+The numbered list below is the original module outline; `docs/roadmap.md` has the authoritative phase order.
 
 1. Foundation: config, auth, RBAC, multi-tenancy (schools, branches), academic years, classes/sections, audit log
 2. Students and guardians, admissions, documents
