@@ -1,22 +1,26 @@
 # Roadmap
 
-Phases are built in order; each phase ends with a commit and push. Within a phase, backend and frontend are built in parallel against an agreed API (see "Working method" in [CLAUDE.md](../CLAUDE.md)). Update the status column when a phase changes state.
+Phases are built in order; each phase ends with a commit and push. Within a phase, backend and frontend are built in parallel against an agreed API (see "Working method" in [CLAUDE.md](../CLAUDE.md)).
 
-| # | Phase | Scope | Status |
-|---|---|---|---|
-| 0 | Foundation | Scaffold, auth (JWT + refresh cookie), multi-tenancy (schools, branches), users and roles, academic years, classes and sections, app shell and design system, PWA | Done |
-| 1 | Admin console | Generic branding (school name from data), screens to create schools (platform admin), branches (owner) and users (managers), user edit / deactivate / password reset, change password | Done |
-| 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | In progress |
-| 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view | |
-| 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | |
-| 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | |
-| 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | |
-| 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | |
-| 8 | Staff | Staff records, leave, payroll | |
-| 9 | Extras | Certificates (bonafide, transfer, leaving), library, transport | |
-| 10 | Dashboards and portals | Real dashboard numbers, parent and student portal views, reports | |
-| 11 | Optional integrations | Razorpay payments, SMS and WhatsApp alerts, email, file storage (all off unless `.env` keys are set) | |
-| 12 | Hardening and release | Audit log, PostgreSQL row-level security, revoke sessions on password change or reset (tokens are currently not revoked), custom app icons, formal tests, performance, Render deployment, backups | |
+**Keeping this file up to date:** when a phase starts, fill in *Started*; when it is finished (verified, committed and pushed), fill in *Finished* and set the status to Done. Use real local time (India Standard Time, IST) from `Get-Date`, in the form `YYYY-MM-DD HH:mm`.
+
+| # | Phase | Scope | Status | Started (IST) | Finished (IST) |
+|---|---|---|---|---|---|
+| 0 | Foundation | Scaffold, auth (JWT + refresh cookie), multi-tenancy (schools, branches), users and roles, academic years, classes and sections, app shell and design system, PWA | Done | 2026-11-01 evening (1) | 2026-11-02 10:56 |
+| 1 | Admin console | Generic branding (school name from data), screens to create schools (platform admin), branches (owner) and users (managers), user edit / deactivate / password reset, change password | Done | 2026-11-02 11:11 | 2026-11-02 11:24 |
+| 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | In progress | 2026-11-02 11:26 | |
+| 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view | Not started | | |
+| 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Not started | | |
+| 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Not started | | |
+| 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | Not started | | |
+| 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | Not started | | |
+| 8 | Staff | Staff records, leave, payroll | Not started | | |
+| 9 | Extras | Certificates (bonafide, transfer, leaving), library, transport | Not started | | |
+| 10 | Dashboards and portals | Real dashboard numbers, parent and student portal views, reports | Not started | | |
+| 11 | Optional integrations | Razorpay payments, SMS and WhatsApp alerts, email, file storage (all off unless `.env` keys are set) | Not started | | |
+| 12 | Hardening and release | Audit log, PostgreSQL row-level security, revoke sessions on password change or reset (tokens are currently not revoked), custom app icons, formal tests, performance, Render deployment, backups | Not started | | |
+
+(1) Phase 0 began on the evening of 2026-11-01; the exact start time was not recorded. The first recorded build of the app is 2026-11-01 22:02. Finished = time of the first commit. For phases 1 and 2, *Started* is the time of the first commit or agent launch of that phase.
 
 ## Dependencies
 
