@@ -16,6 +16,7 @@ export interface NavItem {
 const STAFF: Role[] = ['school_owner', 'management', 'headmaster', 'teacher', 'accountant', 'clerk'];
 const MANAGERS: Role[] = ['school_owner', 'management', 'headmaster'];
 const SCHOOL_USERS: Role[] = [...STAFF, 'parent', 'student'];
+const FEE_USERS: Role[] = ['school_owner', 'management', 'accountant', 'clerk', 'headmaster', 'parent', 'student'];
 const USER_ADMINS: Role[] = ['super_admin', ...MANAGERS];
 
 /** Sidebar navigation. When a module ships, remove its `soon` flag. */
@@ -25,6 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Attendance', path: '/attendance', icon: 'calendar', roles: [...STAFF, 'parent', 'student'] },
   { label: 'Academic progress', path: '/progress', icon: 'chart', roles: STAFF, soon: true },
   { label: 'Noticeboard', path: '/notices', icon: 'megaphone', roles: SCHOOL_USERS, unreadBadge: true },
+  { label: 'Fees', path: '/fees', icon: 'wallet', roles: FEE_USERS },
   { label: 'Schools', path: '/schools', icon: 'building', roles: ['super_admin'] },
   { label: 'Branches', path: '/branches', icon: 'building', roles: ['super_admin', 'school_owner'] },
   { label: 'Users', path: '/users', icon: 'user', roles: USER_ADMINS },

@@ -11,7 +11,7 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 | 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | Done | 2026-11-02 11:26 | 2026-11-02 11:38 |
 | 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view, holidays | Done | 2026-11-02 11:39 | 2026-11-02 11:53 |
 | 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Done | 2026-11-02 11:54 | 2026-11-02 12:01 |
-| 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Not started | | |
+| 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Done | 2026-11-02 12:03 | 2026-11-02 12:17 |
 | 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | Not started | | |
 | 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | Not started | | |
 | 8 | Staff | Staff records, leave, payroll | Not started | | |
@@ -31,4 +31,6 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 
 - Sessions are not revoked on password change or reset (phase 12).
 - The overview page shows only counts that exist today; student, attendance and marks cards arrive with their modules.
-- Search and notifications in the top bar are disabled placeholders.
+- Search in the top bar is a disabled placeholder.
+- Fees: the receipt PDF uses Helvetica and writes "Rs." (no rupee sign, no Devanagari names) until a Unicode font is bundled; there is no standalone payments list screen yet (the API exists); the currency is a single constant in the frontend (`core/ui/money.ts`) and could become a school setting; payment concurrency (`SELECT ... FOR UPDATE`) is only tested on SQLite, so recheck on PostgreSQL (phase 12). Online payment arrives in phase 11.
+- The academic-year to school link is checked in services, not by a database constraint.

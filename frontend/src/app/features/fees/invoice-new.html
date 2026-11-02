@@ -1,0 +1,85 @@
+<section class="card" aria-labelledby="new-invoice-title">
+  <div class="card-head">
+    <h2 class="card-title" id="new-invoice-title">New invoice</h2>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="closed.emit()">
+      <sms-icon name="close" [size]="14" />
+      Close
+    </button>
+  </div>
+
+  <form class="stack" [formGroup]="form" (ngSubmit)="submit()">
+    @if (student(); as s) {
+      <p class="panel">
+        Student: <strong>{{ s.full_name }}</strong> · Admission no. {{ s.admission_no }}
+        <button type="button" class="btn btn-ghost btn-sm" (click)="student.set(null)">Change</button>
+      </p>
+    } @else {
+      <div class="panel">
+        <sms-student-picker actionLabel="Select" (picked)="student.set($event)" />
+      </div>
+    }
+
+    <div class="form-grid">
+      <label class="field">
+        Academic year
+        <select class="input" formControlName="yearId">
+          @for (y of lookups.years(); track y.id) {
+            <option [ngValue]="y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Title
+        <input class="input" type="text" maxlength="120" formControlName="title" />
+      </label>
+      <label class="field">
+        Due date
+        <input class="input" type="date" formControlName="dueDate" />
+      </label>
+    </div>
+
+    <fieldset class="panel stack" formArrayName="lines">
+      <legend class="hint">Fee lines</legend>
+      @for (line of lines.controls; track line; let i = $index) {
+        <div class="form-grid" [formGroupName]="i">
+          <label class="field">
+            Description
+            <input class="input" type="text" maxlength="200" formControlName="description" />
+          </label>
+          <label class="field">
+            Amount (rupees)
+            <input class="input" type="text" inputmode="decimal" autocomplete="off" formControlName="amount" />
+          </label>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="lines.length < 2"
+              [attr.aria-label]="'Remove line ' + (i + 1)"
+              (click)="removeLine(i)"
+            >
+              <sms-icon name="trash" [size]="14" />
+              Remove
+            </button>
+          </div>
+        </div>
+      }
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="addLine()">
+          <sms-icon name="plus" [size]="14" />
+          Add line
+        </button>
+        <span class="hint" aria-live="polite">Total {{ money(total()) }}</span>
+      </div>
+    </fieldset>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">
+        {{ busy() ? 'Creating…' : 'Create invoice' }}
+      </button>
+    </div>
+  </form>
+</section>

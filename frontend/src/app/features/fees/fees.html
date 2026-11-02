@@ -1,0 +1,47 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Fees</h1>
+    <p class="page-subtitle">
+      {{ selfService ? 'Fee invoices, payments and receipts.' : 'Invoices, payments, dues and collection.' }}
+    </p>
+  </div>
+</div>
+
+@if (tabs.length > 1) {
+  <div class="tabs" role="tablist" aria-label="Fee sections" (keydown)="onTabKey($event)">
+    @for (t of tabs; track t.id) {
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [id]="'tab-' + t.id"
+        [attr.aria-selected]="active() === t.id"
+        [attr.aria-controls]="'panel-' + t.id"
+        [attr.tabindex]="active() === t.id ? 0 : -1"
+        (click)="select(t.id)"
+      >
+        {{ t.label }}
+      </button>
+    }
+  </div>
+}
+
+<div role="tabpanel" [id]="'panel-' + active()" [attr.aria-labelledby]="tabs.length > 1 ? 'tab-' + active() : null">
+  @switch (active()) {
+    @case ('invoices') {
+      <sms-fee-invoices [canManage]="canManage" [canPay]="canPay" />
+    }
+    @case ('dues') {
+      <sms-fee-dues />
+    }
+    @case ('collection') {
+      <sms-fee-collection />
+    }
+    @case ('setup') {
+      <sms-fee-setup />
+    }
+    @case ('my') {
+      <sms-my-fees />
+    }
+  }
+</div>

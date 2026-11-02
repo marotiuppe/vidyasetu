@@ -631,3 +631,80 @@ svg {
     min-height: 44px;
   }
 }
+
+/* ============================================================
+   Shared by attendance and fees: tab strip, amounts, status
+   badges and simple proportion bars
+   ============================================================ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  max-width: 100%;
+  width: fit-content;
+  margin-bottom: 16px;
+  padding: 4px;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.tab {
+  min-height: 37px;
+  padding: 8px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[aria-selected='true'] {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+@media (pointer: coarse), (max-width: 1023px) {
+  .tab {
+    min-height: 44px;
+  }
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.badge-danger {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.badge-warn {
+  color: var(--amber);
+  background: var(--amber-bg);
+}
+
+.bar {
+  display: block;
+  flex: 1 1 120px;
+  height: 8px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: 4px;
+}

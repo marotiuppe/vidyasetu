@@ -1,0 +1,114 @@
+<section class="card" aria-labelledby="generate-title">
+  <div class="card-head">
+    <h2 class="card-title" id="generate-title">Generate invoices</h2>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="closed.emit()">
+      <sms-icon name="close" [size]="14" />
+      Close
+    </button>
+  </div>
+  <p class="hint">Invoices are created from the fee structure. Students who already have an invoice with the same title are skipped.</p>
+
+  <form class="stack" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <label class="field">
+        Academic year
+        <select class="input" formControlName="yearId">
+          @for (y of lookups.years(); track y.id) {
+            <option [ngValue]="y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Title
+        <input class="input" type="text" maxlength="120" placeholder="For example Term 1 fees" formControlName="title" />
+      </label>
+      <label class="field">
+        Due date
+        <input class="input" type="date" formControlName="dueDate" />
+      </label>
+      <label class="field">
+        Generate for
+        <select class="input" formControlName="target">
+          <option value="class">A whole class</option>
+          <option value="section">One section</option>
+          <option value="students">Selected students</option>
+        </select>
+      </label>
+      @if (target() !== 'students') {
+        <label class="field">
+          Class
+          <select class="input" formControlName="classId" (change)="form.controls.sectionId.setValue(0)">
+            <option [ngValue]="0">Choose a class</option>
+            @for (c of lookups.classes(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (target() === 'section') {
+        <label class="field">
+          Section
+          <select class="input" formControlName="sectionId">
+            <option [ngValue]="0">Choose a section</option>
+            @for (s of sectionOptions(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+
+    @if (target() !== 'students' && structure().length) {
+      <fieldset class="panel">
+        <legend class="hint">Fee heads to include</legend>
+        @for (i of structure(); track i.id) {
+          <label class="check">
+            <input type="checkbox" [checked]="isChecked(i.fee_head_id)" (change)="toggleHead(i.fee_head_id)" />
+            {{ i.fee_head_name }} · {{ money(i.amount_paise) }}
+          </label>
+        }
+      </fieldset>
+    }
+
+    @if (target() === 'students') {
+      <div class="panel stack">
+        <sms-student-picker [excludeIds]="studentIds()" (picked)="addStudent($event)" />
+        @if (students().length) {
+          <ul class="rows" aria-label="Selected students">
+            @for (s of students(); track s.id) {
+              <li class="row">
+                <span class="row-main">
+                  {{ s.full_name }}
+                  <span class="row-sub">Admission no. {{ s.admission_no }}</span>
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="'Remove ' + s.full_name"
+                  (click)="removeStudent(s.id)"
+                >
+                  Remove
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (result(); as r) {
+      <p class="notice" role="status">
+        Created {{ r.created }} invoice{{ r.created === 1 ? '' : 's' }}. Skipped {{ r.skipped_existing }} that already
+        existed and {{ r.skipped_no_structure }} with no fee structure.
+      </p>
+    }
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">
+        {{ busy() ? 'Generating…' : 'Generate invoices' }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -1,0 +1,211 @@
+<section class="card" id="invoice-detail" aria-labelledby="invoice-title" [attr.aria-busy]="loading()">
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (loading() && !invoice()) {
+    <p class="empty" role="status">Loading invoice…</p>
+  }
+  @if (invoice(); as inv) {
+    <div class="head">
+      <div>
+        <h2 class="card-title" id="invoice-title">Invoice {{ inv.invoice_no }}</h2>
+        <p class="sub">
+          {{ inv.student_name }} · Admission no. {{ inv.admission_no }} ·
+          {{ classSection(inv.class_name, inv.section_name) }}
+        </p>
+        <p class="sub">{{ inv.title }} · Due {{ inv.due_date }}</p>
+      </div>
+      <div class="header-actions">
+        <span class="badge" [class]="statusClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+        @if (inv.is_overdue) {
+          <span class="badge badge-danger">Overdue</span>
+        }
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closed.emit()">
+          <sms-icon name="close" [size]="14" />
+          Close
+        </button>
+      </div>
+    </div>
+
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+    @if (inv.status === 'cancelled') {
+      <p class="form-error">This invoice was cancelled@if (inv.cancel_reason) {: {{ inv.cancel_reason }}}.</p>
+    }
+
+    <dl class="sum">
+      <div><dt>Gross</dt><dd class="amount">{{ money(inv.gross_paise) }}</dd></div>
+      <div><dt>Discount</dt><dd class="amount">{{ money(inv.discount_paise) }}</dd></div>
+      <div><dt>Total</dt><dd class="amount">{{ money(inv.total_paise) }}</dd></div>
+      <div><dt>Paid</dt><dd class="amount">{{ money(inv.paid_paise) }}</dd></div>
+      <div><dt>Balance</dt><dd class="amount">{{ money(inv.balance_paise) }}</dd></div>
+    </dl>
+    @if (inv.discount_reason) {
+      <p class="row-sub">Discount reason: {{ inv.discount_reason }}</p>
+    }
+
+    <h3>Fee lines</h3>
+    <ul class="rows">
+      @for (l of inv.lines; track l.id) {
+        <li class="row">
+          <span class="row-main">{{ l.description }}</span>
+          <span class="amount">{{ money(l.amount_paise) }}</span>
+        </li>
+      }
+    </ul>
+
+    @if (canEdit() || canCancel()) {
+      <div class="form-actions">
+        @if (canEdit()) {
+          <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="editOpen()" (click)="openEdit()">
+            <sms-icon name="edit" [size]="14" />
+            Edit discount and due date
+          </button>
+        }
+        @if (canCancel()) {
+          <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="cancelOpen()" (click)="openCancel()">
+            Cancel invoice
+          </button>
+        }
+      </div>
+    }
+
+    @if (editOpen()) {
+      <form class="panel stack" [formGroup]="editForm" (ngSubmit)="saveEdit(inv)" aria-label="Edit invoice">
+        <div class="form-grid">
+          <label class="field">
+            Due date
+            <input class="input" type="date" formControlName="dueDate" />
+          </label>
+          <label class="field">
+            Discount (rupees)
+            <input class="input" type="text" inputmode="decimal" formControlName="discount" />
+          </label>
+          <label class="field">
+            Discount reason
+            <input class="input" type="text" maxlength="200" formControlName="reason" />
+          </label>
+        </div>
+        @if (editError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">Save changes</button>
+          <button type="button" class="btn btn-ghost" (click)="closeForms()">Cancel</button>
+        </div>
+      </form>
+    }
+
+    @if (cancelOpen()) {
+      <form class="panel stack" (submit)="$event.preventDefault(); cancelInvoice(inv)" aria-label="Cancel invoice">
+        <label class="field">
+          Reason for cancelling
+          <input class="input" type="text" maxlength="200" [formControl]="reasonControl" />
+        </label>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">Confirm cancel</button>
+          <button type="button" class="btn btn-ghost" (click)="closeForms()">Keep invoice</button>
+        </div>
+      </form>
+    }
+
+    <h3>Payments</h3>
+    <ul class="rows">
+      @for (p of inv.payments; track p.id) {
+        <li class="row">
+          <span class="row-main">
+            <span [class.void]="p.status === 'reversed'">{{ p.receipt_no }} · {{ money(p.amount_paise) }}</span>
+            <span class="row-sub">
+              {{ p.paid_on }} · {{ methodLabel(p.method) }}@if (p.reference) { · Ref {{ p.reference }}}
+              · Received by {{ p.received_by_name }}
+            </span>
+            @if (p.status === 'reversed') {
+              <span class="row-sub">Reversed: {{ p.reversed_reason }}</span>
+            }
+          </span>
+          <span class="badge" [class]="p.status === 'received' ? 'badge-success' : 'badge-muted'">
+            {{ p.status === 'received' ? 'Received' : 'Reversed' }}
+          </span>
+          <span class="row-actions">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [attr.aria-label]="'Receipt ' + p.receipt_no"
+              (click)="receipt(p)"
+            >
+              <sms-icon name="download" [size]="14" />
+              Receipt
+            </button>
+            @if (canManage() && p.status === 'received') {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="'Reverse payment ' + p.receipt_no"
+                [attr.aria-expanded]="reversingId() === p.id"
+                (click)="openReverse(p)"
+              >
+                Reverse
+              </button>
+            }
+          </span>
+          @if (reversingId() === p.id) {
+            <form class="panel stack" (submit)="$event.preventDefault(); reverse(p)" aria-label="Reverse payment">
+              <label class="field">
+                Reason for reversing {{ p.receipt_no }}
+                <input class="input" type="text" maxlength="200" [formControl]="reasonControl" />
+              </label>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" [disabled]="busy()">Confirm reverse</button>
+                <button type="button" class="btn btn-ghost" (click)="closeForms()">Cancel</button>
+              </div>
+            </form>
+          }
+        </li>
+      } @empty {
+        <li class="empty">No payments yet.</li>
+      }
+    </ul>
+
+    @if (canRecord()) {
+      <h3>Record payment</h3>
+      <form class="panel stack" [formGroup]="payForm" (ngSubmit)="recordPayment(inv)" aria-label="Record payment">
+        <div class="form-grid">
+          <label class="field">
+            Amount (rupees)
+            <input class="input" type="text" inputmode="decimal" autocomplete="off" formControlName="amount" />
+            <span class="hint">Balance {{ money(inv.balance_paise) }}</span>
+          </label>
+          <label class="field">
+            Method
+            <select class="input" formControlName="method">
+              @for (m of methods; track m) {
+                <option [value]="m">{{ methodLabel(m) }}</option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            Reference (optional)
+            <input class="input" type="text" maxlength="100" formControlName="reference" />
+          </label>
+          <label class="field">
+            Paid on
+            <input class="input" type="date" [max]="today" formControlName="paidOn" />
+          </label>
+          <label class="field">
+            Note (optional)
+            <input class="input" type="text" maxlength="200" formControlName="note" />
+          </label>
+        </div>
+        @if (payError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            {{ busy() ? 'Saving…' : 'Record payment' }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

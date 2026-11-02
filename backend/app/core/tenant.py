@@ -37,6 +37,17 @@ def scope_tenant(stmt: Select[Any], model: Any, user: User) -> Select[Any]:
     return stmt
 
 
+def scope_fees(stmt: Select[Any], model: Any, user: User) -> Select[Any]:
+    """Scope for fee data (heads, structure, invoices, payments) read or changed by fee staff.
+
+    Fee staff see their branch (school owner: the whole school). Super admins, parents, students
+    and teachers get nothing here: parents and students reach fees only through `scope_students`.
+    """
+    if user.role in (Role.SUPER_ADMIN, Role.PARENT, Role.STUDENT, Role.TEACHER):
+        return stmt.where(False)
+    return scope_tenant(stmt, model, user)
+
+
 def scope_users(stmt: Select[tuple[User]], user: User) -> Select[tuple[User]]:
     if user.role == Role.SUPER_ADMIN:
         return stmt

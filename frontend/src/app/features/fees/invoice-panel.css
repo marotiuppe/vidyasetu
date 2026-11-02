@@ -1,0 +1,43 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.sub {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.sum {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 12px 0;
+}
+
+.sum div {
+  display: grid;
+}
+
+.sum dt {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.sum dd {
+  margin: 0;
+}
+
+h3 {
+  margin: 16px 0 6px;
+  font-size: 0.85rem;
+}
+
+.void {
+  text-decoration: line-through;
+  color: var(--muted);
+}

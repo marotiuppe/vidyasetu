@@ -1,0 +1,8 @@
+.cell {
+  flex: 1 1 150px;
+}
+
+.money {
+  display: grid;
+  min-width: 120px;
+}

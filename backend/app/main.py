@@ -16,6 +16,7 @@ from app.modules.academics.router import router as academics_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
+from app.modules.fees.router import router as fees_router
 from app.modules.notices.router import router as notices_router
 from app.modules.schools.router import router as schools_router
 from app.modules.students.router import router as students_router
@@ -74,6 +75,7 @@ api.include_router(academics_router)
 api.include_router(students_router)
 api.include_router(attendance_router)
 api.include_router(notices_router)
+api.include_router(fees_router)
 app.include_router(api)
 
 

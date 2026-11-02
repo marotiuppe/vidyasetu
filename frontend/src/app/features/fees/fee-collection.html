@@ -1,0 +1,68 @@
+<section class="card" aria-labelledby="collection-title">
+  <h2 class="card-title" id="collection-title">Collection</h2>
+
+  <div class="toolbar" role="search">
+    <label class="field">
+      From
+      <input class="input" type="date" [max]="to()" [value]="from()" (change)="from.set(onValue($event))" />
+    </label>
+    <label class="field">
+      To
+      <input class="input" type="date" [min]="from()" [max]="today" [value]="to()" (change)="to.set(onValue($event))" />
+    </label>
+    @if (canPickBranch) {
+      <label class="field">
+        Branch
+        <select class="input" (change)="branchId.set(+onValue($event))">
+          <option value="0" [selected]="branchId() === 0">All branches</option>
+          @for (b of lookups.branches(); track b.id) {
+            <option [value]="b.id" [selected]="branchId() === b.id">{{ b.name }}</option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (rangeInvalid()) {
+    <p class="form-error" role="alert">Choose a start date that is not after the end date.</p>
+  } @else if (loading()) {
+    <p class="empty" role="status">Loading collection…</p>
+  } @else if (data(); as d) {
+    <p class="total">
+      <span class="hint">Collected from {{ d.from }} to {{ d.to }}</span>
+      <span class="big">{{ money(d.total_paise) }}</span>
+      <span class="hint">{{ d.count }} payment{{ d.count === 1 ? '' : 's' }}</span>
+    </p>
+
+    <h3>By payment method</h3>
+    <ul class="rows">
+      @for (m of d.by_method; track m.method) {
+        <li class="row">
+          <span class="label">{{ methodLabel(m.method) }}</span>
+          <span class="bar" aria-hidden="true"><span [style.width.%]="pct(m.total_paise, d.total_paise)"></span></span>
+          <span class="amount">{{ money(m.total_paise) }}</span>
+          <span class="row-sub">{{ m.count }} payment{{ m.count === 1 ? '' : 's' }}</span>
+        </li>
+      } @empty {
+        <li class="empty">No payments in this period.</li>
+      }
+    </ul>
+
+    <h3>By day</h3>
+    <ul class="rows">
+      @for (day of d.by_day; track day.date) {
+        <li class="row">
+          <span class="label">{{ day.date }}</span>
+          <span class="bar" aria-hidden="true"><span [style.width.%]="pct(day.total_paise, maxDay())"></span></span>
+          <span class="amount">{{ money(day.total_paise) }}</span>
+        </li>
+      } @empty {
+        <li class="empty">No payments in this period.</li>
+      }
+    </ul>
+  }
+</section>

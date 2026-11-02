@@ -1,0 +1,46 @@
+<div class="stack">
+  <label class="field">
+    Find a student
+    <input
+      class="input"
+      type="search"
+      placeholder="Type at least 2 letters of the name or admission no."
+      autocomplete="off"
+      [value]="query()"
+      (input)="onInput($event)"
+    />
+  </label>
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  <div aria-live="polite">
+    @if (loading()) {
+      <p class="empty">Searching…</p>
+    } @else if (query().trim().length >= 2) {
+      <ul class="rows">
+        @for (s of results(); track s.id) {
+          <li class="row">
+            <span class="row-main">
+              <span>{{ s.full_name }}</span>
+              <span class="row-sub">
+                Admission no. {{ s.admission_no }} ·
+                {{ classSection(s.current_enrollment?.class_name ?? null, s.current_enrollment?.section_name ?? null) }}
+              </span>
+            </span>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="excluded(s.id)"
+              [attr.aria-label]="actionLabel() + ' ' + s.full_name"
+              (click)="pick(s)"
+            >
+              {{ excluded(s.id) ? 'Added' : actionLabel() }}
+            </button>
+          </li>
+        } @empty {
+          <li class="empty">No students match.</li>
+        }
+      </ul>
+    }
+  </div>
+</div>

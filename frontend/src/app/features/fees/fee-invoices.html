@@ -1,0 +1,149 @@
+@if (canManage()) {
+  <div class="header-actions actions">
+    <button type="button" class="btn btn-ghost" [attr.aria-expanded]="mode() === 'generate'" (click)="setMode('generate')">
+      <sms-icon name="sparkle" [size]="16" />
+      Generate invoices
+    </button>
+    <button type="button" class="btn btn-primary" [attr.aria-expanded]="mode() === 'new'" (click)="setMode('new')">
+      <sms-icon name="plus" [size]="16" />
+      New invoice
+    </button>
+  </div>
+}
+
+<div class="stack">
+  @if (mode() === 'generate') {
+    <sms-invoice-generate (generated)="generated()" (closed)="mode.set('none')" />
+  }
+  @if (mode() === 'new') {
+    <sms-invoice-new (created)="created($event)" (closed)="mode.set('none')" />
+  }
+  @if (selectedId()) {
+    <sms-invoice-panel
+      [invoiceId]="selectedId()"
+      [canManage]="canManage()"
+      [canPay]="canPay()"
+      (changed)="reload()"
+      (closed)="selectedId.set(0)"
+    />
+  }
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="invoice-list">
+    <h2 class="card-title" id="invoice-list">Invoices</h2>
+
+    <div class="toolbar" role="search">
+      <label class="field">
+        Search
+        <input
+          class="input"
+          type="search"
+          placeholder="Student, admission or invoice no."
+          autocomplete="off"
+          [value]="filters().q"
+          (input)="patch({ q: onValue($event) })"
+        />
+      </label>
+      <label class="field">
+        Academic year
+        <select class="input" (change)="onSelect('yearId', $event)">
+          <option value="0" [selected]="filters().yearId === 0">All years</option>
+          @for (y of lookups.years(); track y.id) {
+            <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Class
+        <select class="input" (change)="onSelect('classId', $event)">
+          <option value="0" [selected]="filters().classId === 0">All classes</option>
+          @for (c of lookups.classes(); track c.id) {
+            <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Section
+        <select class="input" [disabled]="!filters().classId" (change)="onSelect('sectionId', $event)">
+          <option value="0" [selected]="filters().sectionId === 0">All sections</option>
+          @for (s of sectionOptions(); track s.id) {
+            <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Status
+        <select class="input" (change)="onStatus($event)">
+          <option value="" [selected]="filters().status === ''">All statuses</option>
+          @for (s of statuses; track s) {
+            <option [value]="s" [selected]="filters().status === s">{{ statusLabel(s) }}</option>
+          }
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" [checked]="filters().overdue" (change)="onOverdue($event)" />
+        Overdue only
+      </label>
+    </div>
+
+    @if (data(); as d) {
+      <ul class="stat-strip" aria-label="Totals for the current filters">
+        <li class="badge">Billed {{ money(d.totals.billed_paise) }}</li>
+        <li class="badge badge-success">Collected {{ money(d.totals.paid_paise) }}</li>
+        <li class="badge badge-warn">Outstanding {{ money(d.totals.balance_paise) }}</li>
+      </ul>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading invoices…</p>
+    } @else {
+      <ul class="rows">
+        @for (i of data()?.items ?? []; track i.id) {
+          <li class="row" (click)="open(i)">
+            <span class="row-main">
+              <button type="button" class="open" [attr.aria-label]="'Open invoice ' + i.invoice_no">
+                {{ i.invoice_no }}
+              </button>
+              <span class="row-sub">{{ i.title }}</span>
+            </span>
+            <span class="row-main cell">
+              <span>{{ i.student_name }}</span>
+              <span class="row-sub">{{ classSection(i.class_name, i.section_name) }} · {{ i.admission_no }}</span>
+            </span>
+            <span class="row-main cell">
+              <span>Due {{ i.due_date }}</span>
+              @if (i.is_overdue) {
+                <span><span class="badge badge-danger">Overdue</span></span>
+              }
+            </span>
+            <span class="money">
+              <span class="amount">{{ money(i.total_paise) }}</span>
+              <span class="row-sub">Paid {{ money(i.paid_paise) }}</span>
+              <span class="row-sub">Balance {{ money(i.balance_paise) }}</span>
+            </span>
+            <span class="badge" [class]="statusClass(i.status)">{{ statusLabel(i.status) }}</span>
+          </li>
+        } @empty {
+          <li class="empty">No invoices match.</li>
+        }
+      </ul>
+
+      @if (total() > 0) {
+        <nav class="pager" aria-label="Pagination">
+          <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+          <span class="row-actions">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
+              Previous
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
+              Next
+            </button>
+          </span>
+        </nav>
+      }
+    }
+  </section>
+</div>

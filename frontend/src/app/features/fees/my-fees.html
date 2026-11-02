@@ -1,0 +1,103 @@
+<div class="stack">
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (childrenLoading()) {
+    <p class="empty" role="status">Loading…</p>
+  } @else if (!childId()) {
+    <p class="empty">No student record is linked to your account.</p>
+  } @else {
+    @if (children().length > 1) {
+      <label class="field child-pick">
+        Child
+        <select class="input" (change)="pickChild($event)">
+          @for (c of children(); track c.id) {
+            <option [value]="c.id" [selected]="c.id === childId()">{{ c.full_name }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading fees…</p>
+    } @else if (fees(); as f) {
+      <section class="card" aria-labelledby="my-summary">
+        <h2 class="card-title" id="my-summary">Fee summary@if (childName()) { for {{ childName() }}}</h2>
+        <ul class="stat-strip">
+          <li class="badge">Billed {{ money(f.summary.billed_paise) }}</li>
+          <li class="badge badge-success">Paid {{ money(f.summary.paid_paise) }}</li>
+          <li class="badge badge-warn">Balance {{ money(f.summary.balance_paise) }}</li>
+        </ul>
+      </section>
+
+      @for (inv of f.invoices; track inv.id) {
+        <section class="card" [attr.aria-labelledby]="'inv-' + inv.id">
+          <div class="card-head">
+            <h3 class="card-title" [id]="'inv-' + inv.id">{{ inv.title }} · {{ inv.invoice_no }}</h3>
+            <span class="header-actions">
+              <span class="badge" [class]="statusClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+              @if (inv.is_overdue) {
+                <span class="badge badge-danger">Overdue</span>
+              }
+            </span>
+          </div>
+          <p class="row-sub">Due {{ inv.due_date }}</p>
+          <ul class="stat-strip lines">
+            <li class="badge">Total {{ money(inv.total_paise) }}</li>
+            <li class="badge badge-success">Paid {{ money(inv.paid_paise) }}</li>
+            <li class="badge badge-warn">Balance {{ money(inv.balance_paise) }}</li>
+          </ul>
+
+          <details>
+            <summary>Fee items ({{ inv.lines.length }})</summary>
+            <ul class="rows">
+              @for (l of inv.lines; track l.id) {
+                <li class="row">
+                  <span class="row-main">{{ l.description }}</span>
+                  <span class="amount">{{ money(l.amount_paise) }}</span>
+                </li>
+              }
+              @if (inv.discount_paise > 0) {
+                <li class="row">
+                  <span class="row-main">Discount@if (inv.discount_reason) { ({{ inv.discount_reason }})}</span>
+                  <span class="amount">-{{ money(inv.discount_paise) }}</span>
+                </li>
+              }
+            </ul>
+          </details>
+
+          @if (inv.payments.length) {
+            <h4>Payments</h4>
+            <ul class="rows">
+              @for (p of inv.payments; track p.id) {
+                <li class="row">
+                  <span class="row-main">
+                    <span>{{ money(p.amount_paise) }} · {{ methodLabel(p.method) }}</span>
+                    <span class="row-sub">{{ p.paid_on }} · Receipt {{ p.receipt_no }}</span>
+                  </span>
+                  <span class="badge" [class]="p.status === 'received' ? 'badge-success' : 'badge-muted'">
+                    {{ p.status === 'received' ? 'Received' : 'Reversed' }}
+                  </span>
+                  @if (p.status === 'received') {
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      [attr.aria-label]="'Receipt ' + p.receipt_no"
+                      (click)="receipt(p)"
+                    >
+                      <sms-icon name="download" [size]="14" />
+                      Receipt
+                    </button>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      } @empty {
+        <p class="empty">No fee invoices yet.</p>
+      }
+    }
+  }
+</div>

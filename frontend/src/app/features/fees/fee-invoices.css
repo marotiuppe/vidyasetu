@@ -1,0 +1,37 @@
+.cell {
+  flex: 1 1 140px;
+}
+
+.open {
+  padding: 0;
+  font-weight: 650;
+  color: var(--text);
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.open:hover {
+  text-decoration: underline;
+}
+
+li.row {
+  cursor: pointer;
+}
+
+.money {
+  display: grid;
+  min-width: 110px;
+  text-align: right;
+}
+
+@media (max-width: 767px) {
+  .money {
+    text-align: left;
+  }
+}
+
+.actions {
+  margin-bottom: 16px;
+}

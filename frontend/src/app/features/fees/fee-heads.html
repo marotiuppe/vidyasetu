@@ -1,0 +1,75 @@
+<section class="card" aria-labelledby="heads-title">
+  <h2 class="card-title" id="heads-title">Fee heads</h2>
+
+  <form class="form-grid" (submit)="$event.preventDefault(); add()" aria-label="Add fee head">
+    <label class="field">
+      New fee head
+      <input
+        class="input"
+        type="text"
+        maxlength="80"
+        placeholder="For example Tuition or Transport"
+        [formControl]="addControl"
+      />
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">Add fee head</button>
+    </div>
+  </form>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">Loading fee heads…</p>
+  } @else {
+    <ul class="rows">
+      @for (h of heads(); track h.id) {
+        <li class="row">
+          @if (renamingId() === h.id) {
+            <form class="row-main" (submit)="$event.preventDefault(); rename(h)" [attr.aria-label]="'Rename ' + h.name">
+              <label class="field">
+                Name
+                <input class="input" type="text" maxlength="80" [formControl]="renameControl" />
+              </label>
+            </form>
+            <span class="row-actions">
+              <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="rename(h)">Save</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="renamingId.set(0)">Cancel</button>
+            </span>
+          } @else {
+            <span class="row-main">{{ h.name }}</span>
+            <span class="badge" [class]="h.is_active ? 'badge-success' : 'badge-muted'">
+              {{ h.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            <span class="row-actions">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="'Rename ' + h.name"
+                (click)="startRename(h)"
+              >
+                Rename
+              </button>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [disabled]="busy()"
+                [attr.aria-label]="(h.is_active ? 'Deactivate ' : 'Activate ') + h.name"
+                (click)="toggle(h)"
+              >
+                {{ h.is_active ? 'Deactivate' : 'Activate' }}
+              </button>
+            </span>
+          }
+        </li>
+      } @empty {
+        <li class="empty">No fee heads yet. Add one above.</li>
+      }
+    </ul>
+  }
+</section>

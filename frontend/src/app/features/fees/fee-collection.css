@@ -1,0 +1,20 @@
+.total {
+  display: grid;
+  margin: 4px 0 12px;
+}
+
+.big {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 750;
+  letter-spacing: -0.5px;
+}
+
+h3 {
+  margin: 16px 0 6px;
+  font-size: 0.85rem;
+}
+
+.label {
+  flex: 0 0 120px;
+}

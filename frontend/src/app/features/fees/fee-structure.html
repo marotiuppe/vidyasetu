@@ -1,0 +1,97 @@
+<section class="card" aria-labelledby="structure-title">
+  <h2 class="card-title" id="structure-title">Fee structure</h2>
+  <p class="hint">Saving replaces the fee structure of the chosen class for the chosen academic year.</p>
+
+  <form class="stack" (ngSubmit)="save()" [formGroup]="picker">
+    <div class="toolbar">
+      @if (canPickBranch) {
+        <label class="field">
+          Branch
+          <select class="input" formControlName="branchId" (change)="pickBranch()">
+            <option [ngValue]="0">All branches</option>
+            @for (b of lookups.branches(); track b.id) {
+              <option [ngValue]="b.id">{{ b.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label class="field">
+        Academic year
+        <select class="input" formControlName="yearId">
+          <option [ngValue]="0">Choose a year</option>
+          @for (y of lookups.years(); track y.id) {
+            <option [ngValue]="y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        Class
+        <select class="input" formControlName="classId">
+          <option [ngValue]="0">Choose a class</option>
+          @for (c of classOptions(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    @if (!ready()) {
+      <p class="empty">Choose an academic year and a class to edit its fees.</p>
+    } @else if (loading()) {
+      <p class="empty" role="status">Loading fee structure…</p>
+    } @else {
+      <fieldset class="panel stack">
+        <legend class="hint">Fee heads and amounts</legend>
+        @for (row of rows.controls; track row; let i = $index) {
+          <div class="form-grid" [formGroup]="row">
+            <label class="field">
+              Fee head
+              <select class="input" formControlName="headId">
+                <option [ngValue]="0">Choose a fee head</option>
+                @for (h of optionsFor(i); track h.id) {
+                  <option [ngValue]="h.id">{{ h.name }}{{ h.is_active ? '' : ' (inactive)' }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Amount (rupees)
+              <input class="input" type="text" inputmode="decimal" autocomplete="off" formControlName="amount" />
+            </label>
+            <div class="form-actions">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="'Remove row ' + (i + 1)"
+                (click)="removeRow(i)"
+              >
+                <sms-icon name="trash" [size]="14" />
+                Remove
+              </button>
+            </div>
+          </div>
+        }
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="addRow()">
+            <sms-icon name="plus" [size]="14" />
+            Add row
+          </button>
+          <span class="hint" aria-live="polite">Structure total {{ money(total()) }}</span>
+        </div>
+      </fieldset>
+    }
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+    @if (ready()) {
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="busy() || loading()">
+          {{ busy() ? 'Saving…' : 'Save fee structure' }}
+        </button>
+      </div>
+    }
+  </form>
+</section>
