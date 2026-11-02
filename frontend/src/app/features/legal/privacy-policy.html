@@ -1,0 +1,182 @@
+<article class="legal-doc">
+  <h1>Privacy policy</h1>
+  <p class="lead">
+    This policy explains what personal data the Vidyasetu school management platform handles, why,
+    who can see it and what you can do about it. It describes the platform as it is built today.
+    Anything still planned is marked as planned.
+  </p>
+
+  <dl class="legal-facts">
+    <dt>Effective date</dt>
+    <dd><sms-legal-value [value]="legal()?.policy_effective_date" /></dd>
+    <dt>Privacy contact</dt>
+    <dd><sms-legal-value [value]="legal()?.privacy_contact_email" kind="email" /></dd>
+  </dl>
+
+  <h2>1. Who is responsible for your data</h2>
+  <p>
+    The Digital Personal Data Protection Act, 2023 uses two terms here. The school is the
+    <strong>data fiduciary</strong>: it enrols students and staff, decides why personal data is
+    collected and how long it is kept. The operator is the <strong>data processor</strong>: it runs
+    the platform and handles data for the school, on the school's instructions.
+  </p>
+  <p>Operator details:</p>
+  <dl class="legal-facts">
+    <dt>Operator</dt>
+    <dd><sms-legal-value [value]="legal()?.operator_name" /></dd>
+    <dt>Address</dt>
+    <dd><sms-legal-value [value]="legal()?.operator_address" /></dd>
+    <dt>Email</dt>
+    <dd><sms-legal-value [value]="legal()?.operator_email" kind="email" /></dd>
+    <dt>Phone</dt>
+    <dd><sms-legal-value [value]="legal()?.operator_phone" kind="phone" /></dd>
+    <dt>Hosting region</dt>
+    <dd><sms-legal-value [value]="legal()?.hosting_region" /></dd>
+  </dl>
+
+  <h2>2. What data we handle</h2>
+  <p>Depending on what the school enters, the platform handles:</p>
+  <ul>
+    <li>
+      <strong>Student records:</strong> name, date of birth, class and section, admission details,
+      address and other enrolment information.
+    </li>
+    <li>
+      <strong>Guardian and parent details:</strong> name, relationship to the student, mobile number
+      and email, and the parent's sign-in account.
+    </li>
+    <li>
+      <strong>Staff and account details:</strong> name, username, mobile number, email address, role
+      and branch.
+    </li>
+    <li><strong>Attendance:</strong> daily attendance marks, leave and holiday records.</li>
+    <li>
+      <strong>Fees:</strong> fee structures, invoices, payments recorded by staff, receipts and
+      dues.
+    </li>
+    <li>
+      <strong>Notices:</strong> notices sent to a school, branch, class or section, and which users
+      have read them.
+    </li>
+    <li>
+      <strong>Sign-in and security records:</strong> sign-in attempts, failed attempts and lockouts,
+      kept to protect accounts.
+    </li>
+  </ul>
+  <p>
+    We do not collect biometric data. The platform does not store a Permanent Education Number (PEN)
+    or an APAAR ID today. Online payment is not yet available. When it is, the payment provider will
+    handle card and bank details, and the platform will not store them.
+  </p>
+
+  <h2>3. Why we use it</h2>
+  <ul>
+    <li>To run the school's workspace: admissions, attendance, notices, fees and receipts.</li>
+    <li>To let staff, parents and students sign in and see only what they are allowed to see.</li>
+    <li>To keep accounts and the service secure.</li>
+    <li>
+      To send messages to the people the school selects, only where the school has set up SMS or
+      email.
+    </li>
+    <li>To meet the record-keeping duties the school has under its own obligations.</li>
+  </ul>
+  <p>We do not use personal data for advertising or marketing profiles, and we do not sell it.</p>
+
+  <h2>4. Who can see it</h2>
+  <p>
+    Access depends on role, school and branch. The server checks each request against the signed-in
+    user's role. The screens are not the only control.
+  </p>
+  <ul>
+    <li>A school owner can see all branches of their own school.</li>
+    <li>
+      Branch staff (management, headmaster, teacher, accountant and clerk) see only their own
+      branch, and only what their role allows.
+    </li>
+    <li>A parent sees only their own children. A student sees only their own record.</li>
+    <li>
+      One school never sees another school's data. One branch does not see another branch's data
+      unless a school-wide role covers both.
+    </li>
+    <li>
+      Platform administrators run the service and can see data across schools in order to operate
+      it. Their actions are not yet written to an audit log (planned).
+    </li>
+  </ul>
+
+  <h2>5. Who we share it with</h2>
+  <p>
+    We do not sell personal data and do not share it with advertisers. Optional services, such as
+    SMS, email or file storage, are used only when they are set up with the provider's own
+    credentials. Where they are not set up, nothing is sent to them. Otherwise, personal data is
+    disclosed only where the law requires it.
+  </p>
+
+  <h2>6. How long we keep it</h2>
+  @if (legal()?.data_retention_note; as note) {
+    <p class="pre-line">{{ note }}</p>
+  } @else {
+    <p>
+      The school decides how long its records are kept. Records are kept while they are needed for
+      the school's purposes and its legal duties, and are then deleted or made anonymous. A written
+      retention schedule is planned.
+    </p>
+  }
+
+  <h2>7. How we protect it</h2>
+  <p>These controls are in place today:</p>
+  <ul>
+    <li>
+      Passwords are stored as Argon2 hashes, never in readable form. A password must be at least 10
+      characters and must not be a commonly used password.
+    </li>
+    <li>
+      An account is locked for a set time after repeated failed sign-ins. The school sets the limits
+      within fixed bounds.
+    </li>
+    <li>
+      Accounts created or reset by an administrator must change the password at first sign-in.
+    </li>
+    <li>Sign-in and other sensitive requests are rate limited.</li>
+    <li>
+      The access token is kept only in the browser's memory. The sign-in session uses an httpOnly,
+      SameSite=Strict cookie that is rotated when it is used.
+    </li>
+    <li>
+      Responses carry security headers, including a content security policy that stops scripts from
+      other sites from running.
+    </li>
+    <li>Every request is limited to the signed-in user's school and branch on the server.</li>
+  </ul>
+  <p>
+    Some protections are planned and not yet in place. They are listed on the
+    <a routerLink="/security">Security page</a>.
+  </p>
+
+  <h2>8. Your rights</h2>
+  <p>You can ask for:</p>
+  <ul>
+    <li><strong>access</strong> to the personal data held about you or your child;</li>
+    <li><strong>correction</strong> of data that is wrong or out of date;</li>
+    <li><strong>erasure</strong> of data the school no longer needs to keep;</li>
+    <li>a response to a <strong>complaint</strong> about how your data is handled.</li>
+  </ul>
+  <p>
+    The school decides why its records are kept, so send requests to the school first. You can also
+    write to the privacy contact at the top of this page, and we will pass the request on to the
+    school concerned. If a complaint is not resolved, use the
+    <a routerLink="/grievance">Grievances page</a>. Tracking requests inside the app is planned.
+  </p>
+
+  <h2>9. Children</h2>
+  <p>
+    Many students are children. The <a routerLink="/children">Children's privacy notice</a> explains
+    how their data is handled.
+  </p>
+
+  <h2>10. Changes to this policy</h2>
+  <p>
+    When this policy changes, the effective date above changes too. Schools that use the platform
+    are told about material changes.
+  </p>
+</article>

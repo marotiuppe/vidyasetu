@@ -32,6 +32,7 @@
   --text: #263b35;
   --muted: #728268;
   --faint: #9aa29b;
+  --text-soft: #55685f; /* secondary text that keeps 4.5:1 contrast on the surfaces */
 
   /* Status */
   --success: #3e7655;
@@ -764,6 +765,114 @@ svg {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* ============================================================
+   Legal pages: reading column (about 70 characters), headings,
+   contact facts list and the template placeholder
+   ============================================================ */
+.legal-doc {
+  max-width: 70ch;
+}
+
+.legal-doc h1 {
+  margin-bottom: 12px;
+  font-size: 1.75rem;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.25;
+  color: var(--forest);
+}
+
+.legal-doc h2 {
+  margin-top: 34px;
+  padding-top: 4px;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.4px;
+  line-height: 1.35;
+  color: var(--forest);
+}
+
+.legal-doc h3 {
+  margin-top: 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.legal-doc p,
+.legal-doc li,
+.legal-doc dd {
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.legal-doc p {
+  margin-top: 12px;
+}
+
+.legal-doc ul,
+.legal-doc ol {
+  margin: 10px 0 0;
+  padding-left: 1.25rem;
+}
+
+.legal-doc li + li {
+  margin-top: 6px;
+}
+
+.legal-doc .lead {
+  font-size: 1rem;
+  color: var(--text-soft);
+}
+
+.legal-doc .pre-line {
+  white-space: pre-line;
+}
+
+.legal-doc .placeholder {
+  padding: 10px 12px;
+  color: var(--text-soft);
+  font-style: italic;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+
+.legal-facts {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.legal-facts dt {
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.legal-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .legal-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .legal-facts dt {
+    margin-top: 8px;
+  }
+
+  .legal-facts dt:first-child {
+    margin-top: 0;
+  }
 }
 
 /* Print: only the element marked print-area is printed; .no-print hides buttons inside it. */

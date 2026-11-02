@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
+import { LegalLinks } from '../../core/legal/legal-links';
 import { LandingCta } from './landing-cta';
 import { LandingFeatures } from './landing-features';
 import { LandingHero } from './landing-hero';
@@ -13,7 +21,7 @@ const PAGE_TITLE = 'Vidyasetu: School Management';
 /** Public landing page shown at "/" to visitors who are not signed in. */
 @Component({
   selector: 'sms-landing',
-  imports: [RouterLink, LandingHero, LandingFeatures, LandingSteps, LandingCta],
+  imports: [RouterLink, LandingHero, LandingFeatures, LandingSteps, LandingCta, LegalLinks],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './landing.html',
   styleUrl: './landing.css',

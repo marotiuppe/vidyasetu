@@ -1,0 +1,28 @@
+@if (variant() === 'disclosure') {
+  <details class="disclosure">
+    <summary>Legal</summary>
+    <nav aria-label="Legal">
+      <ul class="links">
+        @for (link of links; track link.path) {
+          <li>
+            <a [routerLink]="link.path" routerLinkActive="current" ariaCurrentWhenActive="page">{{
+              link.label
+            }}</a>
+          </li>
+        }
+      </ul>
+    </nav>
+  </details>
+} @else {
+  <nav aria-label="Legal">
+    <ul class="links">
+      @for (link of links; track link.path) {
+        <li>
+          <a [routerLink]="link.path" routerLinkActive="current" ariaCurrentWhenActive="page">{{
+            link.label
+          }}</a>
+        </li>
+      }
+    </ul>
+  </nav>
+}

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -6,6 +14,7 @@ import { filter, map, startWith } from 'rxjs';
 import { NoticesService } from '../api/notices.service';
 import { SchoolService } from '../api/school.service';
 import { AuthService } from '../auth/auth.service';
+import { LegalLinks } from '../legal/legal-links';
 import { Icon } from '../ui/icon';
 import { NAV_ITEMS, ROLE_LABELS } from './nav';
 
@@ -14,7 +23,7 @@ const NOTICE_POLL_MS = 120_000;
 
 @Component({
   selector: 'sms-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LegalLinks],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.html',
   styleUrl: './shell.css',
@@ -33,7 +42,9 @@ export class Shell {
   protected readonly userMenuOpen = signal(false);
   protected readonly year = this.school.year;
   protected readonly unread = this.notices.unread;
-  protected readonly noticesEnabled = computed(() => this.auth.user()?.school_id != null && !this.auth.hasRole('super_admin'));
+  protected readonly noticesEnabled = computed(
+    () => this.auth.user()?.school_id != null && !this.auth.hasRole('super_admin'),
+  );
 
   protected readonly logoUrl = this.school.logoUrl;
   protected readonly logoFailed = signal(false);
@@ -57,7 +68,9 @@ export class Shell {
   });
   protected readonly navItems = computed(() => {
     const role = this.auth.user()?.role;
-    return NAV_ITEMS.filter((item) => !item.roles || (role !== undefined && item.roles.includes(role)));
+    return NAV_ITEMS.filter(
+      (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
+    );
   });
 
   protected readonly title = toSignal(

@@ -165,6 +165,11 @@
   margin-top: auto;
 }
 
+.legal-menu {
+  margin: 8px 8px 0;
+  color: var(--sidebar-muted);
+}
+
 .tagline {
   margin: 24px 8px 17px;
   padding: 16px 13px;

@@ -1,0 +1,133 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.legal-wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .legal-wrap {
+    padding: 0 24px;
+  }
+}
+
+.skip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+  padding: 10px 16px;
+  font-weight: 600;
+  color: var(--primary-ink);
+  background: var(--forest);
+  border-radius: var(--radius-sm);
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible {
+  transform: none;
+}
+
+.legal-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.legal-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+  color: var(--forest);
+  text-decoration: none;
+}
+
+.brand img {
+  border-radius: 10px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.back:hover {
+  background: var(--surface-tint);
+}
+
+.legal-main {
+  flex: 1;
+  max-width: 1120px;
+  padding-top: 32px;
+  padding-bottom: 40px;
+}
+
+.legal-main:focus {
+  outline: none;
+}
+
+.legal-banner {
+  max-width: 70ch;
+  margin: 0 0 24px;
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-md);
+}
+
+.legal-template-note {
+  max-width: 70ch;
+  margin: 40px 0 0;
+  padding-top: 16px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  border-top: 1px solid var(--border);
+}
+
+.legal-foot {
+  padding: 28px 0 32px;
+  color: var(--sidebar-text);
+  background: var(--forest);
+}
+
+.legal-foot .legal-wrap {
+  display: grid;
+  gap: 12px;
+}
+
+.legal-copy {
+  font-size: 0.75rem;
+  color: var(--sidebar-muted);
+}

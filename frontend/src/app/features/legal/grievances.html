@@ -1,0 +1,73 @@
+<article class="legal-doc">
+  <h1>Grievances</h1>
+  <p class="lead">
+    Use this page to raise a complaint about how your personal data or your account is handled on
+    the Vidyasetu platform. A complaint can be about a school's use of the platform, or about the
+    operator's own handling of data.
+  </p>
+
+  <h2>1. Who to contact</h2>
+  <dl class="legal-facts">
+    <dt>Grievance officer</dt>
+    <dd><sms-legal-value [value]="legal()?.grievance_officer_name" /></dd>
+    <dt>Email</dt>
+    <dd><sms-legal-value [value]="legal()?.grievance_officer_email" kind="email" /></dd>
+    <dt>Phone</dt>
+    <dd><sms-legal-value [value]="legal()?.grievance_officer_phone" kind="phone" /></dd>
+  </dl>
+
+  <h2>2. Start with the school</h2>
+  <p>
+    The school decides how student and staff records are kept, so it is often the quickest place to
+    start. The school's office or administration can correct a record, reset an account or explain a
+    decision. If you prefer, or if the school does not resolve the matter, write to the grievance
+    officer above.
+  </p>
+
+  <h2>3. What to include</h2>
+  <ul>
+    <li>Your name, and how you are connected to the student (parent, guardian or student).</li>
+    <li>The school and branch, and the username on your account if you have one.</li>
+    <li>What happened, and when. Describe what you expected instead.</li>
+    <li>
+      Copies of any messages or screenshots that help, with anything that is not needed for the
+      complaint removed.
+    </li>
+    <li>What outcome you are asking for, for example a correction or deletion.</li>
+  </ul>
+  <p>
+    Do not send your password, one-time codes or copies of identity documents unless the officer
+    asks for a specific document. We will never ask for your password.
+  </p>
+
+  <h2>4. What happens next</h2>
+  <ol>
+    <li>We acknowledge your complaint.</li>
+    <li>We look into it and may contact the school or ask you for more details.</li>
+    <li>
+      We reply with the outcome and, where something went wrong, what we have changed. We aim to
+      reply within
+      @if (legal(); as info) {
+        {{ info.grievance_response_days }} days.
+      } @else {
+        the time stated on this page.
+      }
+    </li>
+  </ol>
+
+  <h2>5. If you are not satisfied</h2>
+  <p>
+    If you do not agree with the reply, you can ask for the decision to be reviewed. The escalation
+    route is not yet published.
+  </p>
+  <p class="placeholder">
+    [To be completed by the operator: the appeal contact, and any statutory authority to which a
+    complaint can be escalated.]
+  </p>
+
+  <h2>6. Urgent matters</h2>
+  <p>
+    This page is for data and account complaints, not emergencies. If a child is at risk, contact
+    the school or the local emergency services straight away.
+  </p>
+</article>

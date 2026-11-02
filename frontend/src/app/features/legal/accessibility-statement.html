@@ -1,0 +1,74 @@
+<article class="legal-doc">
+  <h1>Accessibility statement</h1>
+  <p class="lead">
+    We want the Vidyasetu app to be usable by everyone, including people who use a keyboard, a
+    screen reader, a screen magnifier or a phone with large text. This statement says what we aim
+    for, what is in place and what is still missing.
+  </p>
+
+  <dl class="legal-facts">
+    <dt>Target</dt>
+    <dd>WCAG 2.1 level AA</dd>
+    <dt>Audit status</dt>
+    <dd>Not yet formally audited by an independent accessibility specialist</dd>
+    <dt>Accessibility contact</dt>
+    <dd><sms-legal-value [value]="legal()?.grievance_officer_email" kind="email" /></dd>
+  </dl>
+
+  <h2>1. What we aim for</h2>
+  <p>
+    We build to the Web Content Accessibility Guidelines (WCAG) 2.1, level AA. The app is also meant
+    to be understood on a small screen, in a browser zoomed to 200 per cent, and with reduced motion
+    turned on.
+  </p>
+
+  <h2>2. What is in place</h2>
+  <ul>
+    <li>Every page has one main heading, and headings follow a logical order.</li>
+    <li>
+      The page is divided into landmarks (header, navigation, main and footer), and each page has a
+      "Skip to content" link.
+    </li>
+    <li>Form fields have visible labels, and errors are shown next to the field they belong to.</li>
+    <li>
+      Everything can be used with a keyboard, and a visible focus outline marks where you are.
+    </li>
+    <li>Touch targets are at least 44 pixels on phones, tablets and touch screens.</li>
+    <li>Text colours are chosen for contrast with their background.</li>
+    <li>Motion is reduced when your device asks for it.</li>
+    <li>Layouts are designed for narrow screens first.</li>
+  </ul>
+
+  <h2>3. Known limitations</h2>
+  <p>We know of these gaps and are working on them:</p>
+  <ul>
+    <li>The search box in the top bar is not available yet.</li>
+    <li>Some dense tables on wide desktop screens may need horizontal scrolling.</li>
+    <li>The interface is in English only. Marathi is planned.</li>
+    <li>
+      The app has not yet been tested with every combination of browser, operating system and screen
+      reader.
+    </li>
+  </ul>
+
+  <h2>4. Reporting a problem</h2>
+  <p>
+    If you cannot use part of the app, tell us. Describe the page, what you were trying to do, what
+    device and browser you use, and what went wrong. Send it to the grievance officer on the
+    <a routerLink="/grievance">Grievances page</a>. You can also ask your school for help.
+  </p>
+  <p>
+    We aim to reply within
+    @if (legal(); as info) {
+      {{ info.grievance_response_days }} days.
+    } @else {
+      the time stated on the Grievances page.
+    }
+  </p>
+
+  <h2>5. Formal review</h2>
+  <p>
+    A formal accessibility review by an independent specialist is planned before the app is used
+    widely. This statement will be updated when that review is done.
+  </p>
+</article>

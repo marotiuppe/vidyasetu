@@ -1,3 +1,4 @@
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -40,7 +41,72 @@ class Settings(BaseSettings):
     first_superadmin_email: str | None = None
     first_superadmin_password: str | None = None
 
+    # Legal and contact details (phase 5.5). All optional: empty means "not configured yet".
+    operator_name: str | None = None
+    operator_address: str | None = None
+    operator_email: str | None = None
+    operator_phone: str | None = None
+    grievance_officer_name: str | None = None
+    grievance_officer_email: str | None = None
+    grievance_officer_phone: str | None = None
+    grievance_response_days: int = Field(default=15, ge=1, le=90)
+    security_contact_email: str | None = None
+    privacy_contact_email: str | None = None
+    hosting_region: str | None = None
+    # ISO date (YYYY-MM-DD) from which the published policies apply.
+    policy_effective_date: str | None = None
+    data_retention_note: str | None = None
+
     frontend_dist: Path = REPO_ROOT / "frontend" / "dist" / "frontend" / "browser"
+
+    @field_validator(
+        "operator_name",
+        "operator_address",
+        "operator_email",
+        "operator_phone",
+        "grievance_officer_name",
+        "grievance_officer_email",
+        "grievance_officer_phone",
+        "security_contact_email",
+        "privacy_contact_email",
+        "hosting_region",
+        "policy_effective_date",
+        "data_retention_note",
+        mode="before",
+    )
+    @classmethod
+    def _blank_is_unset(cls, v: object) -> object:
+        # An empty line in .env (KEY=) means the value is not set.
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v.strip() if isinstance(v, str) else v
+
+    @field_validator(
+        "operator_email",
+        "grievance_officer_email",
+        "security_contact_email",
+        "privacy_contact_email",
+    )
+    @classmethod
+    def _loose_email(cls, v: str | None) -> str | None:
+        # Only a sanity check: something@something.tld, no spaces. Real delivery is not tested here.
+        if v is None:
+            return None
+        local, sep, domain = v.partition("@")
+        if not (local and sep and "." in domain and " " not in v and len(v) <= 254):
+            raise ValueError("must be an email address")
+        return v
+
+    @field_validator("policy_effective_date")
+    @classmethod
+    def _iso_date(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            date.fromisoformat(v)
+        except ValueError as exc:
+            raise ValueError("must be an ISO date (YYYY-MM-DD)") from exc
+        return v
 
     @field_validator("database_url")
     @classmethod

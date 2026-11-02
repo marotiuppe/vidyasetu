@@ -13,13 +13,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { LegalLinks } from '../../core/legal/legal-links';
 import { Icon } from '../../core/ui/icon';
 
 const DEFAULT_RETRY_SECONDS = 60;
 
 @Component({
   selector: 'sms-login',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule, Icon, LegalLinks],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
   styleUrl: './login.css',

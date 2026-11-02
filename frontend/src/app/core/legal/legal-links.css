@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  color: inherit;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.links a,
+summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.8rem;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+}
+
+.links a:hover,
+summary:hover {
+  text-decoration-color: currentColor;
+}
+
+.links a.current {
+  font-weight: 700;
+  text-decoration-color: currentColor;
+}
+
+summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::after {
+  content: '+';
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+.disclosure[open] summary::after {
+  content: '\2212';
+}
+
+.disclosure .links {
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0 0;
+}

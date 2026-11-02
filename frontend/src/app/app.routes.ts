@@ -21,6 +21,51 @@ export const routes: Routes = [
       import('./features/password/change-password').then((m) => m.ChangePassword),
   },
   {
+    // Public legal pages: outside the shell and without authGuard, so visitors and signed-in users can read them.
+    path: '',
+    loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
+    children: [
+      {
+        path: 'privacy',
+        data: { title: 'Privacy policy' },
+        loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.PrivacyPolicy),
+      },
+      {
+        path: 'terms',
+        data: { title: 'Terms of use' },
+        loadComponent: () => import('./features/legal/terms-of-use').then((m) => m.TermsOfUse),
+      },
+      {
+        path: 'children',
+        data: { title: "Children's privacy" },
+        loadComponent: () =>
+          import('./features/legal/children-privacy').then((m) => m.ChildrenPrivacy),
+      },
+      {
+        path: 'cookies',
+        data: { title: 'Cookies and storage' },
+        loadComponent: () => import('./features/legal/cookies-notice').then((m) => m.CookiesNotice),
+      },
+      {
+        path: 'accessibility',
+        data: { title: 'Accessibility statement' },
+        loadComponent: () =>
+          import('./features/legal/accessibility-statement').then((m) => m.AccessibilityStatement),
+      },
+      {
+        path: 'grievance',
+        data: { title: 'Grievances' },
+        loadComponent: () => import('./features/legal/grievances').then((m) => m.Grievances),
+      },
+      {
+        path: 'security',
+        data: { title: 'Security and disclosure' },
+        loadComponent: () =>
+          import('./features/legal/security-disclosure').then((m) => m.SecurityDisclosure),
+      },
+    ],
+  },
+  {
     // Public landing page for visitors; signed-in users fall through to the shell (dashboard).
     path: '',
     pathMatch: 'full',

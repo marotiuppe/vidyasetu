@@ -105,6 +105,10 @@
   gap: 8px 24px;
 }
 
+.foot-in sms-legal-links {
+  flex: 1 1 100%;
+}
+
 .foot-brand {
   display: inline-flex;
   align-items: center;

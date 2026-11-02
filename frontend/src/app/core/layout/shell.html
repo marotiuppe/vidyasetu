@@ -3,7 +3,12 @@
     <div class="brand">
       <span class="brand-mark" [class.has-logo]="showSchoolLogo()">
         @if (showSchoolLogo()) {
-          <img class="school-logo" [src]="logoUrl()" [alt]="schoolName()" (error)="logoFailed.set(true)" />
+          <img
+            class="school-logo"
+            [src]="logoUrl()"
+            [alt]="schoolName()"
+            (error)="logoFailed.set(true)"
+          />
         } @else {
           <img class="product-mark" src="brand/logo-mark.svg" alt="" />
         }
@@ -35,7 +40,9 @@
                 <sms-icon [name]="item.icon" [size]="17" />
                 <span class="nav-text">{{ item.label }}</span>
                 @if (item.unreadBadge && unread() > 0) {
-                  <span class="count" [attr.aria-label]="unread() + ' unread'">{{ unread() > 99 ? '99+' : unread() }}</span>
+                  <span class="count" [attr.aria-label]="unread() + ' unread'">{{
+                    unread() > 99 ? '99+' : unread()
+                  }}</span>
                 }
               </a>
             }
@@ -55,6 +62,9 @@
       </div>
       <div class="private">
         <sms-icon name="lock" [size]="14" /> Private school workspace <i class="dot"></i>
+      </div>
+      <div class="legal-menu">
+        <sms-legal-links variant="disclosure" />
       </div>
     </div>
   </aside>
@@ -84,7 +94,12 @@
 
       <label class="search" title="Search is coming soon">
         <sms-icon name="search" [size]="15" />
-        <input type="search" placeholder="Search the portal…" disabled aria-label="Search (coming soon)" />
+        <input
+          type="search"
+          placeholder="Search the portal…"
+          disabled
+          aria-label="Search (coming soon)"
+        />
       </label>
 
       <span class="divider"></span>
@@ -123,7 +138,9 @@
         </button>
         @if (userMenuOpen()) {
           <div class="menu">
-            <p class="menu-id">Signed in as <strong>{{ auth.user()?.username }}</strong></p>
+            <p class="menu-id">
+              Signed in as <strong>{{ auth.user()?.username }}</strong>
+            </p>
             <div role="menu">
               <a role="menuitem" routerLink="/account">
                 <sms-icon name="lock" [size]="16" /> Change password

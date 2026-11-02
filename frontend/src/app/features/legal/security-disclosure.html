@@ -1,0 +1,107 @@
+<article class="legal-doc">
+  <h1>Security and responsible disclosure</h1>
+  <p class="lead">
+    If you think you have found a security problem in Vidyasetu, please tell us privately so that we
+    can fix it before it is made public. This page explains how to report it, what is in scope and
+    which security controls the platform has today.
+  </p>
+
+  <h2>1. How to report</h2>
+  <dl class="legal-facts">
+    <dt>Security contact</dt>
+    <dd><sms-legal-value [value]="legal()?.security_contact_email" kind="email" /></dd>
+    <dt>Machine-readable notice</dt>
+    <dd><a href="/.well-known/security.txt">/.well-known/security.txt</a></dd>
+  </dl>
+  <p>In your report, please include:</p>
+  <ul>
+    <li>a short description of the problem and what an attacker could do with it;</li>
+    <li>the page, address or feature affected, and the steps to reproduce it;</li>
+    <li>
+      the account type you used (for example a parent account), and whether you needed any special
+      access;
+    </li>
+    <li>your name or handle and a way to contact you. You may report anonymously.</li>
+  </ul>
+
+  <h2>2. What is in scope</h2>
+  <ul>
+    <li>The web app and the API that serves it, on the address the operator publishes.</li>
+    <li>Sign-in, sessions, password handling and account lockout.</li>
+    <li>
+      Access control: anything that lets one user see another school's, another branch's or another
+      person's data.
+    </li>
+    <li>The public pages and the security headers.</li>
+  </ul>
+
+  <h2>3. What is out of scope</h2>
+  <ul>
+    <li>Social engineering of staff, parents or students, and any physical attack.</li>
+    <li>Denial-of-service testing, or load tests, against the live service.</li>
+    <li>Automated scanning at volume that slows the service for other users.</li>
+    <li>
+      Problems in third-party services we do not run, which should be reported to their owners.
+    </li>
+    <li>Reports that only show missing best practice with no realistic way to exploit it.</li>
+  </ul>
+
+  <h2>4. Please do this</h2>
+  <ul>
+    <li>
+      Do not access, change, copy or delete data that is not yours. Use your own test account if you
+      need one.
+    </li>
+    <li>
+      Stop as soon as you have confirmed the problem, and do not look further into other people's
+      data.
+    </li>
+    <li>Do not degrade the service for other users.</li>
+    <li>Keep the details private until we have had a reasonable time to fix the problem.</li>
+  </ul>
+
+  <h2>5. Our commitment</h2>
+  <p>
+    We will acknowledge your report, keep you informed of progress, and credit you if you wish once
+    the problem is fixed. If you act in good faith and follow the rules on this page, we do not
+    intend to take legal action against you for the research. This is a statement of intent, not a
+    legal guarantee, and it does not cover anyone who breaks these rules.
+  </p>
+
+  <h2>6. Security controls in place today</h2>
+  <ul>
+    <li>Passwords are hashed with Argon2 before they are stored.</li>
+    <li>Passwords must be at least 10 characters and must not be a commonly used password.</li>
+    <li>
+      Repeated failed sign-ins lock the account for a set time, with limits set by the school.
+    </li>
+    <li>Sign-in and other sensitive requests are rate limited.</li>
+    <li>
+      Accounts created or reset by an administrator must change the password at first sign-in.
+    </li>
+    <li>
+      The access token is kept only in memory. The refresh token is an httpOnly, SameSite=Strict
+      cookie and is rotated on use.
+    </li>
+    <li>
+      Sign-in, refresh and sign-out requests must carry a custom request header and an allowed
+      origin, which blocks cross-site form posts.
+    </li>
+    <li>
+      Responses include security headers, including a content security policy and frame blocking.
+    </li>
+    <li>Every request is limited to the signed-in user's school and branch on the server.</li>
+    <li>Error responses are generic and do not reveal whether an account exists.</li>
+  </ul>
+
+  <h2>7. Planned, not yet in place</h2>
+  <p>We have not yet put these in place. We list them so that nobody assumes they exist:</p>
+  <ul>
+    <li>an audit log of administrative and sensitive actions (planned);</li>
+    <li>two-factor sign-in for platform and school administrators (planned);</li>
+    <li>database-level row security as a second layer of isolation (planned);</li>
+    <li>encryption of stored data at rest beyond what the hosting provider offers (planned);</li>
+    <li>tested backups and a restore procedure (planned);</li>
+    <li>an independent security review or penetration test (planned, not yet done).</li>
+  </ul>
+</article>
