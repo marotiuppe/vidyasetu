@@ -1,0 +1,36 @@
+databases:
+  - name: sms-db
+    plan: free
+
+services:
+  - type: web
+    name: sms
+    runtime: python
+    plan: free
+    buildCommand: >-
+      pip install uv
+      && (cd backend && uv sync --frozen --no-dev)
+      && (cd frontend && npm ci && npm run build)
+    startCommand: >-
+      cd backend
+      && uv run --no-sync alembic upgrade head
+      && uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sms-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: '[]'
+      # Optional: set once to create the first platform admin, then remove.
+      - key: FIRST_SUPERADMIN_EMAIL
+        sync: false
+      - key: FIRST_SUPERADMIN_PASSWORD
+        sync: false

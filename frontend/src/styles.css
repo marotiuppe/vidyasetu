@@ -1,0 +1,339 @@
+@import '@fontsource-variable/dm-sans';
+@import '@fontsource-variable/manrope';
+
+/* ============================================================
+   Design tokens, taken from the owner's prototype (rlmv-school-portal).
+   Change colours here only; components use var(--*).
+   ============================================================ */
+:root {
+  /* Brand */
+  --forest: #173c35;
+  --green: #277866;
+  --lime: #dcebad;
+  --sidebar-bg: var(--forest);
+  --sidebar-bg-soft: #244b41;
+  --sidebar-text: #b6ccbf;
+  --sidebar-muted: #a9c1b4;
+  --sidebar-label: #8ba99b;
+  --accent: var(--lime); /* active nav item, highlights */
+  --accent-ink: var(--forest);
+  --primary: var(--forest);
+  --primary-hover: #2a5949;
+  --primary-ink: #ffffff;
+
+  /* Surfaces */
+  --bg: #fafbf7;
+  --surface: #ffffff;
+  --surface-tint: #e9f0e4; /* hero / soft panels */
+  --border: #e5e9e2;
+  --border-strong: #dde5d4;
+
+  /* Text */
+  --text: #263b35;
+  --muted: #728268;
+  --faint: #9aa29b;
+
+  /* Status */
+  --success: #3e7655;
+  --success-bg: #e9f3ed;
+  --danger: #bb594e;
+  --danger-bg: #fff4ef;
+  --amber: #946f30;
+  --amber-bg: #faf0e1;
+  --focus: #77ad96;
+
+  /* Shape and depth */
+  --radius-sm: 7px;
+  --radius: 9px;
+  --radius-md: 12px;
+  --radius-lg: 17px;
+  --shadow: 0 12px 40px #183e3510;
+
+  /* Layout */
+  --sidebar-width: 238px;
+  --topbar-height: 83px;
+  --page-max: 1600px;
+  --page-pad-x: 38px;
+
+  /* Tone pairs for icon chips (background / icon) */
+  --tone-green-bg: #f0f4e9;
+  --tone-green-fg: #718957;
+  --tone-lavender-bg: #f1edf6;
+  --tone-lavender-fg: #8f7daa;
+  --tone-peach-bg: #fcf1e5;
+  --tone-peach-fg: #b59161;
+  --tone-sky-bg: #edf3f5;
+  --tone-sky-fg: #7398a3;
+
+  --font: 'DM Sans Variable', 'DM Sans', 'Noto Sans Devanagari', Arial, sans-serif;
+  --font-display: 'Manrope Variable', 'Manrope', 'Noto Sans Devanagari', Arial, sans-serif;
+
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+a {
+  color: var(--green);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Shared building blocks (use these classes in every screen)
+   ============================================================ */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #6d8a74;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.4;
+}
+
+.page-subtitle {
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 21px 23px;
+}
+
+.card-title {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+  font-weight: 750;
+  letter-spacing: -0.3px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 37px;
+  padding: 9px 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: #fff;
+  background: var(--primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-ghost {
+  color: #52674f;
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #fbfcf9;
+  border-color: #b8cab3;
+}
+
+.btn-sm {
+  min-height: 29px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input {
+  width: 100%;
+  min-height: 39px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  accent-color: var(--green);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #7d8f6b;
+}
+
+/* Tinted icon chip: <span class="chip tone-lavender"> */
+.chip {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: var(--tone-green-fg);
+  background: var(--tone-green-bg);
+  border-radius: var(--radius);
+}
+
+.tone-lavender {
+  color: var(--tone-lavender-fg);
+  background: var(--tone-lavender-bg);
+}
+
+.tone-peach {
+  color: var(--tone-peach-fg);
+  background: var(--tone-peach-bg);
+}
+
+.tone-sky {
+  color: var(--tone-sky-fg);
+  background: var(--tone-sky-bg);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+  color: #597343;
+  background: #eef3e7;
+  border-radius: 4px;
+}
+
+.badge-success {
+  color: var(--success);
+  background: var(--success-bg);
+}
+
+.form-error {
+  margin: 0;
+  padding: 10px;
+  font-size: 0.8rem;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid #f2d4ca;
+  border-radius: 6px;
+}
+
+.field-error {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--danger);
+}
+
+/* Tablet and phone: roomier controls, 44px touch targets */
+@media (max-width: 1023px) {
+  :root {
+    --topbar-height: 67px;
+    --page-pad-x: 18px;
+  }
+
+  .page-title {
+    font-size: 1.45rem;
+  }
+}
+
+@media (pointer: coarse), (max-width: 1023px) {
+  .btn,
+  .input {
+    min-height: 44px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+  }
+}
+
+/* iOS zooms into inputs below 16px */
+@media (max-width: 767px) {
+  .input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

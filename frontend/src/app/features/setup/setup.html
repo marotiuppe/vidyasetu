@@ -1,0 +1,94 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">School setup</h1>
+    <p class="page-subtitle">Academic years, classes and sections for your school.</p>
+  </div>
+</div>
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+<div class="grid">
+  <section class="card">
+    <h2 class="card-title">Academic years</h2>
+    <ul class="list">
+      @for (year of years(); track year.id) {
+        <li>
+          <span>{{ year.name }} <small>({{ year.start_date }} to {{ year.end_date }})</small></span>
+          @if (year.is_current) {
+            <span class="badge badge-success">Current</span>
+          } @else if (canManageYears()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="makeCurrent(year.id)">Make current</button>
+          }
+        </li>
+      } @empty {
+        <li class="empty">No academic years yet.</li>
+      }
+    </ul>
+    @if (canManageYears()) {
+      <form [formGroup]="yearForm" (ngSubmit)="addYear()">
+        <label class="field">Name <input class="input" formControlName="name" placeholder="2026-27" /></label>
+        <label class="field">Start <input class="input" type="date" formControlName="start_date" /></label>
+        <label class="field">End <input class="input" type="date" formControlName="end_date" /></label>
+        <label class="check"><input type="checkbox" formControlName="is_current" /> Current year</label>
+        <button class="btn btn-primary" type="submit" [disabled]="yearForm.invalid">Add year</button>
+      </form>
+    }
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Classes</h2>
+    <ul class="list">
+      @for (c of classes(); track c.id) {
+        <li>
+          <span>
+            {{ c.name }} <small>({{ branchName(c.branch_id) }})</small>
+          </span>
+          <span class="chips">
+            @for (s of sectionsOf(c.id); track s.id) {
+              <span class="badge">{{ s.name }}</span>
+            } @empty {
+              <small>no sections</small>
+            }
+          </span>
+        </li>
+      } @empty {
+        <li class="empty">No classes yet.</li>
+      }
+    </ul>
+    <form [formGroup]="classForm" (ngSubmit)="addClass()">
+      @if (needsBranch()) {
+        <label class="field">
+          Branch
+          <select class="input" formControlName="branch_id">
+            <option [value]="0" disabled>Select branch</option>
+            @for (b of branches(); track b.id) {
+              <option [value]="b.id">{{ b.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      <label class="field">Name <input class="input" formControlName="name" placeholder="1st" /></label>
+      <label class="field">Level <input class="input" type="number" formControlName="level" min="1" max="12" /></label>
+      <button class="btn btn-primary" type="submit" [disabled]="classForm.invalid">Add class</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2 class="card-title">Add section</h2>
+    <form [formGroup]="sectionForm" (ngSubmit)="addSection()">
+      <label class="field">
+        Class
+        <select class="input" formControlName="class_id">
+          <option [value]="0" disabled>Select class</option>
+          @for (c of classes(); track c.id) {
+            <option [value]="c.id">{{ c.name }} ({{ branchName(c.branch_id) }})</option>
+          }
+        </select>
+      </label>
+      <label class="field">Name <input class="input" formControlName="name" placeholder="A" /></label>
+      <button class="btn btn-primary" type="submit" [disabled]="sectionForm.invalid">Add section</button>
+    </form>
+  </section>
+</div>

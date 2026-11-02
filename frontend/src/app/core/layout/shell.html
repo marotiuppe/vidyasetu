@@ -1,0 +1,116 @@
+<div class="app" [class.menu-open]="menuOpen()">
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+    <div class="brand">
+      <span class="brand-mark"><sms-icon name="book" [size]="22" /></span>
+      <div>
+        <div class="brand-name">{{ schoolName() }}</div>
+        <div class="brand-sub">{{ roleLabel() }}</div>
+      </div>
+    </div>
+
+    <p class="nav-label">School workspace</p>
+    <nav aria-label="Primary">
+      <ul class="nav">
+        @for (item of navItems(); track item.path) {
+          <li>
+            @if (item.soon) {
+              <span class="nav-item disabled" aria-disabled="true">
+                <sms-icon [name]="item.icon" [size]="17" />
+                <span class="nav-text">{{ item.label }}</span>
+                <span class="soon">Soon</span>
+              </span>
+            } @else {
+              <a
+                class="nav-item"
+                [routerLink]="item.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+              >
+                <sms-icon [name]="item.icon" [size]="17" />
+                <span class="nav-text">{{ item.label }}</span>
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="tagline">
+        <sms-icon name="cap" [size]="18" />
+        <strong>Rooted in Nanded.<br />Growing every day.</strong>
+        One school. Many possibilities.
+        @if (year(); as y) {
+          <br />Academic year {{ y }}
+        }
+      </div>
+      <div class="private">
+        <sms-icon name="lock" [size]="14" /> Private school workspace <i class="dot"></i>
+      </div>
+    </div>
+  </aside>
+
+  <div class="backdrop" (click)="closeOverlays()"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button
+        type="button"
+        class="icon-btn menu-btn"
+        aria-label="Open menu"
+        aria-controls="sidebar"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="toggleMenu()"
+      >
+        <sms-icon [name]="menuOpen() ? 'close' : 'menu'" />
+      </button>
+
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <span class="crumb-root">School portal</span>
+        <span class="crumb-root" aria-hidden="true">/</span>
+        <strong aria-current="page">{{ title() }}</strong>
+      </nav>
+
+      <div class="spacer"></div>
+
+      <label class="search" title="Search is coming soon">
+        <sms-icon name="search" [size]="15" />
+        <input type="search" placeholder="Search the portal…" disabled aria-label="Search (coming soon)" />
+      </label>
+
+      <span class="divider"></span>
+
+      <button type="button" class="icon-btn" disabled aria-label="Notifications (coming soon)">
+        <sms-icon name="bell" [size]="17" />
+      </button>
+
+      <div class="user">
+        <button
+          type="button"
+          class="user-btn"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="userMenuOpen()"
+          (click)="toggleUserMenu($event)"
+        >
+          <span class="avatar">{{ initials() }}</span>
+          <span class="user-text">
+            <span class="user-name">{{ auth.user()?.full_name }}</span>
+            <span class="user-role">{{ roleLabel() }}</span>
+          </span>
+          <sms-icon name="chevronDown" [size]="14" />
+        </button>
+        @if (userMenuOpen()) {
+          <div class="menu" role="menu">
+            <button type="button" role="menuitem" (click)="auth.logout()">
+              <sms-icon name="logout" [size]="16" /> Sign out
+            </button>
+          </div>
+        }
+      </div>
+    </header>
+
+    <div class="page">
+      <router-outlet />
+    </div>
+  </div>
+</div>

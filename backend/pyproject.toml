@@ -1,0 +1,34 @@
+[project]
+name = "sms-backend"
+version = "0.1.0"
+description = "School Management System API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.20",
+    "asyncpg>=0.30",
+    "alembic>=1.13",
+    "pydantic-settings>=2.4",
+    "email-validator>=2.2",
+    "pyjwt>=2.9",
+    "argon2-cffi>=23.1",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.6", "mypy>=1.11"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+"alembic/versions/*" = ["E501", "I001"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]

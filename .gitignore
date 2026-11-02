@@ -1,0 +1,10 @@
+.env
+*.db
+__pycache__/
+.venv/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+frontend/dist/
+rlmv-school-portal/
+frontend/.angular/

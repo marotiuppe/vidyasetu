@@ -1,0 +1,40 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Welcome, {{ firstName() }}.</h1>
+    <p class="page-subtitle">{{ today }} · Here’s what’s happening across your school.</p>
+  </div>
+  @if (yearName(); as year) {
+    <span class="year"><sms-icon name="calendar" [size]="16" /> Academic year {{ year }}</span>
+  }
+</div>
+
+<section class="hero" aria-label="School banner">
+  <div class="hero-text">
+    <p class="eyebrow">Rani Laxmibai · Nanded</p>
+    <h2>Every student. Every possibility.</h2>
+    <p class="hero-copy">
+      A little clarity goes a long way. Keep your school community connected, supported, and ready to learn.
+    </p>
+  </div>
+  <div class="hero-art" aria-hidden="true">
+    <span class="ring ring-outer"></span>
+    <span class="ring ring-inner"></span>
+    <span class="core"><sms-icon name="book" [size]="56" /></span>
+    <span class="spark spark-a"><sms-icon name="sparkle" [size]="22" /></span>
+    <span class="spark spark-b"><sms-icon name="sparkle" [size]="22" /></span>
+    <span class="tag">Learning, together.</span>
+  </div>
+</section>
+
+<section class="stats" aria-label="Summary">
+  @for (stat of stats(); track stat.label) {
+    <article class="card stat">
+      <div class="stat-top">
+        <span>{{ stat.label }}</span>
+        <span class="chip" [class]="'chip tone-' + stat.tone"><sms-icon [name]="stat.icon" [size]="20" /></span>
+      </div>
+      <strong class="stat-value">{{ stat.value }}</strong>
+      <span class="stat-note">{{ stat.note }}</span>
+    </article>
+  }
+</section>
