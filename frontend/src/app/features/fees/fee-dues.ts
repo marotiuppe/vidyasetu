@@ -8,7 +8,6 @@ import { DuesFilters, Dues, FeesApi } from '../../core/api/fees.api';
 import { AuthService } from '../../core/auth/auth.service';
 import {
   CREATE_NEW,
-  CREATE_NEW_LABEL,
   CreateKind,
   FILTER_FIELDS,
   FILTER_KINDS,
@@ -16,6 +15,7 @@ import {
   isCreateNewChange,
 } from '../../core/create/create-new';
 import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise, parseRupeesToPaise } from '../../core/ui/money';
 import { classSection, value } from './fee-labels';
@@ -42,12 +42,11 @@ export class FeeDues {
   protected readonly lookups = inject(FeeLookups);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
 
   protected readonly money = formatPaise;
-  protected readonly classSection = classSection;
   protected readonly onValue = value;
   protected readonly canPickBranch = this.auth.user()?.branch_id == null;
 
@@ -115,6 +114,11 @@ export class FeeDues {
     this.filters.update((f) => ({ ...f, ...change }));
   }
 
+  /** "Class - Section", or the translated "Not enrolled" when the student has no class. */
+  protected classText(className: string | null, sectionName: string | null): string {
+    return className ? classSection(className, sectionName) : this.i18n.t('fees.daily.notEnrolled');
+  }
+
   protected onSelect(key: 'yearId' | 'branchId' | 'classId' | 'sectionId', event: Event): void {
     if (isCreateNewChange(event)) {
       this.createRecord(FILTER_KINDS[key]);
@@ -153,7 +157,6 @@ export class FeeDues {
       },
     });
   }
-
   private toApi(f: Filters): DuesFilters {
     return {
       academic_year_id: f.yearId || undefined,

@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
-from app.core.errors import IdentityInUse
+from app.core.errors import ApiError, IdentityInUse
 from app.core.password_policy import enforce_password, password_problem
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
@@ -199,7 +199,7 @@ async def _build_list(db: AsyncSession, students: list[Student]) -> list[Student
     return [
         StudentOut(
             **_base_fields(
-                s, (enrollments.get(s.id) or [None])[0], guardians.get(s.id, [])
+                s, next(iter(enrollments.get(s.id, [])), None), guardians.get(s.id, [])
             )
         )
         for s in students
@@ -231,7 +231,7 @@ async def _build_detail(db: AsyncSession, s: Student) -> StudentDetail:
 
 
 async def _get_student(db: AsyncSession, actor: User, student_id: int) -> Student:
-    student = await db.scalar(
+    student: Student | None = await db.scalar(
         scope_students(select(Student), actor).where(Student.id == student_id)
     )
     if student is None:
@@ -260,7 +260,9 @@ async def _resolve_branch(db: AsyncSession, actor: User, branch_id: int | None) 
     wanted = actor.branch_id if actor.branch_id is not None else branch_id
     if wanted is None:
         raise _unprocessable("branch_id required")
-    branch = await db.scalar(scope_branches(select(Branch), actor).where(Branch.id == wanted))
+    branch: Branch | None = await db.scalar(
+        scope_branches(select(Branch), actor).where(Branch.id == wanted)
+    )
     if branch is None:
         raise _not_found("Branch")
     return branch
@@ -717,7 +719,9 @@ async def _guardian_login(
         phone=await _parent_phone(db, guardian.phone, student.school_id),
         password_hash=hash_password(password),
         role=Role.PARENT,
-        must_change_password=True,
+        must_change_password=await settings_service.force_password_change(
+            db, student.school_id
+        ),
     )
     db.add(user)
     await db.flush()
@@ -744,6 +748,10 @@ async def _student_login(db: AsyncSession, student: Student) -> CredentialOut:
         password, note = pattern, _PATTERN_NOTE
     else:
         password, note = _random_password(username, full_name), None
+    # The date-of-birth pattern is guessable, so it always has to be replaced at first sign-in.
+    forced = password == pattern or await settings_service.force_password_change(
+        db, student.school_id
+    )
     user = User(
         school_id=student.school_id,
         branch_id=student.branch_id,
@@ -752,7 +760,7 @@ async def _student_login(db: AsyncSession, student: Student) -> CredentialOut:
         full_name=full_name,
         password_hash=hash_password(password),
         role=Role.STUDENT,
-        must_change_password=True,
+        must_change_password=forced,
     )
     db.add(user)
     await db.flush()
@@ -804,6 +812,14 @@ async def _create_logins(
 async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> StudentCreated:
     """Create the student, guardians, enrolment and any requested logins in one transaction."""
     branch = await _resolve_branch(db, actor, data.branch_id)
+    if data.create_student_login and not await settings_service.student_logins_enabled(
+        db, branch.school_id
+    ):
+        raise ApiError(
+            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            "Student logins are switched off for this school",
+            "student_logins_disabled",
+        )
     fields = data.model_dump(
         exclude={"branch_id", "guardians", "enrollment", "create_student_login"}
     )
@@ -1100,7 +1116,9 @@ async def create_guardian_login(
             phone=await _parent_phone(db, guardian.phone, student.school_id),
             password_hash=hash_password(data.password),
             role=Role.PARENT,
-            must_change_password=True,
+            must_change_password=await settings_service.force_password_change(
+                db, student.school_id
+            ),
         )
         db.add(user)
         await db.flush()
@@ -1119,6 +1137,11 @@ async def create_student_login(
     db: AsyncSession, actor: User, student_id: int, data: LoginCreate
 ) -> StudentDetail:
     student = await _get_student(db, actor, student_id)
+    if not await settings_service.student_logins_enabled(db, student.school_id):
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN, "Student logins are switched off for this school",
+            "student_logins_disabled",
+        )
     if student.user_id is not None:
         raise _conflict("Student already has a login")
     email = str(data.email).lower() if data.email is not None else None
@@ -1141,7 +1164,9 @@ async def create_student_login(
         full_name=full_name,
         password_hash=hash_password(data.password),
         role=Role.STUDENT,
-        must_change_password=True,
+        must_change_password=await settings_service.force_password_change(
+            db, student.school_id
+        ),
     )
     db.add(user)
     try:

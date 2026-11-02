@@ -72,7 +72,13 @@ export interface StudentAttendanceReport {
   from: string;
   to: string;
   records: DayRecord[];
-  summary: { present: number; absent: number; leave: number; marked_days: number; percentage: number | null };
+  summary: {
+    present: number;
+    absent: number;
+    leave: number;
+    marked_days: number;
+    percentage: number | null;
+  };
 }
 
 export interface StaffRow {
@@ -122,7 +128,11 @@ export class AttendanceApi {
   }
 
   saveSheet(sectionId: number, date: string, entries: SheetEntry[]): Observable<AttendanceSheet> {
-    return this.http.put<AttendanceSheet>(`${API}/attendance/sheet`, { section_id: sectionId, date, entries });
+    return this.http.put<AttendanceSheet>(`${API}/attendance/sheet`, {
+      section_id: sectionId,
+      date,
+      entries,
+    });
   }
 
   dailySummary(date: string, branchId: number | null): Observable<DailySummary> {
@@ -133,7 +143,9 @@ export class AttendanceApi {
 
   studentReport(studentId: number, from: string, to: string): Observable<StudentAttendanceReport> {
     const params = new HttpParams().set('from', from).set('to', to);
-    return this.http.get<StudentAttendanceReport>(`${API}/students/${studentId}/attendance`, { params });
+    return this.http.get<StudentAttendanceReport>(`${API}/students/${studentId}/attendance`, {
+      params,
+    });
   }
 
   exportCsv(sectionId: number, from: string, to: string): Observable<Blob> {
@@ -147,7 +159,11 @@ export class AttendanceApi {
     return this.http.get<StaffSheet>(`${API}/staff-attendance`, { params });
   }
 
-  saveStaffSheet(date: string, branchId: number | null, entries: StaffEntry[]): Observable<StaffSheet> {
+  saveStaffSheet(
+    date: string,
+    branchId: number | null,
+    entries: StaffEntry[],
+  ): Observable<StaffSheet> {
     const body: { date: string; branch_id?: number; entries: StaffEntry[] } = { date, entries };
     if (branchId) body.branch_id = branchId;
     return this.http.put<StaffSheet>(`${API}/staff-attendance`, body);

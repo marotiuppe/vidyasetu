@@ -1,6 +1,6 @@
 <section class="card" aria-labelledby="dues-title">
   <div class="card-head">
-    <h2 class="card-title" id="dues-title">Outstanding dues</h2>
+    <h2 class="card-title" id="dues-title">{{ i18n.t('fees.daily.dues.title') }}</h2>
     <button
       type="button"
       class="btn btn-ghost"
@@ -8,67 +8,75 @@
       (click)="exportCsv()"
     >
       <sms-icon name="download" [size]="16" />
-      {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+      {{ exporting() ? i18n.t('fees.daily.dues.exporting') : i18n.t('fees.daily.dues.export') }}
     </button>
   </div>
 
   <div class="toolbar" role="search">
     @if (canPickBranch) {
       <label class="field">
-        Branch
+        {{ i18n.t('fees.daily.branch') }}
         <select class="input" (change)="onSelect('branchId', $event)">
-          <option value="0" [selected]="filters().branchId === 0">All branches</option>
+          <option value="0" [selected]="filters().branchId === 0">
+            {{ i18n.t('fees.daily.allBranches') }}
+          </option>
           @for (b of lookups.branches(); track b.id) {
             <option [value]="b.id" [selected]="filters().branchId === b.id">{{ b.name }}</option>
           }
           @if (canCreate.branch) {
-            <option [value]="createNew">{{ createNewLabel }}</option>
+            <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
           }
         </select>
       </label>
     }
     <label class="field">
-      Academic year
+      {{ i18n.t('fees.daily.academicYear') }}
       <select class="input" (change)="onSelect('yearId', $event)">
-        <option value="0" [selected]="filters().yearId === 0">All years</option>
+        <option value="0" [selected]="filters().yearId === 0">
+          {{ i18n.t('fees.daily.allYears') }}
+        </option>
         @for (y of lookups.years(); track y.id) {
           <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
         }
         @if (canCreate.academic_year) {
-          <option [value]="createNew">{{ createNewLabel }}</option>
+          <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
         }
       </select>
     </label>
     <label class="field">
-      Class
+      {{ i18n.t('fees.daily.class') }}
       <select class="input" (change)="onSelect('classId', $event)">
-        <option value="0" [selected]="filters().classId === 0">All classes</option>
+        <option value="0" [selected]="filters().classId === 0">
+          {{ i18n.t('fees.daily.allClasses') }}
+        </option>
         @for (c of classOptions(); track c.id) {
           <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
         }
         @if (canCreate.class) {
-          <option [value]="createNew">{{ createNewLabel }}</option>
+          <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
         }
       </select>
     </label>
     <label class="field">
-      Section
+      {{ i18n.t('fees.daily.section') }}
       <select
         class="input"
         [disabled]="!filters().classId"
         (change)="onSelect('sectionId', $event)"
       >
-        <option value="0" [selected]="filters().sectionId === 0">All sections</option>
+        <option value="0" [selected]="filters().sectionId === 0">
+          {{ i18n.t('fees.daily.allSections') }}
+        </option>
         @for (s of sectionOptions(); track s.id) {
           <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
         }
         @if (canCreate.section && filters().classId) {
-          <option [value]="createNew">{{ createNewLabel }}</option>
+          <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
         }
       </select>
     </label>
     <label class="field">
-      Minimum balance (rupees)
+      {{ i18n.t('fees.daily.dues.minBalance') }}
       <input
         class="input"
         type="text"
@@ -79,9 +87,9 @@
         (input)="patch({ minBalance: onValue($event) })"
       />
       @if (minBalanceInvalid()) {
-        <span class="field-error" role="alert"
-          >Enter a valid amount, for example 500 or 500.50.</span
-        >
+        <span class="field-error" role="alert">{{
+          i18n.t('fees.daily.dues.minBalanceInvalid')
+        }}</span>
       }
     </label>
   </div>
@@ -91,16 +99,24 @@
   }
 
   @if (data(); as d) {
-    <ul class="stat-strip" aria-label="Totals for the current filters">
-      <li class="badge">Billed {{ money(d.totals.billed_paise) }}</li>
-      <li class="badge badge-success">Collected {{ money(d.totals.paid_paise) }}</li>
-      <li class="badge badge-warn">Outstanding {{ money(d.totals.balance_paise) }}</li>
-      <li class="badge badge-danger">Overdue {{ money(d.totals.overdue_paise) }}</li>
+    <ul class="stat-strip" [attr.aria-label]="i18n.t('fees.daily.totalsAria')">
+      <li class="badge">
+        {{ i18n.t('fees.daily.amount.billed', { amount: money(d.totals.billed_paise) }) }}
+      </li>
+      <li class="badge badge-success">
+        {{ i18n.t('fees.daily.amount.collected', { amount: money(d.totals.paid_paise) }) }}
+      </li>
+      <li class="badge badge-warn">
+        {{ i18n.t('fees.daily.amount.outstanding', { amount: money(d.totals.balance_paise) }) }}
+      </li>
+      <li class="badge badge-danger">
+        {{ i18n.t('fees.daily.amount.overdue', { amount: money(d.totals.overdue_paise) }) }}
+      </li>
     </ul>
   }
 
   @if (loading()) {
-    <p class="empty" role="status">Loading dues…</p>
+    <p class="empty" role="status">{{ i18n.t('fees.daily.dues.loading') }}</p>
   } @else {
     <ul class="rows">
       @for (r of data()?.items ?? []; track r.student_id) {
@@ -108,7 +124,8 @@
           <span class="row-main">
             <span>{{ r.student_name }}</span>
             <span class="row-sub">
-              {{ classSection(r.class_name, r.section_name) }} · Admission no. {{ r.admission_no }}
+              {{ classText(r.class_name, r.section_name) }} ·
+              {{ i18n.t('fees.daily.admissionNo', { no: r.admission_no }) }}
             </span>
           </span>
           <span class="row-main cell">
@@ -116,24 +133,32 @@
               <span>{{ r.guardian_name }}</span>
               <span class="row-sub">{{ r.guardian_phone }}</span>
             } @else {
-              <span class="row-sub">No guardian on record</span>
+              <span class="row-sub">{{ i18n.t('fees.daily.dues.noGuardian') }}</span>
             }
           </span>
           <span class="money">
-            <span class="row-sub">Billed {{ money(r.billed_paise) }}</span>
-            <span class="row-sub">Paid {{ money(r.paid_paise) }}</span>
-            <span class="amount">Balance {{ money(r.balance_paise) }}</span>
+            <span class="row-sub">
+              {{ i18n.t('fees.daily.amount.billed', { amount: money(r.billed_paise) }) }}
+            </span>
+            <span class="row-sub">
+              {{ i18n.t('fees.daily.amount.paid', { amount: money(r.paid_paise) }) }}
+            </span>
+            <span class="amount">
+              {{ i18n.t('fees.daily.amount.balance', { amount: money(r.balance_paise) }) }}
+            </span>
           </span>
           <span class="money">
-            <span class="row-sub">Overdue</span>
+            <span class="row-sub">{{ i18n.t('fees.daily.label.overdue') }}</span>
             <span class="amount">{{ money(r.overdue_paise) }}</span>
             @if (r.oldest_due_date) {
-              <span class="row-sub">Oldest due {{ r.oldest_due_date }}</span>
+              <span class="row-sub">
+                {{ i18n.t('fees.daily.oldestDue', { date: r.oldest_due_date }) }}
+              </span>
             }
           </span>
         </li>
       } @empty {
-        <li class="empty">No outstanding dues match.</li>
+        <li class="empty">{{ i18n.t('fees.daily.dues.none') }}</li>
       }
     </ul>
   }

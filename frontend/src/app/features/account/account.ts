@@ -8,10 +8,11 @@ import {
 } from '@angular/forms';
 
 import { AdminApi } from '../../core/api/admin.api';
-import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
+import { placeServerErrors } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
-import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
-import { ROLE_LABELS } from '../../core/layout/nav';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { I18n } from '../../core/i18n/i18n';
+import { ROLE_LABEL_KEYS } from '../../core/layout/nav';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const next = group.get('new_password')?.value;
@@ -30,8 +31,8 @@ export class Account {
   private readonly api = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly auth = inject(AuthService);
-  protected readonly roleLabels = ROLE_LABELS;
-  protected readonly passwordHint = PASSWORD_HINT;
+  protected readonly i18n = inject(I18n);
+  protected readonly roleKeys = ROLE_LABEL_KEYS;
   protected readonly minLength = PASSWORD_MIN_LENGTH;
 
   protected readonly submitting = signal(false);

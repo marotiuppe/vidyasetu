@@ -17,7 +17,14 @@
 }
 
 li.row {
-  cursor: pointer;
+  position: relative;
+}
+
+/* The invoice button stretches over the whole row so the row is still one click target. */
+.open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
 }
 
 .money {

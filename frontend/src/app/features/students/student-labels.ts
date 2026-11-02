@@ -11,6 +11,11 @@ export function statusLabel(status: StudentStatus): string {
   return STATUS_LABELS[status];
 }
 
+/** Translation key for a student status (English text: `students.list.status.<status>`). */
+export function statusKey(status: StudentStatus): string {
+  return `students.list.status.${status}`;
+}
+
 /** Capitalise a snake_case enum value for display (male -> Male). */
 export function titleCase(value: string): string {
   const spaced = value.replace(/_/g, ' ');

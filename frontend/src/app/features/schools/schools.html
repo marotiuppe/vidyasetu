@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Schools</h1>
-    <p class="page-subtitle">Every school on the platform, each with its own owner account.</p>
+    <h1 class="page-title">{{ i18n.t('admin.schools.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admin.schools.subtitle') }}</p>
   </div>
   <button
     type="button"
@@ -9,25 +9,25 @@
     [attr.aria-expanded]="showForm()"
     (click)="toggleForm()"
   >
-    {{ showForm() ? 'Close' : 'New school' }}
+    {{ showForm() ? i18n.t('admin.schools.close') : i18n.t('admin.schools.new') }}
   </button>
 </div>
 
 <div class="stack">
   @if (showForm()) {
     <section class="card" aria-labelledby="new-school">
-      <h2 class="card-title" id="new-school">Create a school</h2>
+      <h2 class="card-title" id="new-school">{{ i18n.t('admin.schools.createTitle') }}</h2>
       <form [formGroup]="form" (ngSubmit)="create()" novalidate>
         <div class="form-grid">
           <label class="field">
-            School name
+            {{ i18n.t('admin.schools.name') }}
             <input class="input" formControlName="name" autocomplete="off" />
             @if (form.controls.name.touched && form.controls.name.invalid) {
-              <span class="field-error">Name is required.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.nameRequired') }}</span>
             }
           </label>
           <label class="field">
-            Code
+            {{ i18n.t('admin.schools.code') }}
             <input
               class="input"
               formControlName="code"
@@ -35,28 +35,31 @@
               placeholder="short-code"
             />
             @if (form.controls.code.touched && form.controls.code.invalid) {
-              <span class="field-error">Use lowercase letters, digits, hyphen or underscore.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.codeError') }}</span>
             }
           </label>
           <label class="field">
-            Board
+            {{ i18n.t('admin.schools.board') }}
             <input class="input" formControlName="board" autocomplete="off" />
             @if (form.controls.board.touched && form.controls.board.invalid) {
-              <span class="field-error">Board is required.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.boardRequired') }}</span>
             }
           </label>
         </div>
-        <h3 class="card-title sub">Owner account</h3>
+        <h3 class="card-title sub">{{ i18n.t('admin.schools.ownerAccount') }}</h3>
         <div class="form-grid">
           <label class="field">
-            Owner full name
+            {{ i18n.t('admin.schools.ownerName') }}
             <input class="input" formControlName="owner_full_name" autocomplete="off" />
             @if (form.controls.owner_full_name.touched && form.controls.owner_full_name.invalid) {
-              <span class="field-error">Owner name is required.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.ownerNameRequired') }}</span>
             }
           </label>
           <label class="field">
-            <span>Owner username <span class="req" aria-hidden="true">*</span></span>
+            <span
+              >{{ i18n.t('admin.schools.ownerUsername') }}
+              <span class="req" aria-hidden="true">*</span></span
+            >
             <input
               class="input"
               formControlName="owner_username"
@@ -66,29 +69,29 @@
               required
               aria-describedby="owner-username-hint"
             />
-            <span class="hint" id="owner-username-hint">{{ usernameHint }}</span>
+            <span class="hint" id="owner-username-hint">{{
+              i18n.t('admin.schools.usernameHint')
+            }}</span>
             @if (
               form.controls.owner_username.touched &&
               form.controls.owner_username.hasError('required')
             ) {
-              <span class="field-error">Username is required.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.usernameRequired') }}</span>
             } @else if (
               form.controls.owner_username.touched && form.controls.owner_username.invalid
             ) {
-              <span class="field-error"
-                >Use 3 to 50 allowed characters, with at least one letter.</span
-              >
+              <span class="field-error">{{ i18n.t('admin.schools.usernameFormat') }}</span>
             }
           </label>
           <label class="field">
-            Owner email
+            {{ i18n.t('admin.schools.ownerEmail') }}
             <input class="input" type="email" formControlName="owner_email" autocomplete="off" />
             @if (form.controls.owner_email.touched && form.controls.owner_email.invalid) {
-              <span class="field-error">Enter a valid email address.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.emailInvalid') }}</span>
             }
           </label>
           <label class="field">
-            Owner password
+            {{ i18n.t('admin.schools.ownerPassword') }}
             <input
               class="input"
               type="password"
@@ -96,24 +99,28 @@
               autocomplete="new-password"
               aria-describedby="owner-password-hint"
             />
-            <span class="hint" id="owner-password-hint">{{ passwordHint }}</span>
+            <span class="hint" id="owner-password-hint">{{
+              i18n.t('admin.schools.passwordHint')
+            }}</span>
             @if (
               form.controls.owner_password.touched &&
               form.controls.owner_password.hasError('required')
             ) {
-              <span class="field-error">Enter a password.</span>
+              <span class="field-error">{{ i18n.t('admin.schools.passwordRequired') }}</span>
             } @else if (
               form.controls.owner_password.touched &&
               form.controls.owner_password.hasError('minlength')
             ) {
-              <span class="field-error">Use at least {{ minLength }} characters.</span>
+              <span class="field-error">{{
+                i18n.t('admin.schools.passwordMin', { min: minLength })
+              }}</span>
             }
             @if (form.controls.owner_password.getError('server'); as message) {
               <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
         </div>
-        <h3 class="card-title sub">Logo (optional)</h3>
+        <h3 class="card-title sub">{{ i18n.t('admin.schools.logoOptional') }}</h3>
         <sms-logo-picker
           #createPicker
           [schoolName]="form.controls.name.value"
@@ -125,9 +132,13 @@
         }
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-            {{ submitting() ? 'Creating…' : 'Create school' }}
+            {{
+              submitting() ? i18n.t('admin.schools.creating') : i18n.t('admin.schools.createSchool')
+            }}
           </button>
-          <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancel</button>
+          <button type="button" class="btn btn-ghost" (click)="toggleForm()">
+            {{ i18n.t('admin.schools.cancel') }}
+          </button>
         </div>
       </form>
     </section>
@@ -142,9 +153,9 @@
   }
 
   <section class="card" aria-labelledby="school-list">
-    <h2 class="card-title" id="school-list">All schools</h2>
+    <h2 class="card-title" id="school-list">{{ i18n.t('admin.schools.allSchools') }}</h2>
     @if (loading()) {
-      <p class="empty" role="status">Loading schools…</p>
+      <p class="empty" role="status">{{ i18n.t('admin.schools.loading') }}</p>
     } @else {
       <ul class="rows">
         @for (school of schools(); track school.id) {
@@ -158,26 +169,30 @@
             </span>
             <span class="row-main">
               <strong>{{ school.name }}</strong>
-              <span class="row-sub">Code {{ school.code }} · Board {{ school.board }}</span>
+              <span class="row-sub">{{
+                i18n.t('admin.schools.codeBoard', { code: school.code, board: school.board })
+              }}</span>
             </span>
             <span
               class="badge"
               [class.badge-success]="school.is_active"
               [class.badge-muted]="!school.is_active"
             >
-              {{ school.is_active ? 'Active' : 'Inactive' }}
+              {{
+                school.is_active ? i18n.t('admin.schools.active') : i18n.t('admin.schools.inactive')
+              }}
             </span>
             @if (confirmId() === school.id) {
               <span
                 class="row-actions"
                 role="group"
-                [attr.aria-label]="'Confirm for ' + school.name"
+                [attr.aria-label]="i18n.t('admin.schools.confirmFor', { name: school.name })"
               >
                 <span class="row-sub">
                   {{
                     school.is_active
-                      ? 'Deactivate this school? Its users will not be able to sign in.'
-                      : 'Activate this school again?'
+                      ? i18n.t('admin.schools.deactivateQ')
+                      : i18n.t('admin.schools.activateQ')
                   }}
                 </span>
                 <button
@@ -186,10 +201,10 @@
                   [disabled]="busyId() === school.id"
                   (click)="confirmToggle(school)"
                 >
-                  Confirm
+                  {{ i18n.t('admin.schools.confirm') }}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="cancelToggle()">
-                  Cancel
+                  {{ i18n.t('admin.schools.cancel') }}
                 </button>
               </span>
             } @else {
@@ -200,10 +215,18 @@
                   [attr.aria-expanded]="editId() === school.id"
                   (click)="editId() === school.id ? cancelEdit() : startEdit(school)"
                 >
-                  {{ editId() === school.id ? 'Close' : 'Edit' }}
+                  {{
+                    editId() === school.id
+                      ? i18n.t('admin.schools.close')
+                      : i18n.t('admin.schools.edit')
+                  }}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="askToggle(school.id)">
-                  {{ school.is_active ? 'Deactivate' : 'Activate' }}
+                  {{
+                    school.is_active
+                      ? i18n.t('admin.schools.deactivate')
+                      : i18n.t('admin.schools.activate')
+                  }}
                 </button>
               </span>
             }
@@ -211,21 +234,21 @@
               <form class="panel" [formGroup]="editForm" (ngSubmit)="saveEdit(school)" novalidate>
                 <div class="form-grid">
                   <label class="field">
-                    School name
+                    {{ i18n.t('admin.schools.name') }}
                     <input class="input" formControlName="name" autocomplete="off" />
                     @if (editForm.controls.name.touched && editForm.controls.name.invalid) {
-                      <span class="field-error">Name is required.</span>
+                      <span class="field-error">{{ i18n.t('admin.schools.nameRequired') }}</span>
                     }
                   </label>
                   <label class="field">
-                    Board
+                    {{ i18n.t('admin.schools.board') }}
                     <input class="input" formControlName="board" autocomplete="off" />
                     @if (editForm.controls.board.touched && editForm.controls.board.invalid) {
-                      <span class="field-error">Board is required.</span>
+                      <span class="field-error">{{ i18n.t('admin.schools.boardRequired') }}</span>
                     }
                   </label>
                 </div>
-                <h3 class="card-title sub">Logo</h3>
+                <h3 class="card-title sub">{{ i18n.t('admin.schools.logo') }}</h3>
                 <sms-logo-picker
                   #editPicker
                   [currentUrl]="school.logo_url"
@@ -239,15 +262,21 @@
                 }
                 <div class="form-actions">
                   <button type="submit" class="btn btn-primary" [disabled]="editBusy()">
-                    {{ editBusy() ? 'Saving…' : 'Save changes' }}
+                    {{
+                      editBusy()
+                        ? i18n.t('admin.schools.saving')
+                        : i18n.t('admin.schools.saveChanges')
+                    }}
                   </button>
-                  <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+                  <button type="button" class="btn btn-ghost" (click)="cancelEdit()">
+                    {{ i18n.t('admin.schools.cancel') }}
+                  </button>
                 </div>
               </form>
             }
           </li>
         } @empty {
-          <li class="empty">No schools yet. Create the first one above.</li>
+          <li class="empty">{{ i18n.t('admin.schools.none') }}</li>
         }
       </ul>
     }

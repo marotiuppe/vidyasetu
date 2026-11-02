@@ -7,7 +7,6 @@ import { apiErrorMessage } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import {
   CREATE_NEW,
-  CREATE_NEW_LABEL,
   CreateKind,
   FILTER_KINDS,
   createPermissions,
@@ -22,9 +21,10 @@ import {
   InvoicePage,
   InvoiceStatus,
 } from '../../core/api/fees.api';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise } from '../../core/ui/money';
-import { classSection, invoiceStatusClass, invoiceStatusLabel, value } from './fee-labels';
+import { classSection, invoiceStatusClass, value } from './fee-labels';
 import { FeeLookups } from './fee-lookups';
 import { InvoiceGenerate } from './invoice-generate';
 import { InvoiceNew } from './invoice-new';
@@ -56,17 +56,15 @@ export class FeeInvoices {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
 
   readonly canManage = input(false);
   readonly canPay = input(false);
 
   protected readonly statuses = INVOICE_STATUSES;
-  protected readonly statusLabel = invoiceStatusLabel;
   protected readonly statusClass = invoiceStatusClass;
-  protected readonly classSection = classSection;
   protected readonly money = formatPaise;
   protected readonly onValue = value;
 
@@ -163,6 +161,15 @@ export class FeeInvoices {
 
   protected onStatus(event: Event): void {
     this.patch({ status: value(event) as InvoiceStatus | '' });
+  }
+
+  /** "Class - Section", or the translated "Not enrolled" when the student has no class. */
+  protected classText(className: string | null, sectionName: string | null): string {
+    return className ? classSection(className, sectionName) : this.i18n.t('fees.daily.notEnrolled');
+  }
+
+  protected statusText(status: InvoiceStatus): string {
+    return this.i18n.t(`fees.daily.status.${status}`);
   }
 
   protected onOverdue(event: Event): void {

@@ -9,6 +9,7 @@ from sqlalchemy import and_, case, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import ApiError
 from app.core.tenant import (
     scope_branches,
     scope_holidays,
@@ -42,6 +43,7 @@ from app.modules.attendance.schemas import (
     StudentSummary,
 )
 from app.modules.branches.models import Branch
+from app.modules.settings import service as settings_service
 from app.modules.students.models import Enrollment, Student, StudentStatus
 from app.modules.users.models import Role, User
 
@@ -112,6 +114,22 @@ async def day_rules(db: AsyncSession, actor: User, day: date) -> DayRules:
 def _require_markable_date(day: date) -> None:
     if day > today():
         raise _unprocessable("Attendance cannot be saved for a future date")
+
+
+async def _require_editable(db: AsyncSession, actor: User, day: date) -> None:
+    """Not in the future, and within the school's edit window (the school owner is not limited)."""
+    _require_markable_date(day)
+    if actor.role == Role.SCHOOL_OWNER or actor.school_id is None:
+        return
+    days = await settings_service.get_int(
+        db, "academic.attendance_edit_days_back", school_id=actor.school_id
+    )
+    if day < today() - timedelta(days=days):
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN,
+            "Attendance older than the edit window can only be changed by the school owner",
+            "attendance_locked",
+        )
 
 
 def _require_working(reason: str | None) -> None:
@@ -265,7 +283,7 @@ async def save_sheet(
     db: AsyncSession, actor: User, section_id: int, day: date, entries: list[SheetEntryIn]
 ) -> Sheet:
     section, school_class = await _get_section(db, actor, section_id)
-    _require_markable_date(day)
+    await _require_editable(db, actor, day)
     rules = await day_rules(db, actor, day)
     _require_working(rules.reason(section.school_id, section.branch_id))
     year = await _year_covering(db, section.school_id, day)
@@ -396,6 +414,7 @@ async def daily_summary(
 async def student_attendance(
     db: AsyncSession, actor: User, student_id: int, from_: date | None, to: date | None
 ) -> StudentAttendance:
+    await settings_service.require_family_portal(db, actor, "portal.parent_sees_attendance")
     found = await db.scalar(
         scope_students(select(Student.id), actor).where(Student.id == student_id)
     )
@@ -537,7 +556,7 @@ async def save_staff_sheet(
     db: AsyncSession, actor: User, day: date, branch_id: int | None, entries: list[StaffEntryIn]
 ) -> StaffSheet:
     users = await _staff_users(db, actor, branch_id)
-    _require_markable_date(day)
+    await _require_editable(db, actor, day)
     rules = await day_rules(db, actor, day)
     _require_working(rules.reason(actor.school_id))
     by_id = {u.id: u for u in users}

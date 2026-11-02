@@ -1,12 +1,12 @@
-<section class="trust" aria-label="Privacy and access">
+<section class="trust" [attr.aria-label]="i18n.t('public.trust.label')">
   <ul class="lp-wrap trust-list" smsReveal>
     <li>
       <span class="chip"><sms-icon name="shield" [size]="18" /></span>
-      <span>Each school's data stays separate</span>
+      <span>{{ i18n.t('public.trust.separate') }}</span>
     </li>
     <li>
       <span class="chip tone-sky"><sms-icon name="lock" [size]="18" /></span>
-      <span>Role-based access for staff, parents and students</span>
+      <span>{{ i18n.t('public.trust.roles') }}</span>
     </li>
   </ul>
 </section>
@@ -14,9 +14,9 @@
 <section class="cta" aria-labelledby="cta-title">
   <div class="lp-wrap band" smsReveal>
     <div>
-      <h2 id="cta-title">Ready to open your school workspace?</h2>
-      <p>Sign in with the account your school gave you.</p>
+      <h2 id="cta-title">{{ i18n.t('public.cta.title') }}</h2>
+      <p>{{ i18n.t('public.cta.text') }}</p>
     </div>
-    <a class="btn btn-lg go" routerLink="/login">Sign in</a>
+    <a class="btn btn-lg go" routerLink="/login">{{ i18n.t('public.action.signIn') }}</a>
   </div>
 </section>

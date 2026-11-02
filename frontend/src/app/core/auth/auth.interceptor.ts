@@ -11,30 +11,19 @@ const isAuthEndpoint = (url: string) =>
 const withToken = (req: HttpRequest<unknown>, token: string | null) =>
   token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
 
-/** The server answers 403 with this code while the user must choose a new password. */
-const isPasswordChangeRequired = (error: HttpErrorResponse): boolean => {
+/** The machine-readable `code` of an API error body, or null when there is none. */
+const errorCode = (error: HttpErrorResponse): string | null => {
   const body: unknown = error.error;
-  return (
-    typeof body === 'object' &&
-    body !== null &&
-    (body as { code?: unknown }).code === 'password_change_required'
-  );
-};
-
-/** The server answers 403 with this code until two-factor sign-in has been set up. */
-const isMfaSetupRequired = (error: HttpErrorResponse): boolean => {
-  const body: unknown = error.error;
-  return (
-    typeof body === 'object' &&
-    body !== null &&
-    (body as { code?: unknown }).code === 'mfa_setup_required'
-  );
+  if (typeof body !== 'object' || body === null) return null;
+  const code = (body as { code?: unknown }).code;
+  return typeof code === 'string' ? code : null;
 };
 
 /**
  * Attach the access token and the CSRF header (`X-Requested-With`) to every API call.
  * On a 401 refresh once and retry (concurrent 401s share one refresh call), otherwise sign out.
- * A 403 `password_change_required` sends the user to the forced password screen.
+ * A 403 `password_change_required`, `mfa_setup_required` or `policy_acceptance_required` sends the
+ * user to the matching screen.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith('/api/')) {
@@ -55,15 +44,23 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (!(error instanceof HttpErrorResponse)) {
         return throwError(() => error);
       }
-      if (error.status === 403 && isPasswordChangeRequired(error)) {
-        auth.requirePasswordChange();
-        void router.navigate(['/change-password']);
-        return throwError(() => error);
-      }
-      if (error.status === 403 && isMfaSetupRequired(error)) {
-        auth.requireMfaSetup();
-        void router.navigate(['/account/mfa']);
-        return throwError(() => error);
+      if (error.status === 403) {
+        const code = errorCode(error);
+        if (code === 'password_change_required') {
+          auth.requirePasswordChange();
+          void router.navigate(['/change-password']);
+          return throwError(() => error);
+        }
+        if (code === 'mfa_setup_required') {
+          auth.requireMfaSetup();
+          void router.navigate(['/account/mfa']);
+          return throwError(() => error);
+        }
+        if (code === 'policy_acceptance_required') {
+          auth.setPoliciesPending(true);
+          void router.navigate(['/accept-policies']);
+          return throwError(() => error);
+        }
       }
       if (error.status !== 401) {
         return throwError(() => error);

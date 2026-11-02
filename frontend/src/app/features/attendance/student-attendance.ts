@@ -4,11 +4,24 @@ import { catchError, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { AttendanceApi, StudentAttendanceReport, StudentMark } from '../../core/api/attendance.api';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
-import { MARK_CLASS, MARK_LABEL, isoDate } from './attendance-labels';
+import { MARK_CLASS, MARK_KEY, isoDate } from './attendance-labels';
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const LETTER: Record<StudentMark, string> = { present: 'P', absent: 'A', leave: 'L' };
+const WEEKDAY_KEYS = [
+  'ops.wd.mon',
+  'ops.wd.tue',
+  'ops.wd.wed',
+  'ops.wd.thu',
+  'ops.wd.fri',
+  'ops.wd.sat',
+  'ops.wd.sun',
+];
+const LETTER_KEY: Record<StudentMark, string> = {
+  present: 'ops.stu.letter.present',
+  absent: 'ops.stu.letter.absent',
+  leave: 'ops.stu.letter.leave',
+};
 
 interface Cell {
   date: string;
@@ -29,13 +42,13 @@ interface Cell {
 })
 export class StudentAttendance {
   private readonly api = inject(AttendanceApi);
+  protected readonly i18n = inject(I18n);
 
   readonly studentId = input.required<number>();
 
-  protected readonly weekdays = WEEKDAYS;
-  protected readonly letter = LETTER;
+  protected readonly weekdays = WEEKDAY_KEYS;
+  protected readonly letterKey = LETTER_KEY;
   protected readonly markClass = MARK_CLASS;
-  protected readonly markLabel = MARK_LABEL;
   private readonly now = new Date();
   private readonly today = isoDate(this.now);
 
@@ -67,9 +80,24 @@ export class StudentAttendance {
       const date = isoDate(d);
       const status = records.get(date) ?? null;
       const sunday = d.getDay() === 0;
-      const text = d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
-      const state = status ? MARK_LABEL[status] : sunday ? 'Sunday, no school' : 'Not marked';
-      out.push({ date, day, status, sunday, future: date > this.today, label: `${text}: ${state}` });
+      const text = d.toLocaleDateString('en-IN', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      });
+      const state = status
+        ? this.i18n.t(MARK_KEY[status])
+        : sunday
+          ? this.i18n.t('ops.stu.sundayNoSchool')
+          : this.i18n.t('ops.common.notMarked');
+      out.push({
+        date,
+        day,
+        status,
+        sunday,
+        future: date > this.today,
+        label: `${text}: ${state}`,
+      });
     }
     return out;
   });

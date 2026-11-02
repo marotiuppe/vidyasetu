@@ -25,8 +25,12 @@ from app.modules.students import service as students_service
 from app.modules.users.models import Role, User
 
 AUDIT_LIMIT = 500
-# The student's own login may not download the record; staff and parents may.
-STUDENT_EXPORT_DENIED = frozenset({Role.STUDENT})
+# Who may download a whole student record: the school owner, the branch's management and
+# headmaster, the family (parents) and platform admins. Teachers, clerks and accountants can see
+# a student but cannot take the record out. A student's own login never can.
+STUDENT_EXPORT_ROLES = frozenset(
+    {Role.SUPER_ADMIN, Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.HEADMASTER, Role.PARENT}
+)
 
 
 async def me_export(db: AsyncSession, user: User) -> dict[str, Any]:
@@ -98,7 +102,7 @@ async def me_export(db: AsyncSession, user: User) -> dict[str, Any]:
 
 
 async def student_export(db: AsyncSession, actor: User, student_id: int) -> dict[str, Any]:
-    if actor.role in STUDENT_EXPORT_DENIED:
+    if actor.role not in STUDENT_EXPORT_ROLES:
         raise ApiError(status.HTTP_403_FORBIDDEN, "Not allowed", "forbidden")
     detail = await students_service.get_student(
         db, actor, student_id, log_view=False

@@ -17,8 +17,11 @@ export const EN_PRIVACY: Record<string, string> = {
   'mfa.login.useRecovery': 'Use a recovery code',
   'mfa.login.useCode': 'Use the authenticator code',
   'mfa.login.back': 'Back to password',
-  'mfa.login.badCode': 'That code is not correct or has expired. Try the latest code.',
-  'mfa.login.badRecovery': 'That recovery code is not valid or was already used.',
+  'mfa.login.badCode':
+    'That code is not correct, or this sign-in has expired. Try the latest code, or start again.',
+  'mfa.login.badRecovery':
+    'That recovery code is not valid, was already used, or this sign-in has expired.',
+  'mfa.login.startAgain': 'Start again',
   'mfa.login.expired': 'This sign-in took too long. Please enter your password again.',
   'mfa.login.failed': 'Could not verify the code. Please try again.',
 

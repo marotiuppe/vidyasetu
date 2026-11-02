@@ -1,10 +1,10 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">New admission</h1>
-    <p class="page-subtitle">Student details, guardians and an optional class enrolment.</p>
+    <h1 class="page-title">{{ i18n.t('students.form.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('students.form.subtitle') }}</p>
   </div>
   @if (!credentials()) {
-    <a class="btn btn-ghost" routerLink="/students">Back to students</a>
+    <a class="btn btn-ghost" routerLink="/students">{{ i18n.t('students.form.backToStudents') }}</a>
   }
 </div>
 
@@ -13,11 +13,11 @@
 } @else {
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="stack">
     <section class="card" aria-labelledby="student-details">
-      <h2 class="card-title" id="student-details">Student</h2>
+      <h2 class="card-title" id="student-details">{{ i18n.t('students.form.student') }}</h2>
       <div class="form-grid">
         @if (needsBranch) {
           <label class="field">
-            Branch
+            {{ i18n.t('students.form.branch') }}
             <select
               class="input"
               formControlName="branch_id"
@@ -25,97 +25,101 @@
                 form.controls.branch_id.touched && +form.controls.branch_id.value < 1
               "
             >
-              <option [value]="0" disabled>Select branch</option>
+              <option [value]="0" disabled>{{ i18n.t('students.form.selectBranch') }}</option>
               @for (b of branches(); track b.id) {
                 <option [value]="b.id">{{ b.name }}</option>
               }
               @if (canCreateBranch) {
-                <option [value]="createNew">{{ createNewLabel }}</option>
+                <option [value]="createNew">{{ i18n.t('students.form.createNew') }}</option>
               }
             </select>
             @if (form.controls.branch_id.touched && +form.controls.branch_id.value < 1) {
-              <span class="field-error">Select a branch.</span>
+              <span class="field-error">{{ i18n.t('students.form.selectBranchError') }}</span>
             }
           </label>
         }
         <label class="field">
-          First name
+          {{ i18n.t('students.form.firstName') }}
           <input class="input" formControlName="first_name" autocomplete="off" />
           @if (form.controls.first_name.touched && form.controls.first_name.invalid) {
             <span class="field-error">{{
-              fieldError(form.controls.first_name, 'First name is required.')
+              fieldError(form.controls.first_name, i18n.t('students.form.firstNameRequired'))
             }}</span>
           }
         </label>
         <label class="field">
-          Last name
+          {{ i18n.t('students.form.lastName') }}
           <input class="input" formControlName="last_name" autocomplete="off" />
           @if (form.controls.last_name.touched && form.controls.last_name.invalid) {
             <span class="field-error">{{
-              fieldError(form.controls.last_name, 'Last name is required.')
+              fieldError(form.controls.last_name, i18n.t('students.form.lastNameRequired'))
             }}</span>
           }
         </label>
         <label class="field">
-          Gender
+          {{ i18n.t('students.form.gender') }}
           <select class="input" formControlName="gender">
             @for (g of genders; track g) {
-              <option [value]="g">{{ titleCase(g) }}</option>
+              <option [value]="g">{{ genderLabel(g) }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Date of birth
+          {{ i18n.t('students.form.dob') }}
           <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
           @if (form.controls.date_of_birth.touched && form.controls.date_of_birth.invalid) {
             <span class="field-error">
               {{
                 form.controls.date_of_birth.hasError('future')
-                  ? 'Date of birth cannot be in the future.'
-                  : fieldError(form.controls.date_of_birth, 'Date of birth is required.')
+                  ? i18n.t('students.form.dobFuture')
+                  : fieldError(form.controls.date_of_birth, i18n.t('students.form.dobRequired'))
               }}
             </span>
           }
         </label>
         <label class="field">
-          Admission date
+          {{ i18n.t('students.form.admissionDate') }}
           <input class="input" type="date" formControlName="admission_date" />
           @if (form.controls.admission_date.touched && form.controls.admission_date.invalid) {
             <span class="field-error">{{
-              fieldError(form.controls.admission_date, 'Admission date is required.')
+              fieldError(
+                form.controls.admission_date,
+                i18n.t('students.form.admissionDateRequired')
+              )
             }}</span>
           }
         </label>
         <label class="field">
-          Admission number (optional)
+          {{ i18n.t('students.form.admissionNo') }}
           <input class="input" formControlName="admission_no" autocomplete="off" />
-          <span class="hint">Generated automatically when left blank.</span>
+          <span class="hint">{{ i18n.t('students.form.admissionNoHint') }}</span>
         </label>
         <label class="field">
-          Previous school (optional)
+          {{ i18n.t('students.form.previousSchool') }}
           <input class="input" formControlName="previous_school" autocomplete="off" />
         </label>
         <label class="field wide">
-          Address (optional)
+          {{ i18n.t('students.form.address') }}
           <input class="input" formControlName="address" autocomplete="off" />
         </label>
       </div>
     </section>
 
     <section class="card" aria-labelledby="guardians-title">
-      <h2 class="card-title" id="guardians-title">Guardians</h2>
-      <p class="hint">
-        Each guardian is a new parent or an existing parent. Siblings can share one parent login.
-      </p>
+      <h2 class="card-title" id="guardians-title">{{ i18n.t('students.form.guardiansTitle') }}</h2>
+      <p class="hint">{{ i18n.t('students.form.guardiansHint') }}</p>
       <div formArrayName="guardians" class="stack">
         @for (g of guardians.controls; track g; let i = $index) {
           <fieldset class="guardian" [formGroupName]="i">
             <legend>
-              Guardian {{ i + 1 }}{{ g.controls.is_primary.value ? ' (primary contact)' : '' }}
+              {{ i18n.t('students.form.guardianLegend', { n: i + 1 })
+              }}{{ g.controls.is_primary.value ? i18n.t('students.form.primaryTag') : '' }}
             </legend>
 
             <div class="parent-choice">
-              <span class="choice-label" [id]="'parent-mode-title-' + i">Parent account</span>
+              <span class="choice-label" [id]="'parent-mode-title-' + i">{{
+                i18n.t('students.form.parentAccount')
+              }}</span>
               <div class="seg" role="radiogroup" [attr.aria-labelledby]="'parent-mode-title-' + i">
                 <label>
                   <input
@@ -125,7 +129,7 @@
                     [attr.name]="'parent-mode-' + i"
                     (change)="onModeChange(i, $event)"
                   />
-                  <span>New parent</span>
+                  <span>{{ i18n.t('students.form.newParent') }}</span>
                 </label>
                 <label>
                   <input
@@ -135,7 +139,7 @@
                     [attr.name]="'parent-mode-' + i"
                     (change)="onModeChange(i, $event)"
                   />
-                  <span>Existing parent</span>
+                  <span>{{ i18n.t('students.form.existingParent') }}</span>
                 </label>
               </div>
             </div>
@@ -148,18 +152,21 @@
                 />
                 @if (g.controls.existing_parent_user_id.value > 0) {
                   <p class="notice" role="status">
-                    Selected {{ g.controls.full_name.value }}. Name and mobile are filled from this
-                    parent's login.
+                    {{
+                      i18n.t('students.form.parentSelected', {
+                        name: g.controls.full_name.value,
+                      })
+                    }}
                   </p>
                 } @else {
-                  <p class="hint">Choose a parent from the results to continue.</p>
+                  <p class="hint">{{ i18n.t('students.form.chooseParent') }}</p>
                 }
               </div>
             }
 
             <div class="form-grid">
               <label class="field">
-                Full name
+                {{ i18n.t('students.form.fullName') }}
                 <input
                   class="input"
                   formControlName="full_name"
@@ -168,20 +175,20 @@
                 />
                 @if (g.controls.full_name.touched && g.controls.full_name.invalid) {
                   <span class="field-error">{{
-                    fieldError(g.controls.full_name, 'Name is required.')
+                    fieldError(g.controls.full_name, i18n.t('students.form.nameRequired'))
                   }}</span>
                 }
               </label>
               <label class="field">
-                Relation
+                {{ i18n.t('students.form.relation') }}
                 <select class="input" formControlName="relation">
                   @for (r of relations; track r) {
-                    <option [value]="r">{{ titleCase(r) }}</option>
+                    <option [value]="r">{{ relationLabel(r) }}</option>
                   }
                 </select>
               </label>
               <label class="field">
-                Mobile number
+                {{ i18n.t('students.form.mobile') }}
                 <input
                   class="input"
                   type="tel"
@@ -191,17 +198,17 @@
                 />
                 @if (g.controls.phone.touched && g.controls.phone.invalid) {
                   <span class="field-error">{{
-                    fieldError(g.controls.phone, 'Use 7 to 20 digits, spaces, + or -.')
+                    fieldError(g.controls.phone, i18n.t('students.form.phoneInvalid'))
                   }}</span>
                 }
               </label>
               @if (g.controls.parent_mode.value === 'new') {
                 <label class="field">
-                  Email (optional)
+                  {{ i18n.t('students.form.emailOptional') }}
                   <input class="input" type="email" formControlName="email" autocomplete="off" />
                   @if (g.controls.email.touched && g.controls.email.invalid) {
                     <span class="field-error">{{
-                      fieldError(g.controls.email, 'Enter a valid email address.')
+                      fieldError(g.controls.email, i18n.t('students.form.emailInvalid'))
                     }}</span>
                   }
                 </label>
@@ -212,11 +219,9 @@
               <div class="login-choice">
                 <label class="check">
                   <input type="checkbox" formControlName="create_login" />
-                  Create a login for this parent
+                  {{ i18n.t('students.form.createLoginParent') }}
                 </label>
-                <span class="hint"
-                  >A username and a temporary password are created automatically.</span
-                >
+                <span class="hint">{{ i18n.t('students.form.autoLogin') }}</span>
               </div>
             }
 
@@ -228,11 +233,11 @@
                   [checked]="g.controls.is_primary.value"
                   (change)="setPrimary(i)"
                 />
-                Primary contact
+                {{ i18n.t('students.form.primaryContact') }}
               </label>
               @if (guardians.length > 1) {
                 <button type="button" class="btn btn-ghost btn-sm" (click)="removeGuardian(i)">
-                  Remove
+                  {{ i18n.t('students.form.remove') }}
                 </button>
               }
             </div>
@@ -240,71 +245,69 @@
         }
         <div>
           <button type="button" class="btn btn-ghost" (click)="addGuardian()">
-            Add another guardian
+            {{ i18n.t('students.form.addGuardian') }}
           </button>
         </div>
       </div>
     </section>
 
     <section class="card" aria-labelledby="enrol-title">
-      <h2 class="card-title" id="enrol-title">Enrolment (optional)</h2>
+      <h2 class="card-title" id="enrol-title">{{ i18n.t('students.form.enrolmentTitle') }}</h2>
       <div class="form-grid">
         <label class="field">
-          Academic year
+          {{ i18n.t('students.form.academicYear') }}
           <select class="input" formControlName="academic_year_id">
-            <option [value]="0" disabled>Select year</option>
+            <option [value]="0" disabled>{{ i18n.t('students.form.selectYear') }}</option>
             @for (y of years(); track y.id) {
               <option [value]="y.id">{{ y.name }}</option>
             }
             @if (canCreateYear) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.form.createNew') }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Class
+          {{ i18n.t('students.form.class') }}
           <select class="input" formControlName="class_id">
-            <option [value]="0">Not enrolled yet</option>
+            <option [value]="0">{{ i18n.t('students.form.notEnrolled') }}</option>
             @for (c of classOptions(); track c.id) {
               <option [value]="c.id">{{ c.name }}</option>
             }
             @if (canCreateClass) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.form.createNew') }}</option>
             }
           </select>
           @if (needsBranch && +form.controls.branch_id.value < 1) {
-            <span class="hint">Choose a branch first to list its classes.</span>
+            <span class="hint">{{ i18n.t('students.form.chooseBranchFirst') }}</span>
           }
         </label>
         <label class="field">
-          Section
+          {{ i18n.t('students.form.section') }}
           <select class="input" formControlName="section_id">
-            <option [value]="0">No section</option>
+            <option [value]="0">{{ i18n.t('students.form.noSection') }}</option>
             @for (s of sectionOptions(); track s.id) {
               <option [value]="s.id">{{ s.name }}</option>
             }
             @if (canCreateSection && +form.controls.class_id.value > 0) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.form.createNew') }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Roll number (optional)
+          {{ i18n.t('students.form.rollNo') }}
           <input class="input" type="number" min="1" formControlName="roll_no" />
-          <span class="hint"
-            >Assigned automatically when a section is chosen and this is blank.</span
-          >
+          <span class="hint">{{ i18n.t('students.form.rollNoHint') }}</span>
         </label>
       </div>
     </section>
 
     <section class="card" aria-labelledby="login-title">
-      <h2 class="card-title" id="login-title">Student login</h2>
+      <h2 class="card-title" id="login-title">{{ i18n.t('students.form.loginTitle') }}</h2>
       <label class="check">
         <input type="checkbox" formControlName="create_student_login" />
-        Create a login for the student
+        {{ i18n.t('students.form.createStudentLogin') }}
       </label>
-      <span class="hint">A username and a temporary password are created automatically.</span>
+      <span class="hint">{{ i18n.t('students.form.autoLogin') }}</span>
     </section>
 
     @if (error(); as message) {
@@ -312,9 +315,9 @@
     }
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-        {{ submitting() ? 'Saving…' : 'Admit student' }}
+        {{ submitting() ? i18n.t('students.form.saving') : i18n.t('students.form.admit') }}
       </button>
-      <a class="btn btn-ghost" routerLink="/students">Cancel</a>
+      <a class="btn btn-ghost" routerLink="/students">{{ i18n.t('students.form.cancel') }}</a>
     </div>
   </form>
 }

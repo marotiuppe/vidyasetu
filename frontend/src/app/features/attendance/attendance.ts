@@ -6,6 +6,7 @@ import { map } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { Student, StudentsApi } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n';
 import { AttendanceMark } from './attendance-mark';
 import { AttendanceSummary } from './attendance-summary';
 import { Holidays } from './holidays';
@@ -16,7 +17,7 @@ type TabId = 'mark' | 'summary' | 'staff' | 'holidays' | 'my';
 
 interface Tab {
   id: TabId;
-  label: string;
+  labelKey: string;
 }
 
 @Component({
@@ -31,16 +32,33 @@ export class Attendance {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly studentsApi = inject(StudentsApi);
+  protected readonly i18n = inject(I18n);
 
   protected readonly selfService = this.auth.hasRole('parent', 'student');
-  protected readonly canMark = this.auth.hasRole('school_owner', 'management', 'headmaster', 'teacher', 'clerk');
-  private readonly canStaff = this.auth.hasRole('school_owner', 'management', 'headmaster', 'clerk');
+  protected readonly canMark = this.auth.hasRole(
+    'school_owner',
+    'management',
+    'headmaster',
+    'teacher',
+    'clerk',
+  );
+  private readonly canStaff = this.auth.hasRole(
+    'school_owner',
+    'management',
+    'headmaster',
+    'clerk',
+  );
 
   protected readonly tabs: Tab[] = this.buildTabs();
 
-  private readonly params = toSignal(this.route.queryParamMap.pipe(map((p) => ({ tab: p.get('tab'), section: p.get('section'), date: p.get('date') }))), {
-    initialValue: { tab: null, section: null, date: null },
-  });
+  private readonly params = toSignal(
+    this.route.queryParamMap.pipe(
+      map((p) => ({ tab: p.get('tab'), section: p.get('section'), date: p.get('date') })),
+    ),
+    {
+      initialValue: { tab: null, section: null, date: null },
+    },
+  );
 
   protected readonly active = computed<TabId>(() => {
     const wanted = this.params().tab;
@@ -74,15 +92,15 @@ export class Attendance {
   private buildTabs(): Tab[] {
     if (this.selfService) {
       return [
-        { id: 'my', label: 'My attendance' },
-        { id: 'holidays', label: 'Holidays' },
+        { id: 'my', labelKey: 'ops.tab.my' },
+        { id: 'holidays', labelKey: 'ops.tab.holidays' },
       ];
     }
     const tabs: Tab[] = [];
-    if (this.canMark) tabs.push({ id: 'mark', label: 'Mark attendance' });
-    tabs.push({ id: 'summary', label: 'Daily summary' });
-    if (this.canStaff) tabs.push({ id: 'staff', label: 'Staff attendance' });
-    tabs.push({ id: 'holidays', label: 'Holidays' });
+    if (this.canMark) tabs.push({ id: 'mark', labelKey: 'ops.tab.mark' });
+    tabs.push({ id: 'summary', labelKey: 'ops.tab.summary' });
+    if (this.canStaff) tabs.push({ id: 'staff', labelKey: 'ops.tab.staff' });
+    tabs.push({ id: 'holidays', labelKey: 'ops.tab.holidays' });
     return tabs;
   }
 

@@ -1,19 +1,21 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Welcome, {{ firstName() }}.</h1>
-    <p class="page-subtitle">{{ today }} · Here’s what’s happening across your school.</p>
+    <h1 class="page-title">{{ i18n.t('app.dash.welcome', { name: firstName() }) }}</h1>
+    <p class="page-subtitle">{{ today }} · {{ i18n.t('app.dash.subtitle') }}</p>
   </div>
   @if (yearName(); as year) {
-    <span class="year"><sms-icon name="calendar" [size]="16" /> Academic year {{ year }}</span>
+    <span class="year"
+      ><sms-icon name="calendar" [size]="16" /> {{ i18n.t('app.dash.year', { year: year }) }}</span
+    >
   }
 </div>
 
-<section class="hero" aria-label="School banner">
+<section class="hero" [attr.aria-label]="i18n.t('app.dash.bannerAria')">
   <div class="hero-text">
     <p class="eyebrow">{{ schoolName() }}</p>
-    <h2>Every student. Every possibility.</h2>
+    <h2>{{ i18n.t('app.dash.heroTitle') }}</h2>
     <p class="hero-copy">
-      A little clarity goes a long way. Keep your school community connected, supported, and ready to learn.
+      {{ i18n.t('app.dash.heroCopy') }}
     </p>
   </div>
   <div class="hero-art" aria-hidden="true">
@@ -22,16 +24,18 @@
     <span class="core"><sms-icon name="book" [size]="56" /></span>
     <span class="spark spark-a"><sms-icon name="sparkle" [size]="22" /></span>
     <span class="spark spark-b"><sms-icon name="sparkle" [size]="22" /></span>
-    <span class="tag">Learning, together.</span>
+    <span class="tag">{{ i18n.t('app.dash.tag') }}</span>
   </div>
 </section>
 
-<section class="stats" aria-label="Summary">
+<section class="stats" [attr.aria-label]="i18n.t('app.dash.summaryAria')">
   @for (stat of stats(); track stat.label) {
     <article class="card stat">
       <div class="stat-top">
         <span>{{ stat.label }}</span>
-        <span class="chip" [class]="'chip tone-' + stat.tone"><sms-icon [name]="stat.icon" [size]="20" /></span>
+        <span class="chip" [class]="'chip tone-' + stat.tone"
+          ><sms-icon [name]="stat.icon" [size]="20"
+        /></span>
       </div>
       <strong class="stat-value">{{ stat.value }}</strong>
       <span class="stat-note">{{ stat.note }}</span>
@@ -42,8 +46,8 @@
 @if (showNotices) {
   <section class="card latest" aria-labelledby="latest-notices-title">
     <div class="card-head">
-      <h2 class="card-title" id="latest-notices-title">Latest notices</h2>
-      <a class="btn btn-ghost btn-sm" routerLink="/notices">View all</a>
+      <h2 class="card-title" id="latest-notices-title">{{ i18n.t('app.dash.latest') }}</h2>
+      <a class="btn btn-ghost btn-sm" routerLink="/notices">{{ i18n.t('app.dash.viewAll') }}</a>
     </div>
     @if (latest(); as list) {
       @if (list.length) {
@@ -55,16 +59,16 @@
                 <span class="row-sub">{{ n.target_label }} · {{ relativeDate(n.created_at) }}</span>
               </div>
               @if (!n.is_read) {
-                <span class="badge badge-success">New</span>
+                <span class="badge badge-success">{{ i18n.t('app.dash.new') }}</span>
               }
             </li>
           }
         </ul>
       } @else {
-        <p class="empty">No notices yet.</p>
+        <p class="empty">{{ i18n.t('app.dash.noNotices') }}</p>
       }
     } @else {
-      <p class="empty" role="status">Loading notices…</p>
+      <p class="empty" role="status">{{ i18n.t('app.dash.loadingNotices') }}</p>
     }
   </section>
 }

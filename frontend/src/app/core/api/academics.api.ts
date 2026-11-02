@@ -58,7 +58,11 @@ export class AcademicsApi {
     return this.http.get<SchoolClass[]>(`${API}/classes`);
   }
 
-  createClass(body: { name: string; level: number; branch_id: number | null }): Observable<SchoolClass> {
+  createClass(body: {
+    name: string;
+    level: number;
+    branch_id: number | null;
+  }): Observable<SchoolClass> {
     return this.http.post<SchoolClass>(`${API}/classes`, body);
   }
 

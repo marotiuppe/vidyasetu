@@ -1,28 +1,28 @@
 <div class="stack">
   @if (canWrite) {
     <section class="card" aria-labelledby="add-holiday-title">
-      <h2 class="card-title" id="add-holiday-title">Add a holiday</h2>
+      <h2 class="card-title" id="add-holiday-title">{{ i18n.t('ops.hol.addTitle') }}</h2>
       <form [formGroup]="form" (ngSubmit)="add()" novalidate>
         <div class="form-grid">
           <label class="field">
-            Date
+            {{ i18n.t('ops.common.date') }}
             <input class="input" type="date" formControlName="date" />
             @if (form.controls.date.touched && form.controls.date.invalid) {
-              <span class="field-error">Choose a date.</span>
+              <span class="field-error">{{ i18n.t('ops.hol.chooseDate') }}</span>
             }
           </label>
           <label class="field">
-            Name
+            {{ i18n.t('ops.hol.name') }}
             <input class="input" formControlName="name" maxlength="120" autocomplete="off" />
             @if (form.controls.name.touched && form.controls.name.invalid) {
-              <span class="field-error">Enter a name.</span>
+              <span class="field-error">{{ i18n.t('ops.hol.enterName') }}</span>
             }
           </label>
           @if (isOwner) {
             <label class="field">
-              Applies to
+              {{ i18n.t('ops.hol.appliesTo') }}
               <select class="input" formControlName="scope">
-                <option [ngValue]="0">Whole school</option>
+                <option [ngValue]="0">{{ i18n.t('ops.common.wholeSchool') }}</option>
                 @for (b of branches(); track b.id) {
                   <option [ngValue]="b.id">{{ b.name }}</option>
                 }
@@ -33,7 +33,7 @@
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="busy()">
             <sms-icon name="plus" [size]="16" />
-            {{ busy() ? 'Adding…' : 'Add holiday' }}
+            {{ busy() ? i18n.t('ops.hol.adding') : i18n.t('ops.hol.addButton') }}
           </button>
         </div>
       </form>
@@ -41,9 +41,17 @@
   }
 
   <section class="card" aria-labelledby="holiday-list-title">
-    <h2 class="card-title" id="holiday-list-title">Holidays</h2>
+    <h2 class="card-title" id="holiday-list-title">{{ i18n.t('ops.tab.holidays') }}</h2>
     @if (range(); as r) {
-      <p class="hint range">{{ r.label }}: {{ formatDate(r.from) }} to {{ formatDate(r.to) }}</p>
+      <p class="hint range">
+        {{
+          i18n.t('ops.hol.rangeText', {
+            label: rangeLabel(r.year),
+            from: formatDate(r.from),
+            to: formatDate(r.to),
+          })
+        }}
+      </p>
     }
 
     @if (error(); as message) {
@@ -54,9 +62,9 @@
     }
 
     @if (loading()) {
-      <p class="empty" role="status">Loading holidays…</p>
+      <p class="empty" role="status">{{ i18n.t('ops.hol.loading') }}</p>
     } @else if (!groups().length) {
-      <p class="empty">No holidays have been added for this period. Sundays are always off.</p>
+      <p class="empty">{{ i18n.t('ops.hol.none') }}</p>
     } @else {
       @for (g of groups(); track g.key) {
         <h3 class="month">{{ g.label }}</h3>
@@ -67,16 +75,18 @@
                 <strong>{{ h.name }}</strong>
                 <span class="row-sub">{{ formatDate(h.date) }}</span>
               </div>
-              <span class="badge" [class.badge-muted]="h.branch_id !== null">{{ h.scopeLabel }}</span>
+              <span class="badge" [class.badge-muted]="h.branch_id !== null">{{
+                h.scopeLabel
+              }}</span>
               @if (canDelete(h)) {
                 <button
                   type="button"
                   class="btn btn-ghost btn-sm"
-                  [attr.aria-label]="'Delete holiday ' + h.name"
+                  [attr.aria-label]="i18n.t('ops.hol.deleteAria', { name: h.name })"
                   (click)="remove(h)"
                 >
                   <sms-icon name="trash" [size]="14" />
-                  Delete
+                  {{ i18n.t('ops.common.delete') }}
                 </button>
               }
             </li>

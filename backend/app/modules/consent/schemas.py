@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, StringConstraints
 
+from app.core.schema_types import UtcDateTime
 from app.modules.consent.models import ConsentMethod, ConsentStatus, Policy, Purpose
 
 
@@ -10,7 +10,7 @@ class PolicyState(BaseModel):
     policy: Policy
     version: str
     accepted: bool
-    accepted_at: datetime | None
+    accepted_at: UtcDateTime | None
 
 
 class PoliciesOut(BaseModel):
@@ -28,7 +28,7 @@ class ConsentCurrent(BaseModel):
     # `none` until a decision has been recorded for this purpose.
     status: ConsentStatus | Literal["none"]
     method: ConsentMethod | None
-    recorded_at: datetime | None
+    recorded_at: UtcDateTime | None
 
 
 class ConsentEntry(BaseModel):
@@ -40,7 +40,7 @@ class ConsentEntry(BaseModel):
     given_by_user_id: int | None
     recorded_by_user_id: int
     recorded_by_name: str | None
-    recorded_at: datetime
+    recorded_at: UtcDateTime
 
 
 class ConsentsOut(BaseModel):

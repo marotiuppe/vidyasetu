@@ -1,12 +1,12 @@
 <div class="stack">
   <section class="card" aria-labelledby="mark-title">
-    <h2 class="card-title" id="mark-title">Mark attendance</h2>
+    <h2 class="card-title" id="mark-title">{{ i18n.t('ops.tab.mark') }}</h2>
     <div class="toolbar">
       @if (canPickBranch) {
         <label class="field">
-          Branch
+          {{ i18n.t('ops.common.branch') }}
           <select class="input" (change)="pickBranch($event)">
-            <option value="0">Select branch</option>
+            <option value="0">{{ i18n.t('ops.mark.selectBranch') }}</option>
             @for (b of branches(); track b.id) {
               <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
             }
@@ -17,9 +17,9 @@
         </label>
       }
       <label class="field">
-        Class
+        {{ i18n.t('ops.common.class') }}
         <select class="input" (change)="pickClass($event)" [disabled]="!classOptions().length">
-          <option value="0">Select class</option>
+          <option value="0">{{ i18n.t('ops.mark.selectClass') }}</option>
           @for (c of classOptions(); track c.id) {
             <option [value]="c.id" [selected]="c.id === classId()">{{ c.name }}</option>
           }
@@ -29,9 +29,9 @@
         </select>
       </label>
       <label class="field">
-        Section
+        {{ i18n.t('ops.common.section') }}
         <select class="input" (change)="pickSection($event)" [disabled]="!classId()">
-          <option value="0">Select section</option>
+          <option value="0">{{ i18n.t('ops.mark.selectSection') }}</option>
           @for (s of sectionOptions(); track s.id) {
             <option [value]="s.id" [selected]="s.id === sectionId()">{{ s.name }}</option>
           }
@@ -41,7 +41,7 @@
         </select>
       </label>
       <label class="field">
-        Date
+        {{ i18n.t('ops.common.date') }}
         <input
           class="input"
           type="date"
@@ -60,24 +60,38 @@
     }
 
     @if (!sectionId()) {
-      <p class="empty">Choose a class and section to load the roster.</p>
+      <p class="empty">{{ i18n.t('ops.mark.chooseFirst') }}</p>
     } @else if (loading()) {
-      <p class="empty" role="status">Loading roster…</p>
+      <p class="empty" role="status">{{ i18n.t('ops.mark.loadingRoster') }}</p>
     } @else if (sheet(); as s) {
       @if (!s.is_working_day) {
         <p class="panel" role="status">
-          Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance
-          cannot be saved.
+          @if (s.non_working_reason) {
+            {{ i18n.t('ops.common.notWorkingReason', { reason: s.non_working_reason }) }}
+          } @else {
+            {{ i18n.t('ops.common.notWorkingDay') }}
+          }
+          {{ i18n.t('ops.att.cannotSave') }}
         </p>
       }
 
-      <h3 class="roster-title">Class {{ s.class_name }}, section {{ s.section_name }}</h3>
-      <ul class="stat-strip" aria-label="Summary">
-        <li class="badge">Total {{ summary().total }}</li>
-        <li class="badge st-tone st-present">Present {{ summary().present }}</li>
-        <li class="badge st-tone st-absent">Absent {{ summary().absent }}</li>
-        <li class="badge st-tone st-leave">Leave {{ summary().leave }}</li>
-        <li class="badge badge-muted">Unmarked {{ summary().unmarked }}</li>
+      <h3 class="roster-title">
+        {{ i18n.t('ops.common.classSection', { cls: s.class_name, sec: s.section_name }) }}
+      </h3>
+      <ul class="stat-strip" [attr.aria-label]="i18n.t('ops.common.summary')">
+        <li class="badge">{{ i18n.t('ops.count.total', { n: summary().total }) }}</li>
+        <li class="badge st-tone st-present">
+          {{ i18n.t('ops.count.present', { n: summary().present }) }}
+        </li>
+        <li class="badge st-tone st-absent">
+          {{ i18n.t('ops.count.absent', { n: summary().absent }) }}
+        </li>
+        <li class="badge st-tone st-leave">
+          {{ i18n.t('ops.count.leave', { n: summary().leave }) }}
+        </li>
+        <li class="badge badge-muted">
+          {{ i18n.t('ops.count.unmarked', { n: summary().unmarked }) }}
+        </li>
       </ul>
 
       @if (rows().length) {
@@ -88,7 +102,7 @@
             [disabled]="!summary().unmarked || !s.is_working_day"
             (click)="markAllPresent()"
           >
-            Mark all present
+            {{ i18n.t('ops.common.markAllPresent') }}
           </button>
         </div>
         <ul class="rows">
@@ -98,15 +112,15 @@
                 <strong>{{ r.full_name }}</strong>
                 <span class="row-sub">
                   @if (r.roll_no !== null) {
-                    Roll {{ r.roll_no }} ·
+                    {{ i18n.t('ops.mark.roll', { n: r.roll_no }) }}
                   }
-                  Adm. {{ r.admission_no }}
+                  {{ i18n.t('ops.mark.adm', { no: r.admission_no }) }}
                 </span>
               </div>
               <div
                 class="seg"
                 role="radiogroup"
-                [attr.aria-label]="'Attendance for ' + r.full_name"
+                [attr.aria-label]="i18n.t('ops.common.attFor', { name: r.full_name })"
               >
                 @for (m of marks; track m.value) {
                   <label [class]="markClass[m.value]">
@@ -118,7 +132,7 @@
                       [disabled]="!s.is_working_day"
                       (change)="setStatus(r.student_id, m.value)"
                     />
-                    <span>{{ m.label }}</span>
+                    <span>{{ i18n.t(markKey[m.value]) }}</span>
                   </label>
                 }
               </div>
@@ -127,17 +141,17 @@
                 class="btn btn-ghost btn-sm"
                 [disabled]="!r.status || !s.is_working_day"
                 [attr.aria-expanded]="!!openRemarks()[r.student_id] || !!r.remark"
-                [attr.aria-label]="'Remark for ' + r.full_name"
+                [attr.aria-label]="i18n.t('ops.common.remarkFor', { name: r.full_name })"
                 (click)="toggleRemark(r.student_id)"
               >
-                Remark
+                {{ i18n.t('ops.common.remark') }}
               </button>
               @if (openRemarks()[r.student_id] || r.remark) {
                 <input
                   class="input remark"
                   maxlength="200"
-                  placeholder="Optional remark"
-                  [attr.aria-label]="'Remark text for ' + r.full_name"
+                  [placeholder]="i18n.t('ops.common.optionalRemark')"
+                  [attr.aria-label]="i18n.t('ops.common.remarkText', { name: r.full_name })"
                   [value]="r.remark"
                   [disabled]="!s.is_working_day"
                   (input)="setRemark(r.student_id, $event)"
@@ -147,15 +161,15 @@
           }
         </ul>
       } @else {
-        <p class="empty">No students are enrolled in this section.</p>
+        <p class="empty">{{ i18n.t('ops.mark.noStudents') }}</p>
       }
 
       <div class="save-bar">
         <span role="status">
           @if (dirty()) {
-            <span class="badge st-tone st-leave">Unsaved changes</span>
+            <span class="badge st-tone st-leave">{{ i18n.t('ops.common.unsaved') }}</span>
           } @else {
-            <span class="hint">No changes to save.</span>
+            <span class="hint">{{ i18n.t('ops.common.noChanges') }}</span>
           }
         </span>
         <button
@@ -164,18 +178,18 @@
           [disabled]="saving() || !dirty() || !s.is_working_day"
           (click)="save()"
         >
-          {{ saving() ? 'Saving…' : 'Save attendance' }}
+          {{ saving() ? i18n.t('ops.common.saving') : i18n.t('ops.common.saveAttendance') }}
         </button>
       </div>
     }
   </section>
 
   <section class="card" aria-labelledby="export-title">
-    <h2 class="card-title" id="export-title">Export attendance</h2>
-    <p class="hint export-hint">Downloads a CSV for the selected section.</p>
+    <h2 class="card-title" id="export-title">{{ i18n.t('ops.mark.exportTitle') }}</h2>
+    <p class="hint export-hint">{{ i18n.t('ops.mark.exportHint') }}</p>
     <div class="toolbar">
       <label class="field">
-        From
+        {{ i18n.t('ops.common.from') }}
         <input
           class="input"
           type="date"
@@ -184,7 +198,7 @@
         />
       </label>
       <label class="field">
-        To
+        {{ i18n.t('ops.common.to') }}
         <input class="input" type="date" [value]="exportTo()" (change)="setExport('to', $event)" />
       </label>
     </div>
@@ -195,7 +209,7 @@
       (click)="exportCsv()"
     >
       <sms-icon name="download" [size]="16" />
-      {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+      {{ exporting() ? i18n.t('ops.common.exporting') : i18n.t('ops.common.exportCsv') }}
     </button>
   </section>
 </div>

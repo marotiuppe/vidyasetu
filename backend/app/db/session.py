@@ -15,13 +15,16 @@ if engine.dialect.name == "sqlite":
     # commit the rows on release and a later rollback could not undo them. This is the SQLAlchemy
     # recipe: the driver's implicit transactions are off and BEGIN is emitted explicitly, so
     # savepoints and rollbacks behave as they do on PostgreSQL.
+    # BEGIN IMMEDIATE takes the write lock when the transaction starts. A plain BEGIN lets two
+    # requests read first and then fail on the write upgrade at once (no waiting), which breaks
+    # concurrent writes. With IMMEDIATE the second writer waits for the busy timeout instead.
     @event.listens_for(engine.sync_engine, "connect")
     def _sqlite_no_implicit_begin(dbapi_connection: Any, _record: Any) -> None:
         dbapi_connection.isolation_level = None
 
     @event.listens_for(engine.sync_engine, "begin")
     def _sqlite_explicit_begin(conn: Connection) -> None:
-        conn.exec_driver_sql("BEGIN")
+        conn.exec_driver_sql("BEGIN IMMEDIATE")
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:

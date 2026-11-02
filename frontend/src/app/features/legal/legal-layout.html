@@ -1,12 +1,12 @@
-<a class="skip" href="#legal-main">Skip to content</a>
+<a class="skip" href="#legal-main">{{ i18n.t('public.skip') }}</a>
 
 <header class="legal-top">
   <div class="legal-wrap legal-top-row">
-    <a class="brand" routerLink="/" aria-label="Vidyasetu home">
+    <a class="brand" routerLink="/" [attr.aria-label]="i18n.t('public.nav.home')">
       <img src="brand/logo-mark.svg" alt="" width="36" height="36" />
       <span>Vidyasetu</span>
     </a>
-    <a class="back" routerLink="/">Back</a>
+    <a class="back" routerLink="/">{{ i18n.t('public.legal.back') }}</a>
   </div>
 </header>
 
@@ -18,22 +18,18 @@
   }
   @if (notConfigured()) {
     <p class="legal-banner" role="note">
-      The operator has not yet entered the legal contact details. This page is a template and must
-      be reviewed before the service is used with real student data.
+      {{ i18n.t('public.legal.bannerNotConfigured') }}
     </p>
   }
   @if (failed()) {
     <p class="legal-banner" role="status">
-      The operator details could not be loaded. Refresh the page to try again.
+      {{ i18n.t('public.legal.bannerFailed') }}
     </p>
   }
 
   <router-outlet />
 
-  <p class="legal-template-note">
-    This text is a template and should be reviewed by a qualified lawyer before the service is used
-    with real student data.
-  </p>
+  <p class="legal-template-note">{{ i18n.t('public.legal.templateNote') }}</p>
 </main>
 
 <footer class="legal-foot">

@@ -63,7 +63,7 @@ h1 {
 
 .b2 {
   inset: 30% -4% -2% 24%;
-  background: radial-gradient(circle at 50% 50%, #8fc4ae, transparent 68%);
+  background: radial-gradient(circle at 50% 50%, var(--focus), transparent 68%);
 }
 
 .b3 {
@@ -79,7 +79,7 @@ h1 {
   padding: 12%;
   background: var(--forest);
   border-radius: 24%;
-  box-shadow: 0 24px 60px #173c3533;
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--forest) 20%, transparent);
 }
 
 svg {

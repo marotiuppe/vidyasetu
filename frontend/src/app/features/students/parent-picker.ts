@@ -15,6 +15,7 @@ import {
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { ParentSummary, StudentsApi } from '../../core/api/students.api';
+import { I18n } from '../../core/i18n/i18n';
 
 /** Search the school's existing parents and pick one (siblings share one parent login). */
 @Component({
@@ -26,6 +27,7 @@ import { ParentSummary, StudentsApi } from '../../core/api/students.api';
 })
 export class ParentPicker {
   private readonly api = inject(StudentsApi);
+  protected readonly i18n = inject(I18n);
 
   /** Id of the parent already chosen for this guardian, shown as pressed. */
   readonly selectedId = input<number | null>(null);
@@ -66,11 +68,11 @@ export class ParentPicker {
   }
 
   protected childrenText(p: ParentSummary): string {
-    if (p.children.length === 0) return 'No children linked yet.';
+    if (p.children.length === 0) return this.i18n.t('students.form.parent.noChildren');
     const names = p.children.map((c) =>
       c.class_name ? `${c.full_name} (${c.class_name})` : c.full_name,
     );
-    return `Children already linked: ${names.join(', ')}`;
+    return this.i18n.t('students.form.parent.childrenLinked', { names: names.join(', ') });
   }
 
   private search(q: string): Observable<ParentSummary[]> {

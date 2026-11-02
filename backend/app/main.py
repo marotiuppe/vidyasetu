@@ -13,6 +13,7 @@ from starlette.types import Scope
 
 from app.core.config import get_settings
 from app.core.errors import ApiError, IdentityInUse
+from app.core.logging_setup import install_log_filters
 from app.core.middleware import (
     BodySizeLimitMiddleware,
     ErrorBoundaryMiddleware,
@@ -44,6 +45,7 @@ from app.modules.users.models import Role, User
 from app.modules.users.router import router as users_router
 
 settings = get_settings()
+install_log_filters()
 
 
 async def _seed_super_admin() -> None:

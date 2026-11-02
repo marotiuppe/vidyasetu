@@ -6,8 +6,9 @@ import { apiErrorMessage } from '../../core/api/api-error';
 import { NOTICE_CATEGORIES, Notice, NoticeCategory, NoticesApi } from '../../core/api/notices.api';
 import { NoticesService } from '../../core/api/notices.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
-import { CATEGORY_LABELS, relativeDate, roleLabel, shortDate } from './notice-labels';
+import { CATEGORY_KEYS, relativeDateText, roleText, shortDate } from './notice-labels';
 import { NoticeForm } from './notice-form';
 
 const PAGE_SIZE = 20;
@@ -25,13 +26,16 @@ export class Notices {
   private readonly api = inject(NoticesApi);
   private readonly shared = inject(NoticesService);
   private readonly auth = inject(AuthService);
+  protected readonly i18n = inject(I18n);
 
   protected readonly categories = NOTICE_CATEGORIES;
-  protected readonly categoryLabels = CATEGORY_LABELS;
-  protected readonly roleLabel = roleLabel;
   protected readonly shortDate = shortDate;
-  protected readonly relativeDate = relativeDate;
-  protected readonly canPost = this.auth.hasRole('school_owner', 'management', 'headmaster', 'teacher');
+  protected readonly canPost = this.auth.hasRole(
+    'school_owner',
+    'management',
+    'headmaster',
+    'teacher',
+  );
 
   protected readonly q = signal('');
   protected readonly category = signal<NoticeCategory | ''>('');
@@ -95,6 +99,18 @@ export class Notices {
         this.total.set(res.total);
         this.shared.unread.set(res.unread_count);
       });
+  }
+
+  protected categoryName(category: NoticeCategory): string {
+    return this.i18n.t(CATEGORY_KEYS[category]);
+  }
+
+  protected roleName(role: string): string {
+    return roleText(role, this.i18n.t);
+  }
+
+  protected when(value: string): string {
+    return relativeDateText(value, this.i18n.t);
   }
 
   protected isLong(n: Notice): boolean {
@@ -165,7 +181,7 @@ export class Notices {
         this.busy.set(false);
         this.shared.unread.set(0);
         this.items.update((list) => list.map((x) => ({ ...x, is_read: true })));
-        this.notice.set('All notices marked as read.');
+        this.notice.set(this.i18n.t('ops.notice.allMarked'));
         if (this.unreadOnly()) this.reloadTick.update((t) => t + 1);
       },
       error: (err: unknown) => {
@@ -199,12 +215,12 @@ export class Notices {
   }
 
   protected remove(n: Notice): void {
-    if (!window.confirm(`Delete the notice "${n.title}"? This cannot be undone.`)) return;
+    if (!window.confirm(this.i18n.t('ops.notice.deleteConfirm', { title: n.title }))) return;
     this.error.set(null);
     this.notice.set(null);
     this.api.remove(n.id).subscribe({
       next: () => {
-        this.notice.set('Notice deleted.');
+        this.notice.set(this.i18n.t('ops.notice.deleted'));
         this.reloadTick.update((t) => t + 1);
         this.shared.refresh();
       },

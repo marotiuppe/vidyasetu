@@ -41,33 +41,68 @@ const USER_ADMINS: Role[] = ['super_admin', ...MANAGERS];
 
 /** Sidebar navigation. When a module ships, remove its `soon` flag. */
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Overview', path: '/', icon: 'dashboard' },
-  { label: 'Student records', path: '/students', icon: 'users', feature: 'students' },
+  { label: 'Overview', labelKey: 'app.nav.overview', path: '/', icon: 'dashboard' },
+  {
+    label: 'Student records',
+    labelKey: 'app.nav.students',
+    path: '/students',
+    icon: 'users',
+    feature: 'students',
+  },
   {
     label: 'Attendance',
+    labelKey: 'app.nav.attendance',
     path: '/attendance',
     icon: 'calendar',
     roles: [...STAFF, 'parent', 'student'],
     feature: 'attendance',
   },
-  { label: 'Academic progress', path: '/progress', icon: 'chart', roles: STAFF, soon: true },
+  {
+    label: 'Academic progress',
+    labelKey: 'app.nav.progress',
+    path: '/progress',
+    icon: 'chart',
+    roles: STAFF,
+    soon: true,
+  },
   {
     label: 'Noticeboard',
+    labelKey: 'app.nav.notices',
     path: '/notices',
     icon: 'megaphone',
     roles: SCHOOL_USERS,
     unreadBadge: true,
     feature: 'notices',
   },
-  { label: 'Fees', path: '/fees', icon: 'wallet', roles: FEE_USERS, feature: 'fees' },
-  { label: 'Schools', path: '/schools', icon: 'building', roles: ['super_admin'] },
+  {
+    label: 'Fees',
+    labelKey: 'app.nav.fees',
+    path: '/fees',
+    icon: 'wallet',
+    roles: FEE_USERS,
+    feature: 'fees',
+  },
+  {
+    label: 'Schools',
+    labelKey: 'app.nav.schools',
+    path: '/schools',
+    icon: 'building',
+    roles: ['super_admin'],
+  },
   {
     label: 'Branches',
+    labelKey: 'app.nav.branches',
     path: '/branches',
     icon: 'building',
     roles: ['super_admin', 'school_owner'],
   },
-  { label: 'Users', path: '/users', icon: 'user', roles: USER_ADMINS },
+  {
+    label: 'Users',
+    labelKey: 'app.nav.users',
+    path: '/users',
+    icon: 'user',
+    roles: USER_ADMINS,
+  },
   {
     label: 'Audit log',
     labelKey: 'nav.audit',
@@ -82,8 +117,20 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'inbox',
     roles: PRIVACY_ADMIN_ROLES,
   },
-  { label: 'School profile', path: '/school', icon: 'building', roles: ['school_owner'] },
-  { label: 'School setup', path: '/setup', icon: 'settings', roles: MANAGERS },
+  {
+    label: 'School profile',
+    labelKey: 'app.nav.schoolProfile',
+    path: '/school',
+    icon: 'building',
+    roles: ['school_owner'],
+  },
+  {
+    label: 'School setup',
+    labelKey: 'app.nav.setup',
+    path: '/setup',
+    icon: 'settings',
+    roles: MANAGERS,
+  },
   { label: 'Settings', labelKey: 'nav.settings', path: '/settings', icon: 'gear' },
 ];
 
@@ -97,4 +144,17 @@ export const ROLE_LABELS: Record<Role, string> = {
   clerk: 'Clerk',
   parent: 'Parent',
   student: 'Student',
+};
+
+/** Translation key for each role's label (translate with `i18n.t`). `ROLE_LABELS` stays as the English fallback. */
+export const ROLE_LABEL_KEYS: Record<Role, string> = {
+  super_admin: 'app.role.super_admin',
+  school_owner: 'app.role.school_owner',
+  management: 'app.role.management',
+  headmaster: 'app.role.headmaster',
+  teacher: 'app.role.teacher',
+  accountant: 'app.role.accountant',
+  clerk: 'app.role.clerk',
+  parent: 'app.role.parent',
+  student: 'app.role.student',
 };

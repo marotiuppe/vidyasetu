@@ -36,7 +36,7 @@
   justify-content: space-between;
   gap: 20px;
   padding: 32px 28px;
-  color: #fff;
+  color: var(--primary-ink);
   background: var(--forest);
   border-radius: var(--radius-lg);
 }
@@ -58,9 +58,9 @@ h2 {
 }
 
 .go:hover {
-  background: #e8f3c4;
+  background: var(--lime);
 }
 
 .go:focus-visible {
-  outline-color: #fff;
+  outline-color: var(--primary-ink);
 }

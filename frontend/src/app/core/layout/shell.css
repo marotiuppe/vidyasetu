@@ -13,7 +13,7 @@
   height: 100dvh;
   padding: 30px 17px 18px;
   overflow-y: auto;
-  color: #d9e6dd;
+  color: var(--sidebar-text);
   background: var(--sidebar-bg);
 }
 
@@ -22,7 +22,7 @@
   align-items: center;
   gap: 12px;
   padding: 0 9px 30px;
-  color: #fff;
+  color: var(--primary-ink);
 }
 
 .brand-mark {
@@ -33,13 +33,13 @@
   flex: none;
   color: var(--lime);
   background: var(--sidebar-bg-soft);
-  border: 1px solid #78988688;
+  border: 1px solid color-mix(in srgb, var(--sidebar-label) 53%, transparent);
   border-radius: 13px 13px 20px 20px;
   overflow: hidden;
 }
 
 .brand-mark.has-logo {
-  background: #fff;
+  background: var(--surface);
 }
 
 .school-logo {
@@ -102,8 +102,8 @@
 }
 
 .nav-item:hover:not(.disabled):not(.active) {
-  color: #fff;
-  background: #ffffff0b;
+  color: var(--primary-ink);
+  background: color-mix(in srgb, var(--primary-ink) 4%, transparent);
 }
 
 .nav-item.active {
@@ -126,7 +126,7 @@
   font-size: 0.62rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: #ffffff16;
+  background: color-mix(in srgb, var(--primary-ink) 9%, transparent);
   border-radius: 5px;
 }
 
@@ -138,7 +138,7 @@
   font-weight: 700;
   line-height: 1.4;
   text-align: center;
-  color: #fff;
+  color: var(--primary-ink);
   background: var(--danger);
   border-radius: 10px;
 }
@@ -176,13 +176,13 @@
   font-size: 0.65rem;
   line-height: 1.8;
   color: var(--sidebar-muted);
-  background: #ffffff04;
-  border: 1px solid #6f998754;
+  background: color-mix(in srgb, var(--primary-ink) 2%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sidebar-label) 33%, transparent);
   border-radius: 12px;
 }
 
 .tagline sms-icon {
-  color: #e6efdf;
+  color: var(--sidebar-text);
 }
 
 .tagline strong {
@@ -190,7 +190,7 @@
   margin: 8px 0 4px;
   font-size: 0.72rem;
   line-height: 1.5;
-  color: #e6efdf;
+  color: var(--sidebar-text);
 }
 
 .private {
@@ -201,14 +201,14 @@
   padding-top: 16px;
   font-size: 0.65rem;
   color: var(--sidebar-muted);
-  border-top: 1px solid #ffffff12;
+  border-top: 1px solid color-mix(in srgb, var(--primary-ink) 7%, transparent);
 }
 
 .dot {
   width: 6px;
   height: 6px;
   margin-left: auto;
-  background: #b9d69c;
+  background: var(--lime);
   border-radius: 50%;
 }
 
@@ -228,7 +228,7 @@
   gap: 22px;
   height: var(--topbar-height);
   padding: 0 var(--page-pad-x);
-  background: #fff;
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 
@@ -247,7 +247,7 @@
 
 .crumbs strong {
   font-weight: 500;
-  color: #41594c;
+  color: var(--text);
 }
 
 .icon-btn {
@@ -255,7 +255,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  color: #687c6d;
+  color: var(--text-soft);
   background: transparent;
   border: 0;
   border-radius: 8px;
@@ -263,7 +263,7 @@
 }
 
 .icon-btn:hover:not(:disabled) {
-  background: #f1f4ee;
+  background: var(--surface-tint);
 }
 
 .icon-btn:disabled {
@@ -278,7 +278,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #879087;
+  color: var(--faint);
 }
 
 .search input {
@@ -322,8 +322,8 @@
   flex: none;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #536b43;
-  background: #e8eee2;
+  color: var(--olive);
+  background: var(--surface-tint);
   border-radius: 50%;
 }
 
@@ -340,7 +340,7 @@
 .user-role {
   margin-top: 2px;
   font-size: 0.62rem;
-  color: #929b92;
+  color: var(--faint);
 }
 
 .menu {
@@ -350,10 +350,10 @@
   z-index: 60;
   min-width: 190px;
   padding: 8px;
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  box-shadow: 0 15px 60px #183c3524;
+  box-shadow: 0 15px 60px color-mix(in srgb, var(--forest) 14%, transparent);
 }
 
 .menu-id {
@@ -384,7 +384,7 @@
 
 .menu button:hover,
 .menu a:hover {
-  background: #f1f6ec;
+  background: var(--surface-tint);
 }
 
 .page {
@@ -396,6 +396,8 @@
 
 .backdrop {
   display: none;
+  padding: 0;
+  border: 0;
 }
 
 /* ---------- Tablet / phone: sidebar becomes a drawer ---------- */
@@ -420,7 +422,7 @@
 
   .menu-open .sidebar {
     transform: none;
-    box-shadow: 10px 0 50px #173c3544;
+    box-shadow: 10px 0 50px color-mix(in srgb, var(--forest) 27%, transparent);
   }
 
   .menu-open .backdrop {
@@ -428,7 +430,7 @@
     inset: 0;
     z-index: 45;
     display: block;
-    background: #173c3555;
+    background: color-mix(in srgb, var(--forest) 33%, transparent);
   }
 
   .menu-btn {

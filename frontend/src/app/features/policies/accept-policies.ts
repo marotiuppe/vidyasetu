@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { concatMap, from } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { PolicyStatus, PrivacyApi } from '../../core/api/privacy.api';
@@ -51,13 +51,16 @@ export class AcceptPolicies {
     if (!this.agreed() || this.saving()) return;
     this.saving.set(true);
     this.error.set(null);
-    forkJoin(this.pending().map((p) => this.api.acceptPolicy(p.policy, p.version))).subscribe({
-      next: () => this.finish(false),
-      error: (err: unknown) => {
-        this.saving.set(false);
-        this.error.set(apiErrorMessage(err));
-      },
-    });
+    // One request at a time: the second acceptance starts only after the first one succeeded.
+    from(this.pending())
+      .pipe(concatMap((p) => this.api.acceptPolicy(p.policy, p.version)))
+      .subscribe({
+        complete: () => this.finish(false),
+        error: (err: unknown) => {
+          this.saving.set(false);
+          this.error.set(apiErrorMessage(err));
+        },
+      });
   }
 
   protected signOut(): void {

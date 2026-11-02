@@ -9,6 +9,7 @@ import {
   roleGuard,
 } from './core/auth/auth.guard';
 import { PRIVACY_ADMIN_ROLES, STUDENT_WRITER_ROLES } from './core/auth/permissions';
+import { moduleGuard } from './core/api/module.guard';
 
 const LEGAL_CHILDREN: Routes = [
   {
@@ -70,12 +71,6 @@ export const routes: Routes = [
       import('./features/policies/accept-policies').then((m) => m.AcceptPolicies),
   },
   {
-    // Public legal pages: outside the shell and without authGuard, so visitors and signed-in users can read them.
-    path: '',
-    loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
-    children: LEGAL_CHILDREN,
-  },
-  {
     // The same pages for one school, reached by its school code (public, no sign-in needed).
     path: 's/:code',
     loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
@@ -100,29 +95,31 @@ export const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        data: { title: 'Overview' },
+        data: { title: 'Overview', titleKey: 'app.nav.overview' },
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
       },
       {
         path: 'students',
-        data: { title: 'Student records' },
+        data: { title: 'Student records', titleKey: 'app.nav.students' },
+        canActivate: [moduleGuard('students')],
         loadComponent: () => import('./features/students/student-list').then((m) => m.StudentList),
       },
       {
         path: 'students/new',
-        data: { title: 'New admission' },
-        canActivate: [roleGuard(...STUDENT_WRITER_ROLES)],
+        data: { title: 'New admission', titleKey: 'app.crumb.newAdmission' },
+        canActivate: [moduleGuard('students'), roleGuard(...STUDENT_WRITER_ROLES)],
         loadComponent: () => import('./features/students/student-form').then((m) => m.StudentForm),
       },
       {
         path: 'students/:id',
-        data: { title: 'Student profile' },
+        data: { title: 'Student profile', titleKey: 'app.crumb.studentProfile' },
+        canActivate: [moduleGuard('students')],
         loadComponent: () =>
           import('./features/students/student-profile').then((m) => m.StudentProfile),
       },
       {
         path: 'attendance',
-        data: { title: 'Attendance' },
+        data: { title: 'Attendance', titleKey: 'app.nav.attendance' },
         canActivate: [
           roleGuard(
             'school_owner',
@@ -134,12 +131,13 @@ export const routes: Routes = [
             'parent',
             'student',
           ),
+          moduleGuard('attendance'),
         ],
         loadComponent: () => import('./features/attendance/attendance').then((m) => m.Attendance),
       },
       {
         path: 'notices',
-        data: { title: 'Noticeboard' },
+        data: { title: 'Noticeboard', titleKey: 'app.nav.notices' },
         canActivate: [
           roleGuard(
             'school_owner',
@@ -151,12 +149,13 @@ export const routes: Routes = [
             'parent',
             'student',
           ),
+          moduleGuard('notices'),
         ],
         loadComponent: () => import('./features/notices/notices').then((m) => m.Notices),
       },
       {
         path: 'fees',
-        data: { title: 'Fees' },
+        data: { title: 'Fees', titleKey: 'app.nav.fees' },
         canActivate: [
           roleGuard(
             'school_owner',
@@ -167,74 +166,81 @@ export const routes: Routes = [
             'parent',
             'student',
           ),
+          moduleGuard('fees'),
         ],
         loadComponent: () => import('./features/fees/fees').then((m) => m.Fees),
       },
       {
         path: 'setup',
-        data: { title: 'School setup' },
+        data: { title: 'School setup', titleKey: 'app.nav.setup' },
         canActivate: [roleGuard('school_owner', 'management', 'headmaster')],
         loadComponent: () => import('./features/setup/setup').then((m) => m.Setup),
       },
       {
         path: 'school',
-        data: { title: 'School profile' },
+        data: { title: 'School profile', titleKey: 'app.nav.schoolProfile' },
         canActivate: [roleGuard('school_owner')],
         loadComponent: () =>
           import('./features/school-profile/school-profile').then((m) => m.SchoolProfile),
       },
       {
         path: 'schools',
-        data: { title: 'Schools' },
+        data: { title: 'Schools', titleKey: 'app.nav.schools' },
         canActivate: [roleGuard('super_admin')],
         loadComponent: () => import('./features/schools/schools').then((m) => m.Schools),
       },
       {
         path: 'branches',
-        data: { title: 'Branches' },
+        data: { title: 'Branches', titleKey: 'app.nav.branches' },
         canActivate: [roleGuard('super_admin', 'school_owner')],
         loadComponent: () => import('./features/branches/branches').then((m) => m.Branches),
       },
       {
         path: 'users',
-        data: { title: 'Users' },
+        data: { title: 'Users', titleKey: 'app.nav.users' },
         canActivate: [roleGuard('super_admin', 'school_owner', 'management', 'headmaster')],
         loadComponent: () => import('./features/users/users').then((m) => m.Users),
       },
       {
         path: 'settings',
-        data: { title: 'Settings' },
+        data: { title: 'Settings', titleKey: 'nav.settings' },
         loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
       },
       {
         path: 'settings/privacy',
-        data: { title: 'Privacy and data' },
+        data: { title: 'Privacy and data', titleKey: 'app.crumb.privacyData' },
         loadComponent: () => import('./features/privacy/privacy').then((m) => m.Privacy),
       },
       {
         path: 'account/mfa',
-        data: { title: 'Two-factor sign-in' },
+        data: { title: 'Two-factor sign-in', titleKey: 'app.crumb.twoFactor' },
         loadComponent: () => import('./features/mfa/mfa-setup').then((m) => m.MfaSetup),
       },
       {
         path: 'audit',
-        data: { title: 'Audit log' },
+        data: { title: 'Audit log', titleKey: 'nav.audit' },
         canActivate: [roleGuard(...PRIVACY_ADMIN_ROLES)],
         loadComponent: () => import('./features/audit/audit').then((m) => m.Audit),
       },
       {
         path: 'data-requests',
-        data: { title: 'Data requests' },
+        data: { title: 'Data requests', titleKey: 'nav.dataRequests' },
         canActivate: [roleGuard(...PRIVACY_ADMIN_ROLES)],
         loadComponent: () =>
           import('./features/data-requests/data-requests').then((m) => m.DataRequests),
       },
       {
         path: 'account',
-        data: { title: 'Account' },
+        data: { title: 'Account', titleKey: 'app.crumb.account' },
         loadComponent: () => import('./features/account/account').then((m) => m.Account),
       },
     ],
+  },
+  {
+    // Public legal pages: outside the shell and without authGuard, so visitors and signed-in users can read them.
+    path: '',
+    loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
+    children: LEGAL_CHILDREN,
   },
   { path: '**', redirectTo: '' },
 ];

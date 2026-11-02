@@ -1,19 +1,25 @@
 <section class="card" aria-labelledby="heads-title">
-  <h2 class="card-title" id="heads-title">Fee heads</h2>
+  <h2 class="card-title" id="heads-title">{{ i18n.t('fees.setup.heads.title') }}</h2>
 
-  <form class="form-grid" (submit)="$event.preventDefault(); add()" aria-label="Add fee head">
+  <form
+    class="form-grid"
+    (submit)="$event.preventDefault(); add()"
+    [attr.aria-label]="i18n.t('fees.setup.heads.addAria')"
+  >
     <label class="field">
-      New fee head
+      {{ i18n.t('fees.setup.heads.newLabel') }}
       <input
         class="input"
         type="text"
         maxlength="80"
-        placeholder="For example Tuition or Transport"
+        [attr.placeholder]="i18n.t('fees.setup.heads.placeholder')"
         [formControl]="addControl"
       />
     </label>
     <div class="form-actions">
-      <button type="submit" class="btn btn-primary" [disabled]="busy()">Add fee head</button>
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">
+        {{ i18n.t('fees.setup.heads.add') }}
+      </button>
     </div>
   </form>
 
@@ -25,50 +31,75 @@
   }
 
   @if (loading()) {
-    <p class="empty" role="status">Loading fee heads…</p>
+    <p class="empty" role="status">{{ i18n.t('fees.setup.heads.loading') }}</p>
   } @else {
     <ul class="rows">
       @for (h of heads(); track h.id) {
         <li class="row">
           @if (renamingId() === h.id) {
-            <form class="row-main" (submit)="$event.preventDefault(); rename(h)" [attr.aria-label]="'Rename ' + h.name">
+            <form
+              class="row-main"
+              (submit)="$event.preventDefault(); rename(h)"
+              [attr.aria-label]="i18n.t('fees.setup.common.renameAria', { name: h.name })"
+            >
               <label class="field">
-                Name
+                {{ i18n.t('fees.setup.heads.name') }}
                 <input class="input" type="text" maxlength="80" [formControl]="renameControl" />
               </label>
             </form>
             <span class="row-actions">
-              <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="rename(h)">Save</button>
-              <button type="button" class="btn btn-ghost btn-sm" (click)="renamingId.set(0)">Cancel</button>
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                [disabled]="busy()"
+                (click)="rename(h)"
+              >
+                {{ i18n.t('fees.setup.common.save') }}
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="renamingId.set(0)">
+                {{ i18n.t('fees.setup.common.cancel') }}
+              </button>
             </span>
           } @else {
             <span class="row-main">{{ h.name }}</span>
             <span class="badge" [class]="h.is_active ? 'badge-success' : 'badge-muted'">
-              {{ h.is_active ? 'Active' : 'Inactive' }}
+              {{
+                h.is_active
+                  ? i18n.t('fees.setup.common.active')
+                  : i18n.t('fees.setup.common.inactive')
+              }}
             </span>
             <span class="row-actions">
               <button
                 type="button"
                 class="btn btn-ghost btn-sm"
-                [attr.aria-label]="'Rename ' + h.name"
+                [attr.aria-label]="i18n.t('fees.setup.common.renameAria', { name: h.name })"
                 (click)="startRename(h)"
               >
-                Rename
+                {{ i18n.t('fees.setup.common.rename') }}
               </button>
               <button
                 type="button"
                 class="btn btn-ghost btn-sm"
                 [disabled]="busy()"
-                [attr.aria-label]="(h.is_active ? 'Deactivate ' : 'Activate ') + h.name"
+                [attr.aria-label]="
+                  h.is_active
+                    ? i18n.t('fees.setup.heads.deactivateAria', { name: h.name })
+                    : i18n.t('fees.setup.heads.activateAria', { name: h.name })
+                "
                 (click)="toggle(h)"
               >
-                {{ h.is_active ? 'Deactivate' : 'Activate' }}
+                {{
+                  h.is_active
+                    ? i18n.t('fees.setup.common.deactivate')
+                    : i18n.t('fees.setup.common.activate')
+                }}
               </button>
             </span>
           }
         </li>
       } @empty {
-        <li class="empty">No fee heads yet. Add one above.</li>
+        <li class="empty">{{ i18n.t('fees.setup.heads.empty') }}</li>
       }
     </ul>
   }

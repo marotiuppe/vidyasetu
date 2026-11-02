@@ -5,6 +5,7 @@ import { map } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { FEE_MANAGER_ROLES, FEE_PAY_ROLES, FEE_VIEW_ROLES } from '../../core/auth/permissions';
+import { I18n } from '../../core/i18n/i18n';
 import { FeeCollection } from './fee-collection';
 import { FeeDues } from './fee-dues';
 import { FeeInvoices } from './fee-invoices';
@@ -15,7 +16,7 @@ type TabId = 'invoices' | 'dues' | 'collection' | 'setup' | 'my';
 
 interface Tab {
   id: TabId;
-  label: string;
+  labelKey: string;
 }
 
 @Component({
@@ -28,6 +29,7 @@ export class Fees {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18n);
 
   protected readonly selfService = this.auth.hasRole('parent', 'student');
   protected readonly canManage = this.auth.hasRole(...FEE_MANAGER_ROLES);
@@ -44,14 +46,15 @@ export class Fees {
   );
 
   private buildTabs(): Tab[] {
-    if (this.selfService) return [{ id: 'my', label: 'My fees' }];
+    if (this.selfService) return [{ id: 'my', labelKey: 'fees.setup.tab.myFees' }];
     if (!this.auth.hasRole(...FEE_VIEW_ROLES)) return [];
     const tabs: Tab[] = [
-      { id: 'invoices', label: 'Invoices' },
-      { id: 'dues', label: 'Dues' },
+      { id: 'invoices', labelKey: 'fees.setup.tab.invoices' },
+      { id: 'dues', labelKey: 'fees.setup.tab.dues' },
     ];
-    if (this.canManage || this.auth.hasRole('headmaster')) tabs.push({ id: 'collection', label: 'Collection' });
-    if (this.canManage) tabs.push({ id: 'setup', label: 'Setup' });
+    if (this.canManage || this.auth.hasRole('headmaster'))
+      tabs.push({ id: 'collection', labelKey: 'fees.setup.tab.collection' });
+    if (this.canManage) tabs.push({ id: 'setup', labelKey: 'fees.setup.tab.setup' });
     return tabs;
   }
 

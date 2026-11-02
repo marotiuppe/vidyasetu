@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 
 import { StudentCredential } from '../../core/api/students.api';
+import { I18n } from '../../core/i18n/i18n';
 import { copyText } from '../../core/ui/clipboard';
 
 /**
@@ -16,27 +17,33 @@ import { copyText } from '../../core/ui/clipboard';
 export class LoginDetails {
   readonly credentials = input.required<StudentCredential[]>();
   readonly done = output<void>();
+  protected readonly i18n = inject(I18n);
 
   /** Polite status line for screen readers after a copy. */
   protected readonly status = signal('');
 
   protected roleLabel(role: StudentCredential['role']): string {
-    return role === 'student' ? 'Student' : 'Parent';
+    return this.i18n.t(
+      role === 'student' ? 'students.list.login.roleStudent' : 'students.list.login.roleParent',
+    );
   }
 
   protected async copy(c: StudentCredential): Promise<void> {
     const lines = [
-      `${this.roleLabel(c.role)}: ${c.full_name}`,
-      `Username: ${c.username}`,
+      this.i18n.t('students.list.login.copyRole', {
+        role: this.roleLabel(c.role),
+        name: c.full_name,
+      }),
+      this.i18n.t('students.list.login.copyUsername', { username: c.username }),
       c.linked_existing
-        ? 'Password: uses the existing parent login'
-        : `Temporary password: ${c.temporary_password ?? ''}`,
+        ? this.i18n.t('students.list.login.copyExisting')
+        : this.i18n.t('students.list.login.copyTemp', { password: c.temporary_password ?? '' }),
     ];
     const ok = await copyText(lines.join('\n'));
     this.status.set(
       ok
-        ? `Copied the details for ${c.full_name}.`
-        : 'Copying is not available here. Select the text and copy it by hand.',
+        ? this.i18n.t('students.list.login.copied', { name: c.full_name })
+        : this.i18n.t('students.list.login.copyUnavailable'),
     );
   }
 

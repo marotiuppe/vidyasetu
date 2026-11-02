@@ -58,7 +58,7 @@ async def list_users(
 
 
 async def get_user(db: AsyncSession, actor: User, user_id: int) -> User:
-    user = await db.scalar(scope_users(select(User), actor).where(User.id == user_id))
+    user: User | None = await db.scalar(scope_users(select(User), actor).where(User.id == user_id))
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
@@ -160,8 +160,9 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
         phone=data.phone,
         password_hash=hash_password(data.password),
         role=data.role,
-        # The admin knows this password, so the user must replace it at first sign-in.
-        must_change_password=True,
+        # The admin knows this password, so the user must replace it at first sign-in (school
+        # setting; on by default).
+        must_change_password=await settings_service.force_password_change(db, school_id),
     )
     db.add(user)
     try:
@@ -241,7 +242,9 @@ async def reset_password(db: AsyncSession, actor: User, user_id: int, new_passwo
         min_length=await settings_service.password_min_length(db, target.school_id),
     )
     target.password_hash = hash_password(new_password)
-    target.must_change_password = True
+    target.must_change_password = await settings_service.force_password_change(
+        db, target.school_id
+    )
     target.failed_login_count = 0
     target.locked_until = None
     await revoke_user_sessions(db, target)

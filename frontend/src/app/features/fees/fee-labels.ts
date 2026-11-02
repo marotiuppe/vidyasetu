@@ -16,12 +16,43 @@ const STATUSES: Record<InvoiceStatus, string> = {
   cancelled: 'Cancelled',
 };
 
+/** Translation lookup, as `I18n.t` (pass `i18n.t` so the label follows the language). */
+export type Translate = (key: string) => string;
+
+const METHOD_KEYS: Record<PaymentMethod, string> = {
+  cash: 'fees.setup.method.cash',
+  upi: 'fees.setup.method.upi',
+  card: 'fees.setup.method.card',
+  bank: 'fees.setup.method.bank',
+  cheque: 'fees.setup.method.cheque',
+  online: 'fees.setup.method.online',
+};
+
+const STATUS_KEYS: Record<InvoiceStatus, string> = {
+  unpaid: 'fees.setup.status.unpaid',
+  partial: 'fees.setup.status.partial',
+  paid: 'fees.setup.status.paid',
+  cancelled: 'fees.setup.status.cancelled',
+};
+
 export function methodLabel(method: PaymentMethod): string {
   return METHODS[method] ?? method;
 }
 
 export function invoiceStatusLabel(status: InvoiceStatus): string {
   return STATUSES[status] ?? status;
+}
+
+/** Translated payment method label. */
+export function methodText(method: PaymentMethod, t: Translate): string {
+  const key = METHOD_KEYS[method];
+  return key ? t(key) : method;
+}
+
+/** Translated invoice status label. */
+export function invoiceStatusText(status: InvoiceStatus, t: Translate): string {
+  const key = STATUS_KEYS[status];
+  return key ? t(key) : status;
 }
 
 /** Badge class for an invoice status; the text label always carries the meaning. */
@@ -55,6 +86,16 @@ export function monthStartIso(): string {
 /** "Class 5 - A" style label. */
 export function classSection(className: string | null, sectionName: string | null): string {
   if (!className) return 'Not enrolled';
+  return sectionName ? `${className} - ${sectionName}` : className;
+}
+
+/** Translated "Class 5 - A" style label; the class and section names are server data. */
+export function classSectionText(
+  className: string | null,
+  sectionName: string | null,
+  t: Translate,
+): string {
+  if (!className) return t('fees.setup.picker.notEnrolled');
   return sectionName ? `${className} - ${sectionName}` : className;
 }
 

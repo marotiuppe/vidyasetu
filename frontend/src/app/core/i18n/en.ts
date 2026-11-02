@@ -1,8 +1,24 @@
 import { EN_PRIVACY } from './en.privacy';
+import { EN_APP } from './en.app';
+import { EN_ADMIN } from './en.admin';
+import { EN_STUDENTS_LIST } from './en.students-list';
+import { EN_STUDENTS_FORM } from './en.students-form';
+import { EN_OPS } from './en.ops';
+import { EN_FEES_DAILY } from './en.fees-daily';
+import { EN_FEES_SETUP } from './en.fees-setup';
+import { EN_PUBLIC } from './en.public';
 
 /** English UI strings for the Settings area. English is the fallback for every language. */
 export const EN: Record<string, string> = {
   ...EN_PRIVACY,
+  ...EN_APP,
+  ...EN_ADMIN,
+  ...EN_STUDENTS_LIST,
+  ...EN_STUDENTS_FORM,
+  ...EN_OPS,
+  ...EN_FEES_DAILY,
+  ...EN_FEES_SETUP,
+  ...EN_PUBLIC,
   'nav.settings': 'Settings',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

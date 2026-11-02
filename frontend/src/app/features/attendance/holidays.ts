@@ -7,6 +7,7 @@ import { AcademicsApi, Branch } from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { AttendanceApi, Holiday } from '../../core/api/attendance.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatDate, isoDate, parseIso } from './attendance-labels';
 
@@ -27,10 +28,12 @@ export class Holidays {
   protected readonly isOwner = this.auth.hasRole('school_owner');
   protected readonly canWrite = this.auth.hasRole('school_owner', 'management', 'headmaster');
   protected readonly formatDate = formatDate;
+  protected readonly i18n = inject(I18n);
 
   protected readonly branches = signal<Branch[]>([]);
   protected readonly holidays = signal<Holiday[]>([]);
-  protected readonly range = signal<{ from: string; to: string; label: string } | null>(null);
+  /** `year` is the academic year name, or null for the next 12 months. */
+  protected readonly range = signal<{ from: string; to: string; year: string | null } | null>(null);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -50,11 +53,17 @@ export class Holidays {
       const key = h.date.slice(0, 7);
       let group = out.find((g) => g.key === key);
       if (!group) {
-        const label = parseIso(h.date).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+        const label = parseIso(h.date).toLocaleDateString('en-IN', {
+          month: 'long',
+          year: 'numeric',
+        });
         group = { key, label, items: [] };
         out.push(group);
       }
-      const scopeLabel = h.branch_id === null ? 'Whole school' : (names.get(h.branch_id) ?? 'Branch');
+      const scopeLabel =
+        h.branch_id === null
+          ? this.i18n.t('ops.common.wholeSchool')
+          : (names.get(h.branch_id) ?? this.i18n.t('ops.common.branch'));
       group.items.push({ ...h, scopeLabel });
     }
     return out;
@@ -62,7 +71,9 @@ export class Holidays {
 
   constructor() {
     if (this.isOwner) {
-      this.academics.branches().subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
+      this.academics
+        .branches()
+        .subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
     }
     this.academics
       .years()
@@ -74,8 +85,12 @@ export class Holidays {
           const end = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
           this.range.set(
             current
-              ? { from: current.start_date, to: current.end_date, label: `Academic year ${current.name}` }
-              : { from: isoDate(now), to: isoDate(end), label: 'Next 12 months' },
+              ? {
+                  from: current.start_date,
+                  to: current.end_date,
+                  year: current.name,
+                }
+              : { from: isoDate(now), to: isoDate(end), year: null },
           );
         }),
         switchMap(() => this.loadStream()),
@@ -104,8 +119,18 @@ export class Holidays {
     this.loadStream().subscribe();
   }
 
+  /** Heading for the period shown above the list. */
+  protected rangeLabel(year: string | null): string {
+    return year
+      ? this.i18n.t('ops.hol.academicYear', { name: year })
+      : this.i18n.t('ops.hol.next12');
+  }
+
   protected canDelete(h: Holiday): boolean {
-    return this.isOwner || (this.canWrite && h.branch_id !== null && h.branch_id === this.user?.branch_id);
+    return (
+      this.isOwner ||
+      (this.canWrite && h.branch_id !== null && h.branch_id === this.user?.branch_id)
+    );
   }
 
   protected add(): void {
@@ -119,7 +144,7 @@ export class Holidays {
     this.api.addHoliday({ date: v.date, name: v.name.trim(), branch_id: branchId }).subscribe({
       next: () => {
         this.busy.set(false);
-        this.notice.set('Holiday added.');
+        this.notice.set(this.i18n.t('ops.hol.added'));
         this.form.reset({ date: '', name: '', scope: v.scope });
         this.reload();
       },
@@ -131,12 +156,13 @@ export class Holidays {
   }
 
   protected remove(h: Holiday): void {
-    if (!window.confirm(`Delete the holiday "${h.name}" on ${formatDate(h.date)}?`)) return;
+    const prompt = this.i18n.t('ops.hol.deleteConfirm', { name: h.name, date: formatDate(h.date) });
+    if (!window.confirm(prompt)) return;
     this.error.set(null);
     this.notice.set(null);
     this.api.deleteHoliday(h.id).subscribe({
       next: () => {
-        this.notice.set('Holiday deleted.');
+        this.notice.set(this.i18n.t('ops.hol.deleted'));
         this.reload();
       },
       error: (err: unknown) => this.error.set(apiErrorMessage(err)),

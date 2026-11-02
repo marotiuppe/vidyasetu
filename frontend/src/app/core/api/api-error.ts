@@ -1,9 +1,28 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbstractControl } from '@angular/forms';
 
-/** Turn a backend error ({ detail: string | [{ msg }] }) into a message for the user. */
+type Translator = (key: string) => string;
+
+let translate: Translator | null = null;
+
+/** Registered by the I18n service so error codes are shown in the active language. */
+export function setErrorTranslator(fn: Translator): void {
+  translate = fn;
+}
+
+/** Backend error codes that have a clear, translated message (keys live in core/i18n). */
+const CODE_KEYS: Record<string, string> = {
+  portal_hidden: 'error.portal_hidden',
+  attendance_locked: 'error.attendance_locked',
+  student_logins_disabled: 'error.student_logins_disabled',
+};
+
+/** Turn a backend error ({ detail: string | [{ msg }], code? }) into a message for the user. */
 export function apiErrorMessage(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
+    const code: unknown = err.error?.code;
+    const key = typeof code === 'string' ? CODE_KEYS[code] : undefined;
+    if (key !== undefined && translate !== null) return translate(key);
     const detail: unknown = err.error?.detail;
     if (typeof detail === 'string') return detail;
     if (Array.isArray(detail)) {

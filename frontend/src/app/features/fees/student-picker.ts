@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { Student, StudentsApi } from '../../core/api/students.api';
-import { classSection, value } from './fee-labels';
+import { I18n } from '../../core/i18n/i18n';
+import { classSectionText, value } from './fee-labels';
 
 /** Search active students by name or admission number and pick one. */
 @Component({
@@ -14,12 +23,18 @@ import { classSection, value } from './fee-labels';
 })
 export class StudentPicker {
   private readonly api = inject(StudentsApi);
+  protected readonly i18n = inject(I18n);
 
   readonly excludeIds = input<number[]>([]);
-  readonly actionLabel = input('Add');
+  /** Button text for a result row; defaults to "Add" when not given. */
+  readonly actionLabel = input<string | null>(null);
   readonly picked = output<Student>();
 
-  protected readonly classSection = classSection;
+  protected readonly buttonLabel = computed(
+    () => this.actionLabel() ?? this.i18n.t('fees.setup.picker.add'),
+  );
+  protected readonly classSection = (className: string | null, sectionName: string | null) =>
+    classSectionText(className, sectionName, this.i18n.t);
   protected readonly query = signal('');
   protected readonly results = signal<Student[]>([]);
   protected readonly loading = signal(false);

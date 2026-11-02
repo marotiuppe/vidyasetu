@@ -22,11 +22,11 @@ import {
   isCreateNewChange,
 } from '../../core/create/create-new';
 import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
-import { MARK_CLASS, STUDENT_MARKS, isoDate, monthStartIso } from './attendance-labels';
+import { MARK_CLASS, MARK_KEY, STUDENT_MARKS, isoDate, monthStartIso } from './attendance-labels';
 
 const MAX_ENTRIES = 200;
-const DISCARD = 'You have unsaved attendance changes. Discard them?';
 
 interface Mark {
   status: StudentMark | null;
@@ -50,6 +50,7 @@ export class AttendanceMark {
   protected readonly createNew = CREATE_NEW;
   protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
+  protected readonly i18n = inject(I18n);
 
   /** Optional preselection (from the daily summary link). Read once on load. */
   readonly initialSection = input(0);
@@ -57,6 +58,7 @@ export class AttendanceMark {
 
   protected readonly marks = STUDENT_MARKS;
   protected readonly markClass = MARK_CLASS;
+  protected readonly markKey = MARK_KEY;
   protected readonly today = isoDate(new Date());
   protected readonly canPickBranch = this.auth.user()?.branch_id == null;
 
@@ -217,7 +219,7 @@ export class AttendanceMark {
   }
 
   private confirmLeave(): boolean {
-    return !this.dirty() || window.confirm(DISCARD);
+    return !this.dirty() || window.confirm(this.i18n.t('ops.att.discard'));
   }
 
   /** Open a create screen for a missing branch, class or section; this page comes back with its state kept. */
@@ -338,7 +340,7 @@ export class AttendanceMark {
       .subscribe({
         next: (res) => {
           this.applySheet(res);
-          this.notice.set('Attendance saved.');
+          this.notice.set(this.i18n.t('ops.mark.saved'));
           this.saving.set(false);
         },
         error: (err: unknown) => {

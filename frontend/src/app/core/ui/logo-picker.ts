@@ -1,5 +1,14 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
+import { I18n } from '../i18n/i18n';
 import { Icon } from './icon';
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
@@ -17,6 +26,8 @@ const MAX_BYTES = 1024 * 1024;
   styleUrl: './logo-picker.css',
 })
 export class LogoPicker {
+  protected readonly i18n = inject(I18n);
+
   /** The logo already saved on the server, if any. */
   readonly currentUrl = input<string | null>(null);
   readonly schoolName = input('');
@@ -72,11 +83,11 @@ export class LogoPicker {
 
   private choose(file: File): void {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      this.error.set('Use a PNG, JPEG or WebP image.');
+      this.error.set(this.i18n.t('admin.logo.typeError'));
       return;
     }
     if (file.size > MAX_BYTES) {
-      this.error.set('The image is larger than 1 MB. Choose a smaller file.');
+      this.error.set(this.i18n.t('admin.logo.sizeError'));
       return;
     }
     this.revoke();

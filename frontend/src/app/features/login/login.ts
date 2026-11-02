@@ -17,12 +17,13 @@ import { I18n } from '../../core/i18n/i18n';
 import { focusById } from '../../core/ui/download';
 import { LegalLinks } from '../../core/legal/legal-links';
 import { Icon } from '../../core/ui/icon';
+import { SiteNotice } from '../../core/layout/site-notice';
 
 const DEFAULT_RETRY_SECONDS = 60;
 
 @Component({
   selector: 'sms-login',
-  imports: [ReactiveFormsModule, Icon, LegalLinks],
+  imports: [ReactiveFormsModule, Icon, LegalLinks, SiteNotice],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
   styleUrl: './login.css',
@@ -44,6 +45,8 @@ export class Login {
   /** 'password' is the first step; 'code' asks for the two-factor code. */
   protected readonly step = signal<'password' | 'code'>('password');
   protected readonly useRecovery = signal(false);
+  /** Set after a 401 on the second step: the code is wrong or the sign-in has expired. */
+  protected readonly restartNeeded = signal(false);
   private mfaToken: string | null = null;
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -93,8 +96,9 @@ export class Login {
           this.loading.set(false);
           this.codeForm.reset();
           this.useRecovery.set(false);
+          this.restartNeeded.set(false);
           this.step.set('code');
-          focusById('mfa-heading');
+          focusById('mfa-code');
           return;
         }
         void this.router.navigate(['/']);
@@ -107,8 +111,8 @@ export class Login {
         }
         this.error.set(
           err instanceof HttpErrorResponse && err.status === 401
-            ? 'Invalid credentials. Check your username, mobile or email and password.'
-            : 'Could not sign in. Please try again.',
+            ? this.i18n.t('app.login.invalid')
+            : this.i18n.t('app.login.failed'),
         );
       },
     });
@@ -118,6 +122,7 @@ export class Login {
     this.useRecovery.update((v) => !v);
     this.codeForm.reset();
     this.error.set(null);
+    this.restartNeeded.set(false);
     focusById('mfa-code');
   }
 
@@ -125,6 +130,7 @@ export class Login {
   protected backToPassword(): void {
     this.mfaToken = null;
     this.error.set(null);
+    this.restartNeeded.set(false);
     this.step.set('password');
     focusById('password');
   }
@@ -137,6 +143,7 @@ export class Login {
     }
     this.loading.set(true);
     this.error.set(null);
+    this.restartNeeded.set(false);
     const raw = this.codeForm.getRawValue().code.trim();
     const payload = this.useRecovery() ? { recovery_code: raw } : { code: raw.replace(/\s+/g, '') };
     this.auth.loginMfa(token, payload, this.form.getRawValue().rememberMe).subscribe({
@@ -153,11 +160,14 @@ export class Login {
           this.error.set(this.i18n.t('mfa.login.expired'));
           return;
         }
-        this.error.set(
-          err instanceof HttpErrorResponse && err.status === 401
-            ? this.i18n.t(this.useRecovery() ? 'mfa.login.badRecovery' : 'mfa.login.badCode')
-            : this.i18n.t('mfa.login.failed'),
-        );
+        if (err instanceof HttpErrorResponse && err.status === 401) {
+          this.restartNeeded.set(true);
+          this.error.set(
+            this.i18n.t(this.useRecovery() ? 'mfa.login.badRecovery' : 'mfa.login.badCode'),
+          );
+          return;
+        }
+        this.error.set(this.i18n.t('mfa.login.failed'));
       },
     });
   }

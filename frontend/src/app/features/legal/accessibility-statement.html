@@ -1,5 +1,5 @@
 <article class="legal-doc">
-  <h1>Accessibility statement</h1>
+  <h1>{{ i18n.t('public.legal.accessibility.title') }}</h1>
   <p class="lead">
     We want the Vidyasetu app to be usable by everyone, including people who use a keyboard, a
     screen reader, a screen magnifier or a phone with large text. This statement says what we aim
@@ -7,22 +7,22 @@
   </p>
 
   <dl class="legal-facts">
-    <dt>Target</dt>
+    <dt>{{ i18n.t('public.legal.fact.target') }}</dt>
     <dd>WCAG 2.1 level AA</dd>
-    <dt>Audit status</dt>
-    <dd>Not yet formally audited by an independent accessibility specialist</dd>
-    <dt>Accessibility contact</dt>
+    <dt>{{ i18n.t('public.legal.fact.auditStatus') }}</dt>
+    <dd>{{ i18n.t('public.legal.fact.auditPending') }}</dd>
+    <dt>{{ i18n.t('public.legal.fact.accessContact') }}</dt>
     <dd><sms-legal-value [value]="legal()?.grievance_officer_email" kind="email" /></dd>
   </dl>
 
-  <h2>1. What we aim for</h2>
+  <h2>{{ i18n.t('public.legal.accessibility.aim') }}</h2>
   <p>
     We build to the Web Content Accessibility Guidelines (WCAG) 2.1, level AA. The app is also meant
     to be understood on a small screen, in a browser zoomed to 200 per cent, and with reduced motion
     turned on.
   </p>
 
-  <h2>2. What is in place</h2>
+  <h2>{{ i18n.t('public.legal.accessibility.inPlace') }}</h2>
   <ul>
     <li>Every page has one main heading, and headings follow a logical order.</li>
     <li>
@@ -37,21 +37,23 @@
     <li>Text colours are chosen for contrast with their background.</li>
     <li>Motion is reduced when your device asks for it.</li>
     <li>Layouts are designed for narrow screens first.</li>
+    <li>
+      The interface is available in English and Marathi. The policy text itself is in English.
+    </li>
   </ul>
 
-  <h2>3. Known limitations</h2>
+  <h2>{{ i18n.t('public.legal.accessibility.limits') }}</h2>
   <p>We know of these gaps and are working on them:</p>
   <ul>
     <li>The search box in the top bar is not available yet.</li>
     <li>Some dense tables on wide desktop screens may need horizontal scrolling.</li>
-    <li>The interface is in English only. Marathi is planned.</li>
     <li>
       The app has not yet been tested with every combination of browser, operating system and screen
       reader.
     </li>
   </ul>
 
-  <h2>4. Reporting a problem</h2>
+  <h2>{{ i18n.t('public.legal.accessibility.reporting') }}</h2>
   <p>
     If you cannot use part of the app, tell us. Describe the page, what you were trying to do, what
     device and browser you use, and what went wrong. Send it to the grievance officer on the
@@ -66,7 +68,7 @@
     }
   </p>
 
-  <h2>5. Formal review</h2>
+  <h2>{{ i18n.t('public.legal.accessibility.review') }}</h2>
   <p>
     A formal accessibility review by an independent specialist is planned before the app is used
     widely. This statement will be updated when that review is done.

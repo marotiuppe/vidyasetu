@@ -1,6 +1,6 @@
 <div class="picker">
   <label class="field">
-    Search existing parent
+    {{ i18n.t('students.form.parent.search') }}
     <input
       class="input"
       type="search"
@@ -8,19 +8,19 @@
       autocomplete="off"
       aria-describedby="parent-search-hint"
     />
-    <span class="hint" id="parent-search-hint"
-      >Type at least 2 characters of a name, mobile number or username.</span
-    >
+    <span class="hint" id="parent-search-hint">{{
+      i18n.t('students.form.parent.searchHint')
+    }}</span>
   </label>
 
   @if (searching()) {
-    <p class="hint" role="status">Searching…</p>
+    <p class="hint" role="status">{{ i18n.t('students.form.parent.searching') }}</p>
   }
   @if (searchError(); as message) {
     <p class="form-error" role="alert">{{ message }}</p>
   }
   @if (results().length > 0) {
-    <ul class="parent-list" aria-label="Matching parents">
+    <ul class="parent-list" [attr.aria-label]="i18n.t('students.form.parent.matching')">
       @for (p of results(); track p.id) {
         <li>
           <button
@@ -32,9 +32,9 @@
           >
             <span class="parent-name">{{ p.full_name }}</span>
             <span class="parent-meta">
-              Username {{ p.username }}
+              {{ i18n.t('students.form.parent.username', { username: p.username }) }}
               @if (p.phone) {
-                · Mobile {{ p.phone }}
+                {{ i18n.t('students.form.parent.mobile', { phone: p.phone }) }}
               }
             </span>
             <span class="parent-meta">{{ childrenText(p) }}</span>
@@ -43,6 +43,6 @@
       }
     </ul>
   } @else if (searched() && !searching() && query.value.trim().length >= 2) {
-    <p class="hint" role="status">No parent found. Try another spelling, or choose New parent.</p>
+    <p class="hint" role="status">{{ i18n.t('students.form.parent.notFound') }}</p>
   }
 </div>

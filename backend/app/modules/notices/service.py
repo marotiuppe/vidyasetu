@@ -153,7 +153,7 @@ async def _build(
 
 
 async def _visible(db: AsyncSession, actor: User, notice_id: int) -> Notice:
-    notice = await db.scalar(
+    notice: Notice | None = await db.scalar(
         scope_notices(select(Notice).where(Notice.id == notice_id), actor, today())
     )
     if notice is None:

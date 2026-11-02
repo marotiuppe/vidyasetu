@@ -8,12 +8,12 @@ from datetime import timedelta
 from typing import Any
 
 from fastapi import status
-from sqlalchemy import Select, false, func, select
+from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.core.errors import ApiError
-from app.core.tenant import scope_students
+from app.core.tenant import AnySelect, scope_students
 from app.db.base import utcnow
 from app.modules.audit import service as audit
 from app.modules.datarights.models import DataRequest, RequestStatus
@@ -83,7 +83,7 @@ def _out(row: Any) -> DataRequestOut:
     )
 
 
-def _handler_scope(stmt: Select[Any], actor: User) -> Select[Any]:
+def _handler_scope(stmt: AnySelect, actor: User) -> AnySelect:
     if actor.role not in HANDLER_ROLES:
         raise _err(status.HTTP_403_FORBIDDEN, "Not allowed", "forbidden")
     if actor.role == Role.SUPER_ADMIN:
@@ -147,7 +147,7 @@ async def _get_out(db: AsyncSession, request_id: int) -> DataRequestOut:
 
 
 async def _page(
-    db: AsyncSession, stmt: Select[Any], count_stmt: Select[Any], page: int, page_size: int
+    db: AsyncSession, stmt: AnySelect, count_stmt: AnySelect, page: int, page_size: int
 ) -> DataRequestPage:
     total = int(await db.scalar(count_stmt) or 0)
     rows = (

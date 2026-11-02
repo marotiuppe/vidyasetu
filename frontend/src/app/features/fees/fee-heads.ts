@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { FeeHead, FeesApi } from '../../core/api/fees.api';
+import { I18n } from '../../core/i18n/i18n';
 
 /** Fee heads (tuition, transport, ...): add, rename, activate or deactivate. */
 @Component({
@@ -14,6 +15,7 @@ import { FeeHead, FeesApi } from '../../core/api/fees.api';
 export class FeeHeads {
   private readonly api = inject(FeesApi);
   private readonly fb = inject(NonNullableFormBuilder);
+  protected readonly i18n = inject(I18n);
 
   readonly heads = input.required<FeeHead[]>();
   readonly loading = input(false);
@@ -28,8 +30,10 @@ export class FeeHeads {
 
   protected add(): void {
     const name = this.addControl.value.trim();
-    if (!name) return this.error.set('Enter a name for the fee head.');
-    this.run(this.api.createHead(name), `Added ${name}.`, () => this.addControl.reset(''));
+    if (!name) return this.error.set(this.i18n.t('fees.setup.heads.nameRequired'));
+    this.run(this.api.createHead(name), this.i18n.t('fees.setup.heads.added', { name }), () =>
+      this.addControl.reset(''),
+    );
   }
 
   protected startRename(h: FeeHead): void {
@@ -39,14 +43,18 @@ export class FeeHeads {
 
   protected rename(h: FeeHead): void {
     const name = this.renameControl.value.trim();
-    if (!name) return this.error.set('Enter a name for the fee head.');
-    this.run(this.api.updateHead(h.id, { name }), 'Fee head renamed.', () => this.renamingId.set(0));
+    if (!name) return this.error.set(this.i18n.t('fees.setup.heads.nameRequired'));
+    this.run(this.api.updateHead(h.id, { name }), this.i18n.t('fees.setup.heads.renamed'), () =>
+      this.renamingId.set(0),
+    );
   }
 
   protected toggle(h: FeeHead): void {
     this.run(
       this.api.updateHead(h.id, { is_active: !h.is_active }),
-      `${h.name} ${h.is_active ? 'deactivated' : 'activated'}.`,
+      this.i18n.t(h.is_active ? 'fees.setup.heads.deactivated' : 'fees.setup.heads.activated', {
+        name: h.name,
+      }),
     );
   }
 

@@ -1,6 +1,15 @@
 from pydantic import BaseModel
 
 
+class SiteInfo(BaseModel):
+    """Platform-wide text shown to every visitor (set by the platform admin in Settings)."""
+
+    platform_name: str | None
+    support_contact: str | None
+    announcement_banner: str | None
+    maintenance_message: str | None
+
+
 class LegalInfo(BaseModel):
     """Operator, grievance and contact details shown on the public legal pages.
 

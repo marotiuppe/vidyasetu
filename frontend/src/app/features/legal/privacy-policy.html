@@ -1,5 +1,5 @@
 <article class="legal-doc">
-  <h1>Privacy policy</h1>
+  <h1>{{ i18n.t('public.legal.privacy.title') }}</h1>
   <p class="lead">
     This policy explains what personal data the Vidyasetu school management platform handles, why,
     who can see it and what you can do about it. It describes the platform as it is built today.
@@ -7,34 +7,34 @@
   </p>
 
   <dl class="legal-facts">
-    <dt>Effective date</dt>
+    <dt>{{ i18n.t('public.legal.fact.effectiveDate') }}</dt>
     <dd><sms-legal-value [value]="legal()?.policy_effective_date" /></dd>
-    <dt>Privacy contact</dt>
+    <dt>{{ i18n.t('public.legal.fact.privacyContact') }}</dt>
     <dd><sms-legal-value [value]="legal()?.privacy_contact_email" kind="email" /></dd>
   </dl>
 
-  <h2>1. Who is responsible for your data</h2>
+  <h2>{{ i18n.t('public.legal.privacy.who') }}</h2>
   <p>
     The Digital Personal Data Protection Act, 2023 uses two terms here. The school is the
     <strong>data fiduciary</strong>: it enrols students and staff, decides why personal data is
     collected and how long it is kept. The operator is the <strong>data processor</strong>: it runs
     the platform and handles data for the school, on the school's instructions.
   </p>
-  <p>Operator details:</p>
+  <p>{{ i18n.t('public.legal.privacy.operatorDetails') }}</p>
   <dl class="legal-facts">
-    <dt>Operator</dt>
+    <dt>{{ i18n.t('public.legal.fact.operator') }}</dt>
     <dd><sms-legal-value [value]="legal()?.operator_name" /></dd>
-    <dt>Address</dt>
+    <dt>{{ i18n.t('public.legal.fact.address') }}</dt>
     <dd><sms-legal-value [value]="legal()?.operator_address" /></dd>
-    <dt>Email</dt>
+    <dt>{{ i18n.t('public.legal.fact.email') }}</dt>
     <dd><sms-legal-value [value]="legal()?.operator_email" kind="email" /></dd>
-    <dt>Phone</dt>
+    <dt>{{ i18n.t('public.legal.fact.phone') }}</dt>
     <dd><sms-legal-value [value]="legal()?.operator_phone" kind="phone" /></dd>
-    <dt>Hosting region</dt>
+    <dt>{{ i18n.t('public.legal.fact.hostingRegion') }}</dt>
     <dd><sms-legal-value [value]="legal()?.hosting_region" /></dd>
   </dl>
 
-  <h2>2. What data we handle</h2>
+  <h2>{{ i18n.t('public.legal.privacy.data') }}</h2>
   <p>Depending on what the school enters, the platform handles:</p>
   <ul>
     <li>
@@ -69,7 +69,7 @@
     handle card and bank details, and the platform will not store them.
   </p>
 
-  <h2>3. Why we use it</h2>
+  <h2>{{ i18n.t('public.legal.privacy.why') }}</h2>
   <ul>
     <li>To run the school's workspace: admissions, attendance, notices, fees and receipts.</li>
     <li>To let staff, parents and students sign in and see only what they are allowed to see.</li>
@@ -82,7 +82,7 @@
   </ul>
   <p>We do not use personal data for advertising or marketing profiles, and we do not sell it.</p>
 
-  <h2>4. Who can see it</h2>
+  <h2>{{ i18n.t('public.legal.privacy.seeIt') }}</h2>
   <p>
     Access depends on role, school and branch. The server checks each request against the signed-in
     user's role. The screens are not the only control.
@@ -104,7 +104,7 @@
     </li>
   </ul>
 
-  <h2>5. Who we share it with</h2>
+  <h2>{{ i18n.t('public.legal.privacy.share') }}</h2>
   <p>
     We do not sell personal data and do not share it with advertisers. Optional services, such as
     SMS, email or file storage, are used only when they are set up with the provider's own
@@ -112,7 +112,7 @@
     disclosed only where the law requires it.
   </p>
 
-  <h2>6. How long we keep it</h2>
+  <h2>{{ i18n.t('public.legal.privacy.keep') }}</h2>
   @if (legal()?.data_retention_note; as note) {
     <p class="pre-line">{{ note }}</p>
   } @else {
@@ -123,7 +123,7 @@
     </p>
   }
 
-  <h2>7. How we protect it</h2>
+  <h2>{{ i18n.t('public.legal.privacy.protect') }}</h2>
   <p>These controls are in place today:</p>
   <ul>
     <li>
@@ -153,7 +153,7 @@
     <a routerLink="../security">Security page</a>.
   </p>
 
-  <h2>8. Your rights</h2>
+  <h2>{{ i18n.t('public.legal.privacy.rights') }}</h2>
   <p>You can ask for:</p>
   <ul>
     <li><strong>access</strong> to the personal data held about you or your child;</li>
@@ -168,13 +168,13 @@
     <a routerLink="../grievance">Grievances page</a>. Tracking requests inside the app is planned.
   </p>
 
-  <h2>9. Children</h2>
+  <h2>{{ i18n.t('public.legal.privacy.children') }}</h2>
   <p>
     Many students are children. The
     <a routerLink="../children">Children's privacy notice</a> explains how their data is handled.
   </p>
 
-  <h2>10. Changes to this policy</h2>
+  <h2>{{ i18n.t('public.legal.privacy.changes') }}</h2>
   <p>
     When this policy changes, the effective date above changes too. Schools that use the platform
     are told about material changes.

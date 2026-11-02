@@ -1,8 +1,6 @@
 <section class="card print-area" aria-labelledby="login-details-title">
-  <h2 class="card-title" id="login-details-title">Login details</h2>
-  <p class="once">
-    Shown only once. Give these to the family; they must choose a new password at first sign-in.
-  </p>
+  <h2 class="card-title" id="login-details-title">{{ i18n.t('students.list.login.title') }}</h2>
+  <p class="once">{{ i18n.t('students.list.login.once') }}</p>
 
   <ul class="creds">
     @for (c of credentials(); track $index) {
@@ -13,20 +11,26 @@
         </p>
         <dl class="cred-facts">
           <div>
-            <dt>Username</dt>
+            <dt>{{ i18n.t('students.list.login.username') }}</dt>
             <dd>
               <code>{{ c.username }}</code>
             </dd>
           </div>
           <div>
-            <dt>{{ c.linked_existing ? 'Password' : 'Temporary password' }}</dt>
+            <dt>
+              {{
+                c.linked_existing
+                  ? i18n.t('students.list.login.password')
+                  : i18n.t('students.list.login.tempPassword')
+              }}
+            </dt>
             <dd>
               @if (c.linked_existing) {
-                Uses the existing parent login
+                {{ i18n.t('students.list.login.existing') }}
               } @else if (c.temporary_password) {
                 <code>{{ c.temporary_password }}</code>
               } @else {
-                Not available
+                {{ i18n.t('students.list.login.notAvailable') }}
               }
             </dd>
           </div>
@@ -35,7 +39,7 @@
           <p class="hint">{{ c.note }}</p>
         }
         <button type="button" class="btn btn-ghost btn-sm no-print" (click)="copy(c)">
-          Copy details for {{ c.full_name }}
+          {{ i18n.t('students.list.login.copyFor', { name: c.full_name }) }}
         </button>
       </li>
     }
@@ -44,7 +48,11 @@
   <p class="hint" role="status" aria-live="polite">{{ status() }}</p>
 
   <div class="form-actions no-print">
-    <button type="button" class="btn btn-ghost" (click)="print()">Print</button>
-    <button type="button" class="btn btn-primary" (click)="done.emit()">Done</button>
+    <button type="button" class="btn btn-ghost" (click)="print()">
+      {{ i18n.t('students.list.login.print') }}
+    </button>
+    <button type="button" class="btn btn-primary" (click)="done.emit()">
+      {{ i18n.t('students.list.login.done') }}
+    </button>
   </div>
 </section>

@@ -18,10 +18,15 @@ dependencies = [
     "pillow>=13.0.0",
     "cryptography>=50.0.2",
     "pyotp>=2.10.0",
+    "uharfbuzz>=0.57.0",
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.6", "mypy>=1.11"]
+dev = [
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "types-reportlab>=5.0.0.20261008",
+]
 
 [tool.ruff]
 line-length = 100

@@ -167,7 +167,12 @@ export interface DueRow {
 
 export interface Dues {
   items: DueRow[];
-  totals: { billed_paise: number; paid_paise: number; balance_paise: number; overdue_paise: number };
+  totals: {
+    billed_paise: number;
+    paid_paise: number;
+    balance_paise: number;
+    overdue_paise: number;
+  };
 }
 
 export interface Collection {
@@ -186,10 +191,13 @@ export interface StudentFees {
 }
 
 /** Add only the set values (skips empty strings, zero, false, null). */
-function toParams(values: Record<string, string | number | boolean | null | undefined>): HttpParams {
+function toParams(
+  values: Record<string, string | number | boolean | null | undefined>,
+): HttpParams {
   let params = new HttpParams();
   for (const [key, value] of Object.entries(values)) {
-    if (value === undefined || value === null || value === '' || value === 0 || value === false) continue;
+    if (value === undefined || value === null || value === '' || value === 0 || value === false)
+      continue;
     params = params.set(key, String(value));
   }
   return params;
@@ -276,7 +284,10 @@ export class FeesApi {
   }
 
   duesCsv(f: DuesFilters): Observable<Blob> {
-    return this.http.get(`${API}/fees/dues/export`, { params: toParams({ ...f }), responseType: 'blob' });
+    return this.http.get(`${API}/fees/dues/export`, {
+      params: toParams({ ...f }),
+      responseType: 'blob',
+    });
   }
 
   collection(from: string, to: string, branchId: number): Observable<Collection> {

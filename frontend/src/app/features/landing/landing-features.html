@@ -1,15 +1,15 @@
 <section id="features" class="section" aria-labelledby="features-title">
   <div class="lp-wrap">
     <div class="head" smsReveal>
-      <h2 id="features-title">Everything the school day needs</h2>
-      <p>One workspace for the people who run the school and the families who depend on it.</p>
+      <h2 id="features-title">{{ i18n.t('public.features.title') }}</h2>
+      <p>{{ i18n.t('public.features.lead') }}</p>
     </div>
     <ul class="grid">
       @for (f of features; track f.title; let i = $index) {
         <li class="card item" [smsReveal]="(i % 3) * 100">
           <span class="chip big" [class]="f.tone"><sms-icon [name]="f.icon" [size]="22" /></span>
-          <h3>{{ f.title }}</h3>
-          <p>{{ f.text }}</p>
+          <h3>{{ i18n.t(f.title) }}</h3>
+          <p>{{ i18n.t(f.text) }}</p>
         </li>
       }
     </ul>

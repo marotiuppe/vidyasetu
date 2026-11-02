@@ -1,15 +1,15 @@
 <section class="card" aria-labelledby="staff-title">
-  <h2 class="card-title" id="staff-title">Staff attendance</h2>
+  <h2 class="card-title" id="staff-title">{{ i18n.t('ops.tab.staff') }}</h2>
   <div class="toolbar">
     <label class="field">
-      Date
+      {{ i18n.t('ops.common.date') }}
       <input class="input" type="date" [value]="date()" [max]="today" (change)="pickDate($event)" />
     </label>
     @if (canPickBranch) {
       <label class="field">
-        Branch
+        {{ i18n.t('ops.common.branch') }}
         <select class="input" (change)="pickBranch($event)">
-          <option value="0">All branches</option>
+          <option value="0">{{ i18n.t('ops.common.allBranches') }}</option>
           @for (b of branches(); track b.id) {
             <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
           }
@@ -29,22 +29,34 @@
   }
 
   @if (loading()) {
-    <p class="empty" role="status">Loading staff…</p>
+    <p class="empty" role="status">{{ i18n.t('ops.staff.loading') }}</p>
   } @else if (sheet(); as s) {
     @if (!s.is_working_day) {
       <p class="panel" role="status">
-        Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance
-        cannot be saved.
+        @if (s.non_working_reason) {
+          {{ i18n.t('ops.common.notWorkingReason', { reason: s.non_working_reason }) }}
+        } @else {
+          {{ i18n.t('ops.common.notWorkingDay') }}
+        }
+        {{ i18n.t('ops.att.cannotSave') }}
       </p>
     }
 
-    <ul class="stat-strip" aria-label="Summary">
-      <li class="badge">Staff {{ counts().total }}</li>
-      <li class="badge st-tone st-present">Present {{ counts().present }}</li>
-      <li class="badge st-tone st-absent">Absent {{ counts().absent }}</li>
-      <li class="badge st-tone st-leave">Leave {{ counts().leave }}</li>
-      <li class="badge st-tone st-half">Half day {{ counts().half }}</li>
-      <li class="badge badge-muted">Unmarked {{ counts().unmarked }}</li>
+    <ul class="stat-strip" [attr.aria-label]="i18n.t('ops.common.summary')">
+      <li class="badge">{{ i18n.t('ops.count.staff', { n: counts().total }) }}</li>
+      <li class="badge st-tone st-present">
+        {{ i18n.t('ops.count.present', { n: counts().present }) }}
+      </li>
+      <li class="badge st-tone st-absent">
+        {{ i18n.t('ops.count.absent', { n: counts().absent }) }}
+      </li>
+      <li class="badge st-tone st-leave">{{ i18n.t('ops.count.leave', { n: counts().leave }) }}</li>
+      <li class="badge st-tone st-half">
+        {{ i18n.t('ops.count.halfDay', { n: counts().half }) }}
+      </li>
+      <li class="badge badge-muted">
+        {{ i18n.t('ops.count.unmarked', { n: counts().unmarked }) }}
+      </li>
     </ul>
 
     @if (rows().length) {
@@ -55,7 +67,7 @@
           [disabled]="!counts().unmarked || !s.is_working_day"
           (click)="markAllPresent()"
         >
-          Mark all present
+          {{ i18n.t('ops.common.markAllPresent') }}
         </button>
       </div>
       <ul class="rows">
@@ -70,7 +82,11 @@
                 }
               </span>
             </div>
-            <div class="seg" role="radiogroup" [attr.aria-label]="'Attendance for ' + r.full_name">
+            <div
+              class="seg"
+              role="radiogroup"
+              [attr.aria-label]="i18n.t('ops.common.attFor', { name: r.full_name })"
+            >
               @for (m of marks; track m.value) {
                 <label [class]="markClass[m.value]">
                   <input
@@ -81,7 +97,7 @@
                     [disabled]="!s.is_working_day"
                     (change)="setStatus(r.user_id, m.value)"
                   />
-                  <span>{{ m.label }}</span>
+                  <span>{{ i18n.t(markKey[m.value]) }}</span>
                 </label>
               }
             </div>
@@ -90,17 +106,17 @@
               class="btn btn-ghost btn-sm"
               [disabled]="!r.status || !s.is_working_day"
               [attr.aria-expanded]="!!openRemarks()[r.user_id] || !!r.remark"
-              [attr.aria-label]="'Remark for ' + r.full_name"
+              [attr.aria-label]="i18n.t('ops.common.remarkFor', { name: r.full_name })"
               (click)="toggleRemark(r.user_id)"
             >
-              Remark
+              {{ i18n.t('ops.common.remark') }}
             </button>
             @if (openRemarks()[r.user_id] || r.remark) {
               <input
                 class="input remark"
                 maxlength="200"
-                placeholder="Optional remark"
-                [attr.aria-label]="'Remark text for ' + r.full_name"
+                [placeholder]="i18n.t('ops.common.optionalRemark')"
+                [attr.aria-label]="i18n.t('ops.common.remarkText', { name: r.full_name })"
                 [value]="r.remark"
                 [disabled]="!s.is_working_day"
                 (input)="setRemark(r.user_id, $event)"
@@ -110,15 +126,15 @@
         }
       </ul>
     } @else {
-      <p class="empty">No staff found.</p>
+      <p class="empty">{{ i18n.t('ops.staff.none') }}</p>
     }
 
     <div class="save-bar">
       <span role="status">
         @if (dirty()) {
-          <span class="badge st-tone st-leave">Unsaved changes</span>
+          <span class="badge st-tone st-leave">{{ i18n.t('ops.common.unsaved') }}</span>
         } @else {
-          <span class="hint">No changes to save.</span>
+          <span class="hint">{{ i18n.t('ops.common.noChanges') }}</span>
         }
       </span>
       <button
@@ -127,7 +143,7 @@
         [disabled]="saving() || !dirty() || !s.is_working_day"
         (click)="save()"
       >
-        {{ saving() ? 'Saving…' : 'Save attendance' }}
+        {{ saving() ? i18n.t('ops.common.saving') : i18n.t('ops.common.saveAttendance') }}
       </button>
     </div>
   }

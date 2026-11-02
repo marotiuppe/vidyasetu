@@ -33,19 +33,15 @@ import {
   StudentsApi,
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
-import { USERNAME_HINT, suggestUsername, usernameFormat } from '../../core/auth/identity';
-import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { suggestUsername, usernameFormat } from '../../core/auth/identity';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { canWriteStudents } from '../../core/auth/permissions';
-import {
-  CREATE_NEW,
-  CREATE_NEW_LABEL,
-  CreateKind,
-  canCreateRecord,
-} from '../../core/create/create-new';
+import { CREATE_NEW, CreateKind, canCreateRecord } from '../../core/create/create-new';
 import { PendingReturn, ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { StudentAttendance } from '../attendance/student-attendance';
 import { StudentConsent } from './student-consent';
-import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
+import { PHONE_PATTERN, initials, statusKey, todayIso } from './student-labels';
 
 @Component({
   selector: 'sms-student-profile',
@@ -63,20 +59,17 @@ export class StudentProfile {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
 
   protected readonly genders = GENDERS;
   protected readonly relations = RELATIONS;
   protected readonly statuses = STATUSES;
-  protected readonly titleCase = titleCase;
-  protected readonly statusLabel = statusLabel;
   protected readonly initials = initials;
   protected readonly today = todayIso();
-  protected readonly usernameHint = USERNAME_HINT;
   protected readonly canWrite = canWriteStudents(this.auth);
   /** Students see their own profile but consent is a matter for parents and the school. */
   protected readonly isStudentLogin = this.auth.hasRole('student');
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreateYear = canCreateRecord(this.auth, 'academic_year');
   protected readonly canCreateClass = canCreateRecord(this.auth, 'class');
   protected readonly canCreateSection = canCreateRecord(this.auth, 'section');
@@ -122,7 +115,6 @@ export class StudentProfile {
     email: ['', Validators.email],
     is_primary: [false],
   });
-  protected readonly passwordHint = PASSWORD_HINT;
   protected readonly minLength = PASSWORD_MIN_LENGTH;
   protected readonly loginForm = this.fb.group({
     username: ['', [Validators.required, usernameFormat]],
@@ -194,6 +186,15 @@ export class StudentProfile {
     this.panelError.set(null);
   }
 
+  protected statusText(status: StudentStatus): string {
+    return this.i18n.t(statusKey(status));
+  }
+
+  /** Gender or relation value shown as a label, e.g. male -> Male. */
+  protected enumText(group: 'gender' | 'relation', value: string): string {
+    return this.i18n.t(`students.list.${group}.${value}`);
+  }
+
   // ---- student details -------------------------------------------------
 
   protected editStudent(s: StudentDetail): void {
@@ -227,7 +228,7 @@ export class StudentProfile {
         previous_school: v.previous_school.trim() || null,
         status: v.status,
       }),
-      'Details saved.',
+      this.i18n.t('students.list.notice.detailsSaved'),
     );
   }
 
@@ -262,17 +263,29 @@ export class StudentProfile {
       email: v.email.trim() || null,
       is_primary: v.is_primary,
     };
-    if (g) this.mutate(this.api.updateGuardian(g.id, body), 'Guardian updated.');
-    else this.mutate(this.api.addGuardian(s.id, body), 'Guardian added.');
+    if (g)
+      this.mutate(
+        this.api.updateGuardian(g.id, body),
+        this.i18n.t('students.list.notice.guardianUpdated'),
+      );
+    else
+      this.mutate(
+        this.api.addGuardian(s.id, body),
+        this.i18n.t('students.list.notice.guardianAdded'),
+      );
   }
 
   protected makePrimary(g: Guardian): void {
-    this.mutate(this.api.updateGuardian(g.id, { is_primary: true }), 'Primary guardian changed.');
+    this.mutate(
+      this.api.updateGuardian(g.id, { is_primary: true }),
+      this.i18n.t('students.list.notice.primaryChanged'),
+    );
   }
 
   protected removeGuardian(g: Guardian): void {
-    if (!window.confirm(`Remove ${g.full_name} as a guardian?`)) return;
-    this.mutate(this.api.deleteGuardian(g.id), 'Guardian removed.');
+    if (!window.confirm(this.i18n.t('students.list.confirm.removeGuardian', { name: g.full_name })))
+      return;
+    this.mutate(this.api.deleteGuardian(g.id), this.i18n.t('students.list.notice.guardianRemoved'));
   }
 
   protected startGuardianLogin(g: Guardian): void {
@@ -292,14 +305,18 @@ export class StudentProfile {
     const v = this.loginForm.getRawValue();
     this.mutate(
       this.api.createGuardianLogin(g.id, this.loginBody(v)),
-      'Parent login created.',
+      this.i18n.t('students.list.notice.parentLoginCreated'),
       this.loginForm,
     );
   }
 
   protected removeGuardianLogin(g: Guardian): void {
-    if (!window.confirm(`Remove the login for ${g.full_name}?`)) return;
-    this.mutate(this.api.removeGuardianLogin(g.id), 'Login removed.');
+    if (!window.confirm(this.i18n.t('students.list.confirm.removeLogin', { name: g.full_name })))
+      return;
+    this.mutate(
+      this.api.removeGuardianLogin(g.id),
+      this.i18n.t('students.list.notice.loginRemoved'),
+    );
   }
 
   // ---- enrolment -------------------------------------------------------
@@ -322,11 +339,11 @@ export class StudentProfile {
     const v = this.enrolForm.getRawValue();
     const rollNo = v.roll_no.trim() === '' ? null : Number(v.roll_no);
     if (Number(v.academic_year_id) < 1 || Number(v.class_id) < 1) {
-      this.panelError.set('Select an academic year and a class.');
+      this.panelError.set(this.i18n.t('students.list.error.selectYearClass'));
       return;
     }
     if (rollNo !== null && (!Number.isInteger(rollNo) || rollNo < 1)) {
-      this.panelError.set('Roll number must be a positive whole number.');
+      this.panelError.set(this.i18n.t('students.list.error.roll'));
       return;
     }
     this.mutate(
@@ -336,7 +353,7 @@ export class StudentProfile {
         section_id: Number(v.section_id) || null,
         roll_no: rollNo,
       }),
-      'Enrolment saved.',
+      this.i18n.t('students.list.notice.enrolmentSaved'),
     );
   }
 
@@ -351,7 +368,12 @@ export class StudentProfile {
         const extra: Params = {};
         const cls = Number(this.enrolForm.controls.class_id.value);
         if (kind === 'section' && cls > 0) extra['classId'] = cls;
-        this.returnState.openCreate(kind, this.enrolForm.getRawValue(), 'Student profile', extra);
+        this.returnState.openCreate(
+          kind,
+          this.enrolForm.getRawValue(),
+          this.i18n.t('students.list.from.profile'),
+          extra,
+        );
       });
   }
 
@@ -396,7 +418,7 @@ export class StudentProfile {
     const v = this.loginForm.getRawValue();
     this.mutate(
       this.api.createStudentLogin(s.id, this.loginBody(v)),
-      'Student login created.',
+      this.i18n.t('students.list.notice.studentLoginCreated'),
       this.loginForm,
     );
   }

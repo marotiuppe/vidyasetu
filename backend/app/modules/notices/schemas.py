@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated, Self
 
 from pydantic import BaseModel, StringConstraints, model_validator
 
+from app.core.schema_types import UtcDateTime
 from app.modules.notices.models import NoticeCategory, TargetType
 
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
@@ -60,7 +61,7 @@ class NoticeOut(BaseModel):
     class_id: int | None
     section_id: int | None
     author: Author | None
-    created_at: datetime
+    created_at: UtcDateTime
     is_read: bool
     read_count: int | None
     can_edit: bool

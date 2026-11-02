@@ -262,6 +262,11 @@ async def password_min_length(db: AsyncSession, school_id: int | None) -> int:
     return max(10, int(await resolve(db, key, school_id=school_id)))
 
 
+async def remember_me_days(db: AsyncSession, school_id: int | None) -> int:
+    """Length of a 'keep me signed in' session in days (school setting, capped by the platform)."""
+    return await get_int(db, "security.remember_me_days", school_id=school_id)
+
+
 async def school_features(db: AsyncSession, school_id: int) -> dict[str, bool]:
     keys = [f"feature.{f}" for f in FEATURES]
     values = await resolve_many(db, keys, Ctx(school_id=school_id))
@@ -270,6 +275,27 @@ async def school_features(db: AsyncSession, school_id: int) -> dict[str, bool]:
 
 async def feature_enabled(db: AsyncSession, school_id: int, feature: str) -> bool:
     return bool(await resolve(db, f"feature.{feature}", school_id=school_id))
+
+
+async def force_password_change(db: AsyncSession, school_id: int | None) -> bool:
+    """Whether accounts created or reset by an admin must change their password at first sign-in."""
+    return await get_bool(db, "security.force_password_change_new_accounts", school_id=school_id)
+
+
+async def student_logins_enabled(db: AsyncSession, school_id: int | None) -> bool:
+    return await get_bool(db, "portal.student_logins_enabled", school_id=school_id)
+
+
+async def require_family_portal(db: AsyncSession, user: User, key: str) -> None:
+    """Parents and students see some data only when the school's portal settings allow it."""
+    if user.role not in (Role.PARENT, Role.STUDENT) or user.school_id is None:
+        return
+    if not await get_bool(db, key, school_id=user.school_id):
+        raise _err(
+            status.HTTP_403_FORBIDDEN,
+            "The school does not show this information to parents and students",
+            "portal_hidden",
+        )
 
 
 _MFA_KEYS = {

@@ -18,7 +18,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./sms.db"
     allowed_origins: list[str] = ["http://localhost:4200"]
     access_token_minutes: int = 15
-    refresh_token_days: int = 14
+    # Refresh-token lifetime of a session without "keep me signed in" (server side and in the
+    # cookie's life). Rotation keeps the same policy.
+    short_session_hours: int = Field(default=12, ge=1, le=72)
+    # Fallback for "keep me signed in" days, used when the school has not chosen a value
+    # (school setting security.remember_me_days, capped by the platform limit).
+    refresh_token_days: int = Field(default=14, ge=1, le=365)
 
     # Host header allow-list (TrustedHostMiddleware). Must be set without "*" in production.
     trusted_hosts: list[str] = ["*"]
@@ -35,7 +40,9 @@ class Settings(BaseSettings):
     login_lockout_minutes_default: int = Field(default=60, ge=5, le=1440)
 
     # Requests per minute per client IP.
-    rate_limit_login_per_minute: int = Field(default=10, ge=1)
+    # A whole school often signs in from one NAT address, so the default is generous. Lockout per
+    # account (login_max_attempts) is what protects individual accounts.
+    rate_limit_login_per_minute: int = Field(default=30, ge=1)
     rate_limit_refresh_per_minute: int = Field(default=30, ge=1)
     rate_limit_change_password_per_minute: int = Field(default=10, ge=1)
     rate_limit_mfa_per_minute: int = Field(default=10, ge=1)

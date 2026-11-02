@@ -17,15 +17,16 @@ import { SettingsService } from '../api/settings.service';
 import { AuthService } from '../auth/auth.service';
 import { I18n } from '../i18n/i18n';
 import { LegalLinks } from '../legal/legal-links';
+import { SiteNotice } from './site-notice';
 import { Icon } from '../ui/icon';
-import { NAV_ITEMS, ROLE_LABELS } from './nav';
+import { NAV_ITEMS, ROLE_LABEL_KEYS } from './nav';
 
 const PRODUCT_NAME = 'Vidyasetu';
 const NOTICE_POLL_MS = 120_000;
 
 @Component({
   selector: 'sms-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LegalLinks],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LegalLinks, SiteNotice],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.html',
   styleUrl: './shell.css',
@@ -57,7 +58,7 @@ export class Shell {
   protected readonly schoolName = computed(() => this.school.name() ?? PRODUCT_NAME);
   protected readonly roleLabel = computed(() => {
     const user = this.auth.user();
-    return user ? ROLE_LABELS[user.role] : '';
+    return user ? this.i18n.t(ROLE_LABEL_KEYS[user.role]) : '';
   });
   protected readonly initials = computed(() => {
     const name = this.auth.user()?.full_name ?? '';
@@ -79,14 +80,21 @@ export class Shell {
     );
   });
 
-  protected readonly title = toSignal(
+  /** The active route's breadcrumb: a translation key (`titleKey`) or the English `title`. */
+  private readonly crumb = toSignal(
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => this.currentTitle()),
-      startWith(this.currentTitle()),
+      map(() => this.currentCrumb()),
+      startWith(this.currentCrumb()),
     ),
-    { initialValue: 'Overview' },
+    { initialValue: { key: 'app.nav.overview', title: 'Overview' } as Crumb },
   );
+
+  /** Re-translated when the language changes. */
+  protected readonly title = computed(() => {
+    const crumb = this.crumb();
+    return crumb.key !== undefined ? this.i18n.t(crumb.key) : (crumb.title ?? '');
+  });
 
   constructor() {
     effect(() => {
@@ -117,12 +125,21 @@ export class Shell {
     this.userMenuOpen.set(false);
   }
 
-  private currentTitle(): string {
+  private currentCrumb(): Crumb {
     let route = this.router.routerState.snapshot.root;
     while (route.firstChild) {
       route = route.firstChild;
     }
+    const key: unknown = route.data['titleKey'];
     const title: unknown = route.data['title'];
-    return typeof title === 'string' ? title : 'Overview';
+    if (typeof key === 'string') {
+      return { key, title: typeof title === 'string' ? title : undefined };
+    }
+    return { title: typeof title === 'string' ? title : 'Overview' };
   }
+}
+
+interface Crumb {
+  key?: string;
+  title?: string;
 }

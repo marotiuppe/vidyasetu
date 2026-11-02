@@ -1,22 +1,22 @@
 <article class="legal-doc">
-  <h1>Grievances</h1>
+  <h1>{{ i18n.t('public.legal.grievances.title') }}</h1>
   <p class="lead">
     Use this page to raise a complaint about how your personal data or your account is handled on
     the Vidyasetu platform. A complaint can be about a school's use of the platform, or about the
     operator's own handling of data.
   </p>
 
-  <h2>1. Who to contact</h2>
+  <h2>{{ i18n.t('public.legal.grievances.contact') }}</h2>
   <dl class="legal-facts">
-    <dt>Grievance officer</dt>
+    <dt>{{ i18n.t('public.legal.fact.grievanceOfficer') }}</dt>
     <dd><sms-legal-value [value]="legal()?.grievance_officer_name" /></dd>
-    <dt>Email</dt>
+    <dt>{{ i18n.t('public.legal.fact.email') }}</dt>
     <dd><sms-legal-value [value]="legal()?.grievance_officer_email" kind="email" /></dd>
-    <dt>Phone</dt>
+    <dt>{{ i18n.t('public.legal.fact.phone') }}</dt>
     <dd><sms-legal-value [value]="legal()?.grievance_officer_phone" kind="phone" /></dd>
   </dl>
 
-  <h2>2. Start with the school</h2>
+  <h2>{{ i18n.t('public.legal.grievances.school') }}</h2>
   <p>
     The school decides how student and staff records are kept, so it is often the quickest place to
     start. The school's office or administration can correct a record, reset an account or explain a
@@ -24,7 +24,7 @@
     officer above.
   </p>
 
-  <h2>3. What to include</h2>
+  <h2>{{ i18n.t('public.legal.grievances.include') }}</h2>
   <ul>
     <li>Your name, and how you are connected to the student (parent, guardian or student).</li>
     <li>The school and branch, and the username on your account if you have one.</li>
@@ -40,7 +40,7 @@
     asks for a specific document. We will never ask for your password.
   </p>
 
-  <h2>4. What happens next</h2>
+  <h2>{{ i18n.t('public.legal.grievances.next') }}</h2>
   <ol>
     <li>We acknowledge your complaint.</li>
     <li>We look into it and may contact the school or ask you for more details.</li>
@@ -55,7 +55,7 @@
     </li>
   </ol>
 
-  <h2>5. If you are not satisfied</h2>
+  <h2>{{ i18n.t('public.legal.grievances.notSatisfied') }}</h2>
   <p>
     If you do not agree with the reply, you can ask for the decision to be reviewed. The escalation
     route is not yet published.
@@ -65,7 +65,7 @@
     complaint can be escalated.]
   </p>
 
-  <h2>6. Urgent matters</h2>
+  <h2>{{ i18n.t('public.legal.grievances.urgent') }}</h2>
   <p>
     This page is for data and account complaints, not emergencies. If a child is at risk, contact
     the school or the local emergency services straight away.

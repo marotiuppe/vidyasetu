@@ -1,16 +1,16 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">School setup</h1>
-    <p class="page-subtitle">Academic years, classes and sections for your school.</p>
+    <h1 class="page-title">{{ i18n.t('admin.setup.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admin.setup.subtitle') }}</p>
   </div>
 </div>
 
 @if (returning()) {
   <div class="return-banner" role="status">
-    <p>
-      Creating a new {{ kindLabel() }} for {{ from() }}. You will return automatically after saving.
-    </p>
-    <button type="button" class="btn btn-ghost" (click)="cancelCreate()">Cancel and go back</button>
+    <p>{{ i18n.t('admin.setup.returning', { kind: kindLabel(), from: from() }) }}</p>
+    <button type="button" class="btn btn-ghost" (click)="cancelCreate()">
+      {{ i18n.t('admin.setup.cancelBack') }}
+    </button>
   </div>
 }
 
@@ -25,41 +25,48 @@
     [class.is-target]="createKind() === 'academic_year'"
     aria-labelledby="years-title"
   >
-    <h2 class="card-title" id="years-title">Academic years</h2>
+    <h2 class="card-title" id="years-title">{{ i18n.t('admin.setup.yearsTitle') }}</h2>
     <ul class="list">
       @for (year of years(); track year.id) {
         <li>
           <span
-            >{{ year.name }} <small>({{ year.start_date }} to {{ year.end_date }})</small></span
+            >{{ year.name }}
+            <small>{{
+              i18n.t('admin.setup.range', { start: year.start_date, end: year.end_date })
+            }}</small></span
           >
           @if (year.is_current) {
-            <span class="badge badge-success">Current</span>
+            <span class="badge badge-success">{{ i18n.t('admin.setup.current') }}</span>
           } @else if (canManageYears()) {
             <button type="button" class="btn btn-ghost btn-sm" (click)="makeCurrent(year.id)">
-              Make current
+              {{ i18n.t('admin.setup.makeCurrent') }}
             </button>
           }
         </li>
       } @empty {
-        <li class="empty">No academic years yet.</li>
+        <li class="empty">{{ i18n.t('admin.setup.noYears') }}</li>
       }
     </ul>
     @if (canManageYears()) {
       <form [formGroup]="yearForm" (ngSubmit)="addYear()">
         <label class="field"
-          >Name <input class="input" formControlName="name" placeholder="2026-27"
+          >{{ i18n.t('admin.setup.name') }}
+          <input class="input" formControlName="name" placeholder="2026-27"
         /></label>
         <label class="field"
-          >Start <input class="input" type="date" formControlName="start_date"
+          >{{ i18n.t('admin.setup.start') }}
+          <input class="input" type="date" formControlName="start_date"
         /></label>
         <label class="field"
-          >End <input class="input" type="date" formControlName="end_date"
+          >{{ i18n.t('admin.setup.end') }}
+          <input class="input" type="date" formControlName="end_date"
         /></label>
         <label class="check"
-          ><input type="checkbox" formControlName="is_current" /> Current year</label
+          ><input type="checkbox" formControlName="is_current" />
+          {{ i18n.t('admin.setup.currentYear') }}</label
         >
         <button class="btn btn-primary" type="submit" [disabled]="yearForm.invalid">
-          Add year
+          {{ i18n.t('admin.setup.addYear') }}
         </button>
       </form>
     }
@@ -71,7 +78,7 @@
     [class.is-target]="createKind() === 'class'"
     aria-labelledby="classes-title"
   >
-    <h2 class="card-title" id="classes-title">Classes</h2>
+    <h2 class="card-title" id="classes-title">{{ i18n.t('admin.setup.classesTitle') }}</h2>
     <ul class="list">
       @for (c of classes(); track c.id) {
         <li>
@@ -82,20 +89,20 @@
             @for (s of sectionsOf(c.id); track s.id) {
               <span class="badge">{{ s.name }}</span>
             } @empty {
-              <small>no sections</small>
+              <small>{{ i18n.t('admin.setup.noSections') }}</small>
             }
           </span>
         </li>
       } @empty {
-        <li class="empty">No classes yet.</li>
+        <li class="empty">{{ i18n.t('admin.setup.noClasses') }}</li>
       }
     </ul>
     <form [formGroup]="classForm" (ngSubmit)="addClass()">
       @if (needsBranch()) {
         <label class="field">
-          Branch
+          {{ i18n.t('admin.setup.branch') }}
           <select class="input" formControlName="branch_id">
-            <option [value]="0" disabled>Select branch</option>
+            <option [value]="0" disabled>{{ i18n.t('admin.setup.selectBranch') }}</option>
             @for (b of branches(); track b.id) {
               <option [value]="b.id">{{ b.name }}</option>
             }
@@ -103,13 +110,15 @@
         </label>
       }
       <label class="field"
-        >Name <input class="input" formControlName="name" placeholder="1st"
+        >{{ i18n.t('admin.setup.name') }}
+        <input class="input" formControlName="name" placeholder="1st"
       /></label>
       <label class="field"
-        >Level <input class="input" type="number" formControlName="level" min="1" max="12"
+        >{{ i18n.t('admin.setup.level') }}
+        <input class="input" type="number" formControlName="level" min="1" max="12"
       /></label>
       <button class="btn btn-primary" type="submit" [disabled]="classForm.invalid">
-        Add class
+        {{ i18n.t('admin.setup.addClass') }}
       </button>
     </form>
   </section>
@@ -120,22 +129,23 @@
     [class.is-target]="createKind() === 'section'"
     aria-labelledby="section-title"
   >
-    <h2 class="card-title" id="section-title">Add section</h2>
+    <h2 class="card-title" id="section-title">{{ i18n.t('admin.setup.addSectionTitle') }}</h2>
     <form [formGroup]="sectionForm" (ngSubmit)="addSection()">
       <label class="field">
-        Class
+        {{ i18n.t('admin.setup.class') }}
         <select class="input" formControlName="class_id">
-          <option [value]="0" disabled>Select class</option>
+          <option [value]="0" disabled>{{ i18n.t('admin.setup.selectClass') }}</option>
           @for (c of classes(); track c.id) {
             <option [value]="c.id">{{ c.name }} ({{ branchName(c.branch_id) }})</option>
           }
         </select>
       </label>
       <label class="field"
-        >Name <input class="input" formControlName="name" placeholder="A"
+        >{{ i18n.t('admin.setup.name') }}
+        <input class="input" formControlName="name" placeholder="A"
       /></label>
       <button class="btn btn-primary" type="submit" [disabled]="sectionForm.invalid">
-        Add section
+        {{ i18n.t('admin.setup.addSection') }}
       </button>
     </form>
   </section>

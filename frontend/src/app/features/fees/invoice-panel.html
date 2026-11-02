@@ -1,28 +1,36 @@
-<section class="card" id="invoice-detail" aria-labelledby="invoice-title" [attr.aria-busy]="loading()">
+<section
+  class="card"
+  id="invoice-detail"
+  aria-labelledby="invoice-title"
+  [attr.aria-busy]="loading()"
+>
   @if (error(); as message) {
     <p class="form-error" role="alert">{{ message }}</p>
   }
   @if (loading() && !invoice()) {
-    <p class="empty" role="status">Loading invoice…</p>
+    <p class="empty" role="status">{{ i18n.t('fees.daily.panel.loading') }}</p>
   }
   @if (invoice(); as inv) {
     <div class="head">
       <div>
-        <h2 class="card-title" id="invoice-title">Invoice {{ inv.invoice_no }}</h2>
+        <h2 class="card-title" id="invoice-title">
+          {{ i18n.t('fees.daily.panel.title', { no: inv.invoice_no }) }}
+        </h2>
         <p class="sub">
-          {{ inv.student_name }} · Admission no. {{ inv.admission_no }} ·
-          {{ classSection(inv.class_name, inv.section_name) }}
+          {{ inv.student_name }} ·
+          {{ i18n.t('fees.daily.admissionNo', { no: inv.admission_no }) }} ·
+          {{ classText(inv.class_name, inv.section_name) }}
         </p>
-        <p class="sub">{{ inv.title }} · Due {{ inv.due_date }}</p>
+        <p class="sub">{{ inv.title }} · {{ i18n.t('fees.daily.due', { date: inv.due_date }) }}</p>
       </div>
       <div class="header-actions">
-        <span class="badge" [class]="statusClass(inv.status)">{{ statusLabel(inv.status) }}</span>
+        <span class="badge" [class]="statusClass(inv.status)">{{ statusText(inv.status) }}</span>
         @if (inv.is_overdue) {
-          <span class="badge badge-danger">Overdue</span>
+          <span class="badge badge-danger">{{ i18n.t('fees.daily.label.overdue') }}</span>
         }
         <button type="button" class="btn btn-ghost btn-sm" (click)="closed.emit()">
           <sms-icon name="close" [size]="14" />
-          Close
+          {{ i18n.t('fees.daily.close') }}
         </button>
       </div>
     </div>
@@ -31,21 +39,44 @@
       <p class="notice" role="status">{{ message }}</p>
     }
     @if (inv.status === 'cancelled') {
-      <p class="form-error">This invoice was cancelled@if (inv.cancel_reason) {: {{ inv.cancel_reason }}}.</p>
+      <p class="form-error">
+        @if (inv.cancel_reason) {
+          {{ i18n.t('fees.daily.panel.cancelledWithReason', { reason: inv.cancel_reason }) }}
+        } @else {
+          {{ i18n.t('fees.daily.panel.cancelled') }}
+        }
+      </p>
     }
 
     <dl class="sum">
-      <div><dt>Gross</dt><dd class="amount">{{ money(inv.gross_paise) }}</dd></div>
-      <div><dt>Discount</dt><dd class="amount">{{ money(inv.discount_paise) }}</dd></div>
-      <div><dt>Total</dt><dd class="amount">{{ money(inv.total_paise) }}</dd></div>
-      <div><dt>Paid</dt><dd class="amount">{{ money(inv.paid_paise) }}</dd></div>
-      <div><dt>Balance</dt><dd class="amount">{{ money(inv.balance_paise) }}</dd></div>
+      <div>
+        <dt>{{ i18n.t('fees.daily.label.gross') }}</dt>
+        <dd class="amount">{{ money(inv.gross_paise) }}</dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('fees.daily.label.discount') }}</dt>
+        <dd class="amount">{{ money(inv.discount_paise) }}</dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('fees.daily.label.total') }}</dt>
+        <dd class="amount">{{ money(inv.total_paise) }}</dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('fees.daily.label.paid') }}</dt>
+        <dd class="amount">{{ money(inv.paid_paise) }}</dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('fees.daily.label.balance') }}</dt>
+        <dd class="amount">{{ money(inv.balance_paise) }}</dd>
+      </div>
     </dl>
     @if (inv.discount_reason) {
-      <p class="row-sub">Discount reason: {{ inv.discount_reason }}</p>
+      <p class="row-sub">
+        {{ i18n.t('fees.daily.panel.discountReason', { reason: inv.discount_reason }) }}
+      </p>
     }
 
-    <h3>Fee lines</h3>
+    <h3>{{ i18n.t('fees.daily.panel.feeLines') }}</h3>
     <ul class="rows">
       @for (l of inv.lines; track l.id) {
         <li class="row">
@@ -58,32 +89,47 @@
     @if (canEdit() || canCancel()) {
       <div class="form-actions">
         @if (canEdit()) {
-          <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="editOpen()" (click)="openEdit()">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [attr.aria-expanded]="editOpen()"
+            (click)="openEdit()"
+          >
             <sms-icon name="edit" [size]="14" />
-            Edit discount and due date
+            {{ i18n.t('fees.daily.panel.editButton') }}
           </button>
         }
         @if (canCancel()) {
-          <button type="button" class="btn btn-ghost btn-sm" [attr.aria-expanded]="cancelOpen()" (click)="openCancel()">
-            Cancel invoice
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [attr.aria-expanded]="cancelOpen()"
+            (click)="openCancel()"
+          >
+            {{ i18n.t('fees.daily.panel.cancelButton') }}
           </button>
         }
       </div>
     }
 
     @if (editOpen()) {
-      <form class="panel stack" [formGroup]="editForm" (ngSubmit)="saveEdit(inv)" aria-label="Edit invoice">
+      <form
+        class="panel stack"
+        [formGroup]="editForm"
+        (ngSubmit)="saveEdit(inv)"
+        [attr.aria-label]="i18n.t('fees.daily.panel.editAria')"
+      >
         <div class="form-grid">
           <label class="field">
-            Due date
+            {{ i18n.t('fees.daily.panel.dueDate') }}
             <input class="input" type="date" formControlName="dueDate" />
           </label>
           <label class="field">
-            Discount (rupees)
+            {{ i18n.t('fees.daily.panel.discountRupees') }}
             <input class="input" type="text" inputmode="decimal" formControlName="discount" />
           </label>
           <label class="field">
-            Discount reason
+            {{ i18n.t('fees.daily.panel.discountReasonLabel') }}
             <input class="input" type="text" maxlength="200" formControlName="reason" />
           </label>
         </div>
@@ -91,109 +137,153 @@
           <p class="form-error" role="alert">{{ message }}</p>
         }
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="busy()">Save changes</button>
-          <button type="button" class="btn btn-ghost" (click)="closeForms()">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            {{ i18n.t('fees.daily.panel.saveChanges') }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="closeForms()">
+            {{ i18n.t('fees.daily.cancel') }}
+          </button>
         </div>
       </form>
     }
 
     @if (cancelOpen()) {
-      <form class="panel stack" (submit)="$event.preventDefault(); cancelInvoice(inv)" aria-label="Cancel invoice">
+      <form
+        class="panel stack"
+        (submit)="$event.preventDefault(); cancelInvoice(inv)"
+        [attr.aria-label]="i18n.t('fees.daily.panel.cancelButton')"
+      >
         <label class="field">
-          Reason for cancelling
+          {{ i18n.t('fees.daily.panel.reasonCancel') }}
           <input class="input" type="text" maxlength="200" [formControl]="reasonControl" />
         </label>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary" [disabled]="busy()">Confirm cancel</button>
-          <button type="button" class="btn btn-ghost" (click)="closeForms()">Keep invoice</button>
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            {{ i18n.t('fees.daily.panel.confirmCancel') }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="closeForms()">
+            {{ i18n.t('fees.daily.panel.keepInvoice') }}
+          </button>
         </div>
       </form>
     }
 
-    <h3>Payments</h3>
+    <h3>{{ i18n.t('fees.daily.paymentsHeading') }}</h3>
     <ul class="rows">
       @for (p of inv.payments; track p.id) {
         <li class="row">
           <span class="row-main">
-            <span [class.void]="p.status === 'reversed'">{{ p.receipt_no }} · {{ money(p.amount_paise) }}</span>
+            <span [class.void]="p.status === 'reversed'"
+              >{{ p.receipt_no }} · {{ money(p.amount_paise) }}</span
+            >
             <span class="row-sub">
-              {{ p.paid_on }} · {{ methodLabel(p.method) }}@if (p.reference) { · Ref {{ p.reference }}}
-              · Received by {{ p.received_by_name }}
+              {{ p.paid_on }} · {{ methodText(p.method) }}
+              @if (p.reference) {
+                · {{ i18n.t('fees.daily.refNo', { ref: p.reference }) }}
+              }
+              · {{ i18n.t('fees.daily.receivedBy', { name: p.received_by_name }) }}
             </span>
             @if (p.status === 'reversed') {
-              <span class="row-sub">Reversed: {{ p.reversed_reason }}</span>
+              <span class="row-sub">
+                {{ i18n.t('fees.daily.reversedReason', { reason: p.reversed_reason ?? '' }) }}
+              </span>
             }
           </span>
           <span class="badge" [class]="p.status === 'received' ? 'badge-success' : 'badge-muted'">
-            {{ p.status === 'received' ? 'Received' : 'Reversed' }}
+            {{
+              p.status === 'received'
+                ? i18n.t('fees.daily.received')
+                : i18n.t('fees.daily.reversed')
+            }}
           </span>
           <span class="row-actions">
             <button
               type="button"
               class="btn btn-ghost btn-sm"
-              [attr.aria-label]="'Receipt ' + p.receipt_no"
+              [attr.aria-label]="i18n.t('fees.daily.receiptNo', { no: p.receipt_no })"
               (click)="receipt(p)"
             >
               <sms-icon name="download" [size]="14" />
-              Receipt
+              {{ i18n.t('fees.daily.receipt') }}
             </button>
             @if (canManage() && p.status === 'received') {
               <button
                 type="button"
                 class="btn btn-ghost btn-sm"
-                [attr.aria-label]="'Reverse payment ' + p.receipt_no"
+                [attr.aria-label]="i18n.t('fees.daily.reverseAria', { no: p.receipt_no })"
                 [attr.aria-expanded]="reversingId() === p.id"
                 (click)="openReverse(p)"
               >
-                Reverse
+                {{ i18n.t('fees.daily.reverse') }}
               </button>
             }
           </span>
           @if (reversingId() === p.id) {
-            <form class="panel stack" (submit)="$event.preventDefault(); reverse(p)" aria-label="Reverse payment">
+            <form
+              class="panel stack"
+              (submit)="$event.preventDefault(); reverse(p)"
+              [attr.aria-label]="i18n.t('fees.daily.reversePaymentForm')"
+            >
               <label class="field">
-                Reason for reversing {{ p.receipt_no }}
+                {{ i18n.t('fees.daily.reverseReasonFor', { no: p.receipt_no }) }}
                 <input class="input" type="text" maxlength="200" [formControl]="reasonControl" />
               </label>
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary" [disabled]="busy()">Confirm reverse</button>
-                <button type="button" class="btn btn-ghost" (click)="closeForms()">Cancel</button>
+                <button type="submit" class="btn btn-primary" [disabled]="busy()">
+                  {{ i18n.t('fees.daily.confirmReverse') }}
+                </button>
+                <button type="button" class="btn btn-ghost" (click)="closeForms()">
+                  {{ i18n.t('fees.daily.cancel') }}
+                </button>
               </div>
             </form>
           }
         </li>
       } @empty {
-        <li class="empty">No payments yet.</li>
+        <li class="empty">{{ i18n.t('fees.daily.noPaymentsYet') }}</li>
       }
     </ul>
 
     @if (canRecord()) {
-      <h3>Record payment</h3>
-      <form class="panel stack" [formGroup]="payForm" (ngSubmit)="recordPayment(inv)" aria-label="Record payment">
+      <h3>{{ i18n.t('fees.daily.recordPayment') }}</h3>
+      <form
+        class="panel stack"
+        [formGroup]="payForm"
+        (ngSubmit)="recordPayment(inv)"
+        [attr.aria-label]="i18n.t('fees.daily.panel.recordAria')"
+      >
         <div class="form-grid">
           <label class="field">
-            Amount (rupees)
-            <input class="input" type="text" inputmode="decimal" autocomplete="off" formControlName="amount" />
-            <span class="hint">Balance {{ money(inv.balance_paise) }}</span>
+            {{ i18n.t('fees.daily.panel.amountRupees') }}
+            <input
+              class="input"
+              type="text"
+              inputmode="decimal"
+              autocomplete="off"
+              formControlName="amount"
+            />
+            <span class="hint">{{
+              i18n.t('fees.daily.amount.balance', { amount: money(inv.balance_paise) })
+            }}</span>
           </label>
           <label class="field">
-            Method
+            {{ i18n.t('fees.daily.method') }}
             <select class="input" formControlName="method">
               @for (m of methods; track m) {
-                <option [value]="m">{{ methodLabel(m) }}</option>
+                <option [value]="m">{{ methodText(m) }}</option>
               }
             </select>
           </label>
           <label class="field">
-            Reference (optional)
+            {{ i18n.t('fees.daily.referenceOptional') }}
             <input class="input" type="text" maxlength="100" formControlName="reference" />
           </label>
           <label class="field">
-            Paid on
+            {{ i18n.t('fees.daily.paidOn') }}
             <input class="input" type="date" [max]="today" formControlName="paidOn" />
           </label>
           <label class="field">
-            Note (optional)
+            {{ i18n.t('fees.daily.noteOptional') }}
             <input class="input" type="text" maxlength="200" formControlName="note" />
           </label>
         </div>
@@ -202,7 +292,7 @@
         }
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="busy()">
-            {{ busy() ? 'Saving…' : 'Record payment' }}
+            {{ busy() ? i18n.t('fees.daily.saving') : i18n.t('fees.daily.recordPayment') }}
           </button>
         </div>
       </form>

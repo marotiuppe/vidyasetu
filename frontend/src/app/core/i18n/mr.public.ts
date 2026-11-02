@@ -1,0 +1,162 @@
+/** Marathi strings for the public landing page and the legal pages (prefix `public.`). Long policy prose stays English. */
+export const MR_PUBLIC: Record<string, string> = {
+  'public.skip': 'मुख्य मजकुराकडे जा',
+  'public.landing.pageTitle': 'विद्यासेतू: शाळा व्यवस्थापन',
+
+  'public.nav.home': 'Vidyasetu मुख्यपृष्ठ',
+  'public.nav.sections': 'पृष्ठाचे विभाग',
+  'public.nav.features': 'वैशिष्ट्ये',
+  'public.nav.how': 'हे कसे चालते',
+  'public.action.signIn': 'साइन इन करा',
+  'public.footer.tagline': 'शाळा आणि त्यांनी सेवा देत असलेली कुटुंबे यांच्यातील एक सेतू.',
+
+  'public.hero.kicker': 'शाळा आणि त्यांच्या कुटुंबांसाठी शाळा व्यवस्थापन',
+  'public.hero.title': 'तुमची संपूर्ण शाळा एकाच शांत ठिकाणाहून चालवा.',
+  'public.hero.lead':
+    'प्रवेश, उपस्थिती, शुल्क आणि सूचना एकाच कार्यक्षेत्रात. शाळेतील कर्मचारी आणि त्यांच्याशी संबंधित पालक व विद्यार्थ्यांसाठी तयार केलेले.',
+  'public.hero.seeFeatures': 'वैशिष्ट्ये पहा',
+  'public.hero.floatAttendance': 'उपस्थिती जतन केली',
+  'public.hero.floatReceipt': 'पावती तयार',
+  'public.hero.floatNotice': 'नवीन सूचना',
+
+  'public.features.title': 'शालेय दिवसाला लागणारे सर्व काही',
+  'public.features.lead':
+    'शाळा चालवणाऱ्या लोकांसाठी आणि त्यावर अवलंबून असलेल्या कुटुंबांसाठी एक कार्यक्षेत्र.',
+  'public.features.students.title': 'विद्यार्थी आणि पालक',
+  'public.features.students.text':
+    'विद्यार्थ्यांना प्रवेश द्या, नोंदी एका ठिकाणी ठेवा आणि प्रत्येक मुलाला त्याच्या पालकांशी जोडा.',
+  'public.features.attendance.title': 'दैनंदिन उपस्थिती',
+  'public.features.attendance.text':
+    'एका वर्गाची उपस्थिती काही टॅपमध्ये नोंदवा आणि विद्यार्थ्यांचा व कर्मचाऱ्यांचा सारांश पहा.',
+  'public.features.notices.title': 'सूचना आणि परिपत्रके',
+  'public.features.notices.text':
+    'संपूर्ण शाळेला किंवा निवडलेल्या गटांना सूचना प्रसिद्ध करा आणि त्या कोणी वाचल्या ते पहा.',
+  'public.features.fees.title': 'शुल्क आणि पावत्या',
+  'public.features.fees.text': 'शुल्क प्रकार तयार करा, बीजके काढा, भरणा नोंदवा आणि पावत्या द्या.',
+  'public.features.portal.title': 'पालक आणि विद्यार्थी पोर्टल',
+  'public.features.portal.text':
+    'कुटुंबे आपल्या मुलांची उपस्थिती, सूचना आणि शुल्क थकबाकी पाहण्यासाठी साइन इन करतात.',
+  'public.features.branches.title': 'अनेक शाळा आणि शाखा',
+  'public.features.branches.text':
+    'एकाच प्लॅटफॉर्मवर अनेक शाळा किंवा शाखा चालवा; प्रत्येक एकमेकांपासून वेगळी राहते.',
+
+  'public.steps.setup.title': 'तुमची शाळा आणि शाखा सेट करा',
+  'public.steps.setup.text': 'शाळा, तिच्या शाखा, वर्ग आणि शैक्षणिक वर्ष तयार करा.',
+  'public.steps.people.title': 'विद्यार्थी, पालक आणि कर्मचारी जोडा',
+  'public.steps.people.text':
+    'विद्यार्थ्यांच्या नोंदी आणा, पालकांना जोडा आणि योग्य भूमिकांसह तुमच्या टीमला आमंत्रित करा.',
+  'public.steps.run.title': 'दिवस चालवा: उपस्थिती, सूचना, शुल्क',
+  'public.steps.run.text':
+    'उपस्थिती नोंदवा, सूचना प्रसिद्ध करा आणि कुटुंबांना माहिती देत शुल्क गोळा करा.',
+
+  'public.trust.label': 'गोपनीयता आणि प्रवेश',
+  'public.trust.separate': 'प्रत्येक शाळेचा डेटा वेगळा राहतो',
+  'public.trust.roles': 'कर्मचारी, पालक आणि विद्यार्थ्यांसाठी भूमिकेनुसार प्रवेश',
+  'public.cta.title': 'तुमचे शाळा कार्यक्षेत्र उघडण्यास तयार आहात?',
+  'public.cta.text': 'तुमच्या शाळेने दिलेल्या खात्याने साइन इन करा.',
+
+  'public.legal.back': 'मागे',
+  'public.legal.bannerNotConfigured':
+    'सेवा चालवणाऱ्याने अजून कायदेशीर संपर्क तपशील भरलेले नाहीत. हे पान एक नमुना आहे; खऱ्या विद्यार्थी डेटासह सेवा वापरण्यापूर्वी त्याचा आढावा घेणे आवश्यक आहे.',
+  'public.legal.bannerFailed':
+    'सेवा चालवणाऱ्याचे तपशील लोड होऊ शकले नाहीत. पुन्हा प्रयत्न करण्यासाठी पान रीफ्रेश करा.',
+  'public.legal.templateNote':
+    'हा मजकूर नमुना आहे; खऱ्या विद्यार्थी डेटासह सेवा वापरण्यापूर्वी पात्र वकिलाकडून त्याचा आढावा घेतला जावा.',
+  'public.legal.menu': 'कायदेशीर',
+  'public.legal.value.loading': 'लोड होत आहे…',
+  'public.legal.value.missing': 'सेवा चालवणाऱ्याने अजून दिलेले नाही',
+
+  'public.legal.link.privacy': 'गोपनीयता धोरण',
+  'public.legal.link.terms': 'वापराच्या अटी',
+  'public.legal.link.children': 'मुलांची गोपनीयता',
+  'public.legal.link.cookies': 'कुकीज आणि साठवणूक',
+  'public.legal.link.accessibility': 'सुलभता',
+  'public.legal.link.grievance': 'तक्रारी',
+  'public.legal.link.security': 'सुरक्षा',
+
+  'public.legal.fact.effectiveDate': 'लागू होण्याची तारीख',
+  'public.legal.fact.privacyContact': 'गोपनीयता संपर्क',
+  'public.legal.fact.operator': 'सेवा चालवणारा',
+  'public.legal.fact.address': 'पत्ता',
+  'public.legal.fact.email': 'ईमेल',
+  'public.legal.fact.phone': 'फोन',
+  'public.legal.fact.hostingRegion': 'होस्टिंग क्षेत्र',
+  'public.legal.fact.grievanceOfficer': 'तक्रार अधिकारी',
+  'public.legal.fact.securityContact': 'सुरक्षा संपर्क',
+  'public.legal.fact.machineNotice': 'मशीन-वाचनीय सूचना',
+  'public.legal.fact.target': 'लक्ष्य',
+  'public.legal.fact.auditStatus': 'लेखापरीक्षण स्थिती',
+  'public.legal.fact.accessContact': 'सुलभता संपर्क',
+  'public.legal.fact.auditPending':
+    'अजून स्वतंत्र सुलभता तज्ज्ञाकडून औपचारिक लेखापरीक्षण झालेले नाही',
+  'public.legal.privacy.operatorDetails': 'सेवा चालवणाऱ्याचे तपशील:',
+
+  'public.legal.accessibility.title': 'सुलभता निवेदन',
+  'public.legal.accessibility.aim': '1. आम्ही कशाचे ध्येय ठेवतो',
+  'public.legal.accessibility.inPlace': '2. काय उपलब्ध आहे',
+  'public.legal.accessibility.limits': '3. ज्ञात मर्यादा',
+  'public.legal.accessibility.reporting': '4. समस्या कळवणे',
+  'public.legal.accessibility.review': '5. औपचारिक आढावा',
+
+  'public.legal.privacy.title': 'गोपनीयता धोरण',
+  'public.legal.privacy.who': '1. तुमच्या डेटासाठी कोण जबाबदार आहे',
+  'public.legal.privacy.data': '2. आम्ही कोणता डेटा हाताळतो',
+  'public.legal.privacy.why': '3. आम्ही तो का वापरतो',
+  'public.legal.privacy.seeIt': '4. तो कोण पाहू शकतो',
+  'public.legal.privacy.share': '5. आम्ही तो कोणाशी सामायिक करतो',
+  'public.legal.privacy.keep': '6. आम्ही तो किती काळ ठेवतो',
+  'public.legal.privacy.protect': '7. आम्ही त्याचे संरक्षण कसे करतो',
+  'public.legal.privacy.rights': '8. तुमचे हक्क',
+  'public.legal.privacy.children': '9. मुले',
+  'public.legal.privacy.changes': '10. या धोरणातील बदल',
+
+  'public.legal.terms.title': 'वापराच्या अटी',
+  'public.legal.terms.who': '1. सेवा कोण वापरू शकते',
+  'public.legal.terms.accounts': '2. खाती आणि पासवर्ड',
+  'public.legal.terms.acceptable': '3. स्वीकार्य वापर',
+  'public.legal.terms.schoolDuties': '4. शाळेच्या जबाबदाऱ्या',
+  'public.legal.terms.availability': '5. उपलब्धता',
+  'public.legal.terms.optional': '6. ऐच्छिक सेवा',
+  'public.legal.terms.ip': '7. बौद्धिक संपदा',
+  'public.legal.terms.suspension': '8. निलंबन',
+  'public.legal.terms.liability': '9. जबाबदारीच्या मर्यादा',
+  'public.legal.terms.changes': '10. या अटींमधील बदल',
+  'public.legal.terms.law': '11. लागू कायदा आणि वाद',
+  'public.legal.terms.contact': '12. संपर्क',
+
+  'public.legal.security.title': 'सुरक्षा आणि जबाबदार माहिती प्रकटीकरण',
+  'public.legal.security.report': '1. समस्या कशी कळवावी',
+  'public.legal.security.scope': '2. काय समाविष्ट आहे',
+  'public.legal.security.outOfScope': '3. काय समाविष्ट नाही',
+  'public.legal.security.doThis': '4. कृपया हे करा',
+  'public.legal.security.commitment': '5. आमची बांधिलकी',
+  'public.legal.security.controls': '6. आज अस्तित्वात असलेली सुरक्षा नियंत्रणे',
+  'public.legal.security.planned': '7. नियोजित, अजून अस्तित्वात नाही',
+
+  'public.legal.children.title': 'मुलांच्या गोपनीयतेची सूचना',
+  'public.legal.children.school': '1. शाळा जबाबदार आहे',
+  'public.legal.children.parents': '2. पालक आणि संमती',
+  'public.legal.children.students': '3. विद्यार्थ्यांची खाती',
+  'public.legal.children.notDo': '4. आम्ही काय करत नाही',
+  'public.legal.children.sensitive': '5. संवेदनशील ओळखक्रमांक',
+  'public.legal.children.who': '6. मुलाची नोंद कोण पाहू शकते',
+  'public.legal.children.correction': '7. दुरुस्ती आणि हटवणे',
+  'public.legal.children.security': '8. सुरक्षा',
+  'public.legal.children.changes': '9. बदल',
+
+  'public.legal.cookies.title': 'कुकीज आणि साठवणूक',
+  'public.legal.cookies.signIn': '1. साइन-इन कुकी',
+  'public.legal.cookies.token': '2. तुमचा प्रवेश टोकन',
+  'public.legal.cookies.notUsed': '3. आम्ही काय वापरत नाही',
+  'public.legal.cookies.offline': '4. ऑफलाइन अ‍ॅप आवरण',
+  'public.legal.cookies.control': '5. कुकीज आणि साठवणूक नियंत्रित करणे',
+  'public.legal.cookies.changes': '6. बदल',
+
+  'public.legal.grievances.title': 'तक्रारी',
+  'public.legal.grievances.contact': '1. कोणाशी संपर्क साधावा',
+  'public.legal.grievances.school': '2. शाळेपासून सुरुवात करा',
+  'public.legal.grievances.include': '3. काय समाविष्ट करावे',
+  'public.legal.grievances.next': '4. पुढे काय होते',
+  'public.legal.grievances.notSatisfied': '5. समाधान न झाल्यास',
+  'public.legal.grievances.urgent': '6. तातडीच्या बाबी',
+};

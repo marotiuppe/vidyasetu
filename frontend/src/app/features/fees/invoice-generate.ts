@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, of, switchMap, tap } from 'rxjs';
@@ -6,6 +13,7 @@ import { catchError, of, switchMap, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { FeesApi, GenerateInput, GenerateResult, StructureItem } from '../../core/api/fees.api';
 import { Student } from '../../core/api/students.api';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise } from '../../core/ui/money';
 import { FeeLookups } from './fee-lookups';
@@ -24,6 +32,7 @@ export class InvoiceGenerate {
   private readonly api = inject(FeesApi);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly lookups = inject(FeeLookups);
+  protected readonly i18n = inject(I18n);
 
   readonly generated = output<void>();
   readonly closed = output<void>();
@@ -38,7 +47,9 @@ export class InvoiceGenerate {
     classId: [0],
     sectionId: [0],
   });
-  private readonly values = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly values = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
 
   protected readonly students = signal<Student[]>([]);
   protected readonly structure = signal<StructureItem[]>([]);
@@ -48,7 +59,9 @@ export class InvoiceGenerate {
   protected readonly result = signal<GenerateResult | null>(null);
 
   protected readonly target = computed(() => this.values().target ?? 'class');
-  protected readonly sectionOptions = computed(() => this.lookups.sectionsOf(Number(this.values().classId)));
+  protected readonly sectionOptions = computed(() =>
+    this.lookups.sectionsOf(Number(this.values().classId)),
+  );
   protected readonly studentIds = computed(() => this.students().map((s) => s.id));
 
   constructor() {
@@ -79,7 +92,9 @@ export class InvoiceGenerate {
   }
 
   protected toggleHead(headId: number): void {
-    this.unchecked.update((u) => (u.includes(headId) ? u.filter((x) => x !== headId) : [...u, headId]));
+    this.unchecked.update((u) =>
+      u.includes(headId) ? u.filter((x) => x !== headId) : [...u, headId],
+    );
   }
 
   protected addStudent(s: Student): void {
@@ -95,25 +110,28 @@ export class InvoiceGenerate {
     this.result.set(null);
     const v = this.form.getRawValue();
     const title = v.title.trim();
-    if (!v.yearId) return this.error.set('Choose an academic year.');
-    if (!title) return this.error.set('Enter a title for the invoices.');
-    if (!v.dueDate) return this.error.set('Choose a due date.');
+    if (!v.yearId) return this.error.set(this.i18n.t('fees.setup.common.chooseYear'));
+    if (!title) return this.error.set(this.i18n.t('fees.setup.generate.enterTitle'));
+    if (!v.dueDate) return this.error.set(this.i18n.t('fees.setup.common.chooseDue'));
 
     const body: GenerateInput = { academic_year_id: v.yearId, title, due_date: v.dueDate };
     if (v.target === 'students') {
-      if (!this.students().length) return this.error.set('Add at least one student.');
+      if (!this.students().length)
+        return this.error.set(this.i18n.t('fees.setup.generate.addStudent'));
       body.student_ids = this.studentIds();
     } else {
-      if (!v.classId) return this.error.set('Choose a class.');
+      if (!v.classId) return this.error.set(this.i18n.t('fees.setup.common.chooseClassError'));
       body.class_id = v.classId;
       if (v.target === 'section') {
-        if (!v.sectionId) return this.error.set('Choose a section.');
+        if (!v.sectionId)
+          return this.error.set(this.i18n.t('fees.setup.common.chooseSectionError'));
         body.section_id = v.sectionId;
       }
       const chosen = this.structure()
         .filter((i) => this.isChecked(i.fee_head_id))
         .map((i) => i.fee_head_id);
-      if (this.structure().length && !chosen.length) return this.error.set('Select at least one fee head.');
+      if (this.structure().length && !chosen.length)
+        return this.error.set(this.i18n.t('fees.setup.generate.selectHead'));
       if (chosen.length && chosen.length < this.structure().length) body.fee_head_ids = chosen;
     }
 

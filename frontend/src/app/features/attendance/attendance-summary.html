@@ -1,15 +1,15 @@
 <section class="card" aria-labelledby="summary-title">
-  <h2 class="card-title" id="summary-title">Daily summary</h2>
+  <h2 class="card-title" id="summary-title">{{ i18n.t('ops.tab.summary') }}</h2>
   <div class="toolbar">
     <label class="field">
-      Date
+      {{ i18n.t('ops.common.date') }}
       <input class="input" type="date" [value]="date()" [max]="today" (change)="pickDate($event)" />
     </label>
     @if (canPickBranch) {
       <label class="field">
-        Branch
+        {{ i18n.t('ops.common.branch') }}
         <select class="input" (change)="pickBranch($event)">
-          <option value="0">All branches</option>
+          <option value="0">{{ i18n.t('ops.common.allBranches') }}</option>
           @for (b of branches(); track b.id) {
             <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
           }
@@ -26,11 +26,15 @@
   }
 
   @if (loading()) {
-    <p class="empty" role="status">Loading summary…</p>
+    <p class="empty" role="status">{{ i18n.t('ops.sum.loading') }}</p>
   } @else if (data(); as d) {
     @if (!d.is_working_day) {
       <p class="panel" role="status">
-        Not a working day{{ d.non_working_reason ? ': ' + d.non_working_reason : '' }}.
+        @if (d.non_working_reason) {
+          {{ i18n.t('ops.common.notWorkingReason', { reason: d.non_working_reason }) }}
+        } @else {
+          {{ i18n.t('ops.common.notWorkingDay') }}
+        }
       </p>
     }
 
@@ -39,27 +43,36 @@
         @for (s of d.sections; track s.section_id) {
           <li class="row">
             <div class="row-main">
-              <strong>Class {{ s.class_name }}, section {{ s.section_name }}</strong>
+              <strong>{{
+                i18n.t('ops.common.classSection', { cls: s.class_name, sec: s.section_name })
+              }}</strong>
               <span class="row-sub">
-                {{ s.total }} students · Present {{ s.present }} · Absent {{ s.absent }} · Leave
-                {{ s.leave }} · Unmarked {{ s.unmarked }}
+                {{
+                  i18n.t('ops.sum.rowSub', {
+                    total: s.total,
+                    present: s.present,
+                    absent: s.absent,
+                    leave: s.leave,
+                    unmarked: s.unmarked,
+                  })
+                }}
               </span>
             </div>
             <div class="meter">
               @if (presentPercent(s.present, s.total - s.unmarked); as pct) {
-                <div
-                  class="bar"
-                  role="img"
-                  [attr.aria-label]="pct + ' percent of marked students present'"
-                >
+                <div class="bar" role="img" [attr.aria-label]="i18n.t('ops.sum.pctBar', { pct })">
                   <span [style.width.%]="pct"></span>
                 </div>
                 <span class="pct">{{ pct }}%</span>
               } @else {
-                <div class="bar" role="img" aria-label="Not marked yet"></div>
+                <div
+                  class="bar"
+                  role="img"
+                  [attr.aria-label]="i18n.t('ops.sum.notMarkedYet')"
+                ></div>
                 <span class="pct">
                   @if (s.total - s.unmarked === 0) {
-                    Not marked
+                    {{ i18n.t('ops.common.notMarked') }}
                   } @else {
                     0%
                   }
@@ -72,30 +85,41 @@
                 routerLink="/attendance"
                 [queryParams]="{ tab: 'mark', section: s.section_id, date: date() }"
                 [attr.aria-label]="
-                  'Mark attendance for class ' + s.class_name + ' section ' + s.section_name
+                  i18n.t('ops.sum.markFor', { cls: s.class_name, sec: s.section_name })
                 "
               >
-                Mark
+                {{ i18n.t('ops.sum.mark') }}
               </a>
             }
           </li>
         }
       </ul>
-      <div class="totals" role="group" aria-label="Totals">
-        <strong>Total</strong>
+      <div class="totals" role="group" [attr.aria-label]="i18n.t('ops.sum.totalsAria')">
+        <strong>{{ i18n.t('ops.common.total') }}</strong>
         <ul class="stat-strip">
-          <li class="badge">Students {{ d.totals.total }}</li>
-          <li class="badge st-tone st-present">Present {{ d.totals.present }}</li>
-          <li class="badge st-tone st-absent">Absent {{ d.totals.absent }}</li>
-          <li class="badge st-tone st-leave">Leave {{ d.totals.leave }}</li>
-          <li class="badge badge-muted">Unmarked {{ d.totals.unmarked }}</li>
-          @if (totalPercent() !== null) {
-            <li class="badge badge-success">{{ totalPercent() }}% present</li>
+          <li class="badge">{{ i18n.t('ops.count.students', { n: d.totals.total }) }}</li>
+          <li class="badge st-tone st-present">
+            {{ i18n.t('ops.count.present', { n: d.totals.present }) }}
+          </li>
+          <li class="badge st-tone st-absent">
+            {{ i18n.t('ops.count.absent', { n: d.totals.absent }) }}
+          </li>
+          <li class="badge st-tone st-leave">
+            {{ i18n.t('ops.count.leave', { n: d.totals.leave }) }}
+          </li>
+          <li class="badge badge-muted">
+            {{ i18n.t('ops.count.unmarked', { n: d.totals.unmarked }) }}
+          </li>
+          @let overall = totalPercent();
+          @if (overall !== null) {
+            <li class="badge badge-success">
+              {{ i18n.t('ops.count.percentPresent', { n: overall }) }}
+            </li>
           }
         </ul>
       </div>
     } @else {
-      <p class="empty">No class sections found.</p>
+      <p class="empty">{{ i18n.t('ops.sum.noSections') }}</p>
     }
   }
 </section>

@@ -7,7 +7,7 @@
       (click)="setMode('generate')"
     >
       <sms-icon name="sparkle" [size]="16" />
-      Generate invoices
+      {{ i18n.t('fees.daily.invoices.generate') }}
     </button>
     <button
       type="button"
@@ -16,7 +16,7 @@
       (click)="setMode('new')"
     >
       <sms-icon name="plus" [size]="16" />
-      New invoice
+      {{ i18n.t('fees.daily.invoices.new') }}
     </button>
   </div>
 }
@@ -43,91 +43,109 @@
   }
 
   <section class="card" aria-labelledby="invoice-list">
-    <h2 class="card-title" id="invoice-list">Invoices</h2>
+    <h2 class="card-title" id="invoice-list">{{ i18n.t('fees.daily.invoices.title') }}</h2>
 
     <div class="toolbar" role="search">
       <label class="field">
-        Search
+        {{ i18n.t('fees.daily.invoices.search') }}
         <input
           class="input"
           type="search"
-          placeholder="Student, admission or invoice no."
+          [attr.placeholder]="i18n.t('fees.daily.invoices.searchPlaceholder')"
           autocomplete="off"
           [value]="filters().q"
           (input)="patch({ q: onValue($event) })"
         />
       </label>
       <label class="field">
-        Academic year
+        {{ i18n.t('fees.daily.academicYear') }}
         <select class="input" (change)="onSelect('yearId', $event)">
-          <option value="0" [selected]="filters().yearId === 0">All years</option>
+          <option value="0" [selected]="filters().yearId === 0">
+            {{ i18n.t('fees.daily.allYears') }}
+          </option>
           @for (y of lookups.years(); track y.id) {
             <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
           }
           @if (canCreate.academic_year) {
-            <option [value]="createNew">{{ createNewLabel }}</option>
+            <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
           }
         </select>
       </label>
       <label class="field">
-        Class
+        {{ i18n.t('fees.daily.class') }}
         <select class="input" (change)="onSelect('classId', $event)">
-          <option value="0" [selected]="filters().classId === 0">All classes</option>
+          <option value="0" [selected]="filters().classId === 0">
+            {{ i18n.t('fees.daily.allClasses') }}
+          </option>
           @for (c of lookups.classes(); track c.id) {
             <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
           }
           @if (canCreate.class) {
-            <option [value]="createNew">{{ createNewLabel }}</option>
+            <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
           }
         </select>
       </label>
       <label class="field">
-        Section
+        {{ i18n.t('fees.daily.section') }}
         <select
           class="input"
           [disabled]="!filters().classId"
           (change)="onSelect('sectionId', $event)"
         >
-          <option value="0" [selected]="filters().sectionId === 0">All sections</option>
+          <option value="0" [selected]="filters().sectionId === 0">
+            {{ i18n.t('fees.daily.allSections') }}
+          </option>
           @for (s of sectionOptions(); track s.id) {
             <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
           }
           @if (canCreate.section && filters().classId) {
-            <option [value]="createNew">{{ createNewLabel }}</option>
+            <option [value]="createNew">{{ i18n.t('fees.daily.createNew') }}</option>
           }
         </select>
       </label>
       <label class="field">
-        Status
+        {{ i18n.t('fees.daily.statusLabel') }}
         <select class="input" (change)="onStatus($event)">
-          <option value="" [selected]="filters().status === ''">All statuses</option>
+          <option value="" [selected]="filters().status === ''">
+            {{ i18n.t('fees.daily.allStatuses') }}
+          </option>
           @for (s of statuses; track s) {
-            <option [value]="s" [selected]="filters().status === s">{{ statusLabel(s) }}</option>
+            <option [value]="s" [selected]="filters().status === s">{{ statusText(s) }}</option>
           }
         </select>
       </label>
       <label class="check">
         <input type="checkbox" [checked]="filters().overdue" (change)="onOverdue($event)" />
-        Overdue only
+        {{ i18n.t('fees.daily.overdueOnly') }}
       </label>
     </div>
 
     @if (data(); as d) {
-      <ul class="stat-strip" aria-label="Totals for the current filters">
-        <li class="badge">Billed {{ money(d.totals.billed_paise) }}</li>
-        <li class="badge badge-success">Collected {{ money(d.totals.paid_paise) }}</li>
-        <li class="badge badge-warn">Outstanding {{ money(d.totals.balance_paise) }}</li>
+      <ul class="stat-strip" [attr.aria-label]="i18n.t('fees.daily.totalsAria')">
+        <li class="badge">
+          {{ i18n.t('fees.daily.amount.billed', { amount: money(d.totals.billed_paise) }) }}
+        </li>
+        <li class="badge badge-success">
+          {{ i18n.t('fees.daily.amount.collected', { amount: money(d.totals.paid_paise) }) }}
+        </li>
+        <li class="badge badge-warn">
+          {{ i18n.t('fees.daily.amount.outstanding', { amount: money(d.totals.balance_paise) }) }}
+        </li>
       </ul>
     }
 
     @if (loading()) {
-      <p class="empty" role="status">Loading invoices…</p>
+      <p class="empty" role="status">{{ i18n.t('fees.daily.invoices.loading') }}</p>
     } @else {
       <ul class="rows">
         @for (i of data()?.items ?? []; track i.id) {
-          <li class="row" (click)="open(i)">
+          <li class="row">
             <span class="row-main">
-              <button type="button" class="open" [attr.aria-label]="'Open invoice ' + i.invoice_no">
+              <button
+                type="button"
+                class="open"
+                [attr.aria-label]="i18n.t('fees.daily.invoices.openAria', { no: i.invoice_no })"
+              >
                 {{ i.invoice_no }}
               </button>
               <span class="row-sub">{{ i.title }}</span>
@@ -135,30 +153,42 @@
             <span class="row-main cell">
               <span>{{ i.student_name }}</span>
               <span class="row-sub"
-                >{{ classSection(i.class_name, i.section_name) }} · {{ i.admission_no }}</span
+                >{{ classText(i.class_name, i.section_name) }} · {{ i.admission_no }}</span
               >
             </span>
             <span class="row-main cell">
-              <span>Due {{ i.due_date }}</span>
+              <span>{{ i18n.t('fees.daily.due', { date: i.due_date }) }}</span>
               @if (i.is_overdue) {
-                <span><span class="badge badge-danger">Overdue</span></span>
+                <span
+                  ><span class="badge badge-danger">{{
+                    i18n.t('fees.daily.label.overdue')
+                  }}</span></span
+                >
               }
             </span>
             <span class="money">
               <span class="amount">{{ money(i.total_paise) }}</span>
-              <span class="row-sub">Paid {{ money(i.paid_paise) }}</span>
-              <span class="row-sub">Balance {{ money(i.balance_paise) }}</span>
+              <span class="row-sub">
+                {{ i18n.t('fees.daily.amount.paid', { amount: money(i.paid_paise) }) }}
+              </span>
+              <span class="row-sub">
+                {{ i18n.t('fees.daily.amount.balance', { amount: money(i.balance_paise) }) }}
+              </span>
             </span>
-            <span class="badge" [class]="statusClass(i.status)">{{ statusLabel(i.status) }}</span>
+            <span class="badge" [class]="statusClass(i.status)">{{ statusText(i.status) }}</span>
           </li>
         } @empty {
-          <li class="empty">No invoices match.</li>
+          <li class="empty">{{ i18n.t('fees.daily.invoices.none') }}</li>
         }
       </ul>
 
       @if (total() > 0) {
-        <nav class="pager" aria-label="Pagination">
-          <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+        <nav class="pager" [attr.aria-label]="i18n.t('fees.daily.invoices.pagination')">
+          <span>
+            {{
+              i18n.t('fees.daily.invoices.pageRange', { from: from(), to: to(), total: total() })
+            }}
+          </span>
           <span class="row-actions">
             <button
               type="button"
@@ -166,7 +196,7 @@
               [disabled]="page() <= 1"
               (click)="prev()"
             >
-              Previous
+              {{ i18n.t('fees.daily.invoices.previous') }}
             </button>
             <button
               type="button"
@@ -174,7 +204,7 @@
               [disabled]="to() >= total()"
               (click)="next()"
             >
-              Next
+              {{ i18n.t('fees.daily.invoices.next') }}
             </button>
           </span>
         </nav>

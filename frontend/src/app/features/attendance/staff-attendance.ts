@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, concatMap, from, last, of, switchMap, tap } from 'rxjs';
-import { Params, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { AcademicsApi, Branch } from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -10,17 +10,15 @@ import { AuthService } from '../../core/auth/auth.service';
 import {
   CREATE_NEW,
   CREATE_NEW_LABEL,
-  CreateKind,
   createPermissions,
   isCreateNewChange,
 } from '../../core/create/create-new';
-import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
-import { ROLE_LABELS } from '../../core/layout/nav';
-import { Role } from '../../core/auth/auth.models';
-import { MARK_CLASS, STAFF_MARKS, isoDate } from './attendance-labels';
+import { ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
+import { roleText } from '../notices/notice-labels';
+import { MARK_CLASS, MARK_KEY, STAFF_MARKS, isoDate } from './attendance-labels';
 
 const MAX_ENTRIES = 200;
-const DISCARD = 'You have unsaved attendance changes. Discard them?';
 
 interface Mark {
   status: StaffMark | null;
@@ -42,9 +40,11 @@ export class StaffAttendance {
   protected readonly createNew = CREATE_NEW;
   protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
+  protected readonly i18n = inject(I18n);
 
   protected readonly marks = STAFF_MARKS;
   protected readonly markClass = MARK_CLASS;
+  protected readonly markKey = MARK_KEY;
   protected readonly today = isoDate(new Date());
   protected readonly canPickBranch = this.auth.user()?.branch_id == null;
 
@@ -69,7 +69,7 @@ export class StaffAttendance {
         ...s,
         status: e ? e.status : s.status,
         remark: e ? e.remark : (s.remark ?? ''),
-        roleLabel: ROLE_LABELS[s.role as Role] ?? s.role,
+        roleLabel: roleText(s.role, this.i18n.t),
         branchName: s.branch_id !== null ? (names.get(s.branch_id) ?? null) : null,
       };
     });
@@ -152,7 +152,7 @@ export class StaffAttendance {
 
   protected pickBranch(event: Event): void {
     const el = event.target as HTMLSelectElement;
-    if (this.dirty() && !window.confirm(DISCARD)) {
+    if (this.dirty() && !window.confirm(this.i18n.t('ops.att.discard'))) {
       el.value = String(this.branchId());
       return;
     }
@@ -169,7 +169,7 @@ export class StaffAttendance {
       !el.value ||
       el.value > this.today ||
       el.value === this.date() ||
-      (this.dirty() && !window.confirm(DISCARD))
+      (this.dirty() && !window.confirm(this.i18n.t('ops.att.discard')))
     ) {
       el.value = this.date();
       return;
@@ -224,7 +224,7 @@ export class StaffAttendance {
       .subscribe({
         next: (res) => {
           this.applySheet(res);
-          this.notice.set('Staff attendance saved.');
+          this.notice.set(this.i18n.t('ops.staff.saved'));
           this.saving.set(false);
         },
         error: (err: unknown) => {

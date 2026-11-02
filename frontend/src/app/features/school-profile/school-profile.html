@@ -1,33 +1,31 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">School profile</h1>
-    <p class="page-subtitle">
-      Your school name, board and logo. The logo appears in the sidebar for everyone at your school.
-    </p>
+    <h1 class="page-title">{{ i18n.t('admin.profile.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admin.profile.subtitle') }}</p>
   </div>
 </div>
 
 @if (loading()) {
-  <p class="empty" role="status">Loading school profile…</p>
+  <p class="empty" role="status">{{ i18n.t('admin.profile.loading') }}</p>
 } @else if (loadError(); as message) {
   <p class="form-error" role="alert">{{ message }}</p>
 } @else {
   <div class="grid">
     <section class="card" aria-labelledby="details-title">
-      <h2 class="card-title" id="details-title">Details</h2>
+      <h2 class="card-title" id="details-title">{{ i18n.t('admin.profile.details') }}</h2>
       <form class="form" [formGroup]="form" (ngSubmit)="saveDetails()" novalidate>
         <label class="field">
-          School name
+          {{ i18n.t('admin.profile.schoolName') }}
           <input class="input" formControlName="name" autocomplete="off" />
           @if (form.controls.name.touched && form.controls.name.invalid) {
-            <span class="field-error">Name is required.</span>
+            <span class="field-error">{{ i18n.t('admin.profile.nameRequired') }}</span>
           }
         </label>
         <label class="field">
-          Board
+          {{ i18n.t('admin.profile.board') }}
           <input class="input" formControlName="board" autocomplete="off" />
           @if (form.controls.board.touched && form.controls.board.invalid) {
-            <span class="field-error">Board is required.</span>
+            <span class="field-error">{{ i18n.t('admin.profile.boardRequired') }}</span>
           }
         </label>
         <p class="hint">
@@ -42,14 +40,14 @@
         }
         <div class="actions">
           <button type="submit" class="btn btn-primary" [disabled]="saving()">
-            {{ saving() ? 'Saving…' : 'Save details' }}
+            {{ saving() ? i18n.t('admin.profile.saving') : i18n.t('admin.profile.saveDetails') }}
           </button>
         </div>
       </form>
     </section>
 
     <section class="card" aria-labelledby="logo-title">
-      <h2 class="card-title" id="logo-title">Logo</h2>
+      <h2 class="card-title" id="logo-title">{{ i18n.t('admin.profile.logo') }}</h2>
       <div class="form">
         <sms-logo-picker
           #picker
@@ -72,7 +70,7 @@
             [disabled]="logoBusy() || !logoFile()"
             (click)="uploadLogo()"
           >
-            {{ logoBusy() ? 'Working…' : 'Upload logo' }}
+            {{ logoBusy() ? i18n.t('admin.profile.working') : i18n.t('admin.profile.uploadLogo') }}
           </button>
         </div>
       </div>

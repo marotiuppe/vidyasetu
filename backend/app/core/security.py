@@ -29,15 +29,20 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def create_token(
-    user_id: int, token_type: TokenType, extra_claims: dict[str, Any] | None = None
+    user_id: int,
+    token_type: TokenType,
+    extra_claims: dict[str, Any] | None = None,
+    lifetime: timedelta | None = None,
 ) -> str:
     settings = get_settings()
-    if token_type == "access":
+    if lifetime is not None:
+        delta = lifetime
+    elif token_type == "access":
         delta = timedelta(minutes=settings.access_token_minutes)
     elif token_type == "mfa":
         delta = timedelta(minutes=MFA_TOKEN_MINUTES)
     else:
-        delta = timedelta(days=settings.refresh_token_days)
+        delta = timedelta(hours=settings.short_session_hours)
     payload: dict[str, Any] = {**(extra_claims or {})}
     payload.update(
         {

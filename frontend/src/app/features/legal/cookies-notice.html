@@ -1,16 +1,16 @@
 <article class="legal-doc">
-  <h1>Cookies and storage</h1>
+  <h1>{{ i18n.t('public.legal.cookies.title') }}</h1>
   <p class="lead">
     This notice explains what the Vidyasetu web app stores in your browser and why. The app uses one
     cookie, for keeping you signed in. It does not use analytics, advertising or tracking cookies.
   </p>
 
   <dl class="legal-facts">
-    <dt>Effective date</dt>
+    <dt>{{ i18n.t('public.legal.fact.effectiveDate') }}</dt>
     <dd><sms-legal-value [value]="legal()?.policy_effective_date" /></dd>
   </dl>
 
-  <h2>1. The sign-in cookie</h2>
+  <h2>{{ i18n.t('public.legal.cookies.signIn') }}</h2>
   <p>When you sign in, the server sets a refresh cookie. It has these properties:</p>
   <ul>
     <li><strong>httpOnly:</strong> page scripts cannot read it.</li>
@@ -31,14 +31,14 @@
     signed in, so if you block it you will have to sign in again each time you open the app.
   </p>
 
-  <h2>2. Your access token</h2>
+  <h2>{{ i18n.t('public.legal.cookies.token') }}</h2>
   <p>
     The short-lived access token that authorises each request is kept only in the memory of the open
     page. It is not written to local storage, session storage or a cookie. Reloading the page renews
     it from the sign-in cookie.
   </p>
 
-  <h2>3. What we do not use</h2>
+  <h2>{{ i18n.t('public.legal.cookies.notUsed') }}</h2>
   <ul>
     <li>No analytics cookies or analytics scripts.</li>
     <li>No advertising cookies, advertising identifiers or tracking pixels.</li>
@@ -46,7 +46,7 @@
     <li>No fonts, scripts or styles loaded from other websites. Fonts are part of the app.</li>
   </ul>
 
-  <h2>4. Offline app shell</h2>
+  <h2>{{ i18n.t('public.legal.cookies.offline') }}</h2>
   <p>
     The app can be installed on your phone or computer. Its service worker stores the app's own
     files (the page, styles, scripts, icons and fonts) so that the app opens without a connection.
@@ -54,13 +54,13 @@
     attendance records. Those are always fetched from the server.
   </p>
 
-  <h2>5. Controlling cookies and storage</h2>
+  <h2>{{ i18n.t('public.legal.cookies.control') }}</h2>
   <p>
     You can delete cookies and site data in your browser settings at any time. This signs you out.
     You can also sign out from the account menu in the app, which removes the sign-in cookie.
   </p>
 
-  <h2>6. Changes</h2>
+  <h2>{{ i18n.t('public.legal.cookies.changes') }}</h2>
   <p>
     If the app starts using a new kind of cookie or storage, this notice will be updated and the
     effective date will change. We will not use cookies for advertising or tracking.

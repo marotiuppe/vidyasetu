@@ -23,7 +23,7 @@ from app.modules.auth.models import RefreshToken
 from app.modules.schools.models import School
 from app.modules.settings import service as settings_service
 from app.modules.users.identity import detect_kind, normalize_email, normalize_phone
-from app.modules.users.models import User
+from app.modules.users.models import Role, User
 
 # Old refresh rows are removed this long after they expired or were revoked.
 _RETENTION = timedelta(days=30)
@@ -35,6 +35,7 @@ class Session:
     access_token: str
     refresh_token: str
     remember_me: bool
+    lifetime: timedelta
 
 
 async def _find_login_users(db: AsyncSession, identifier: str) -> list[User]:
@@ -57,6 +58,15 @@ async def _school_active(db: AsyncSession, user: User) -> bool:
         return True
     school = await db.get(School, user.school_id)
     return school is not None and school.is_active
+
+
+async def _login_allowed(db: AsyncSession, user: User) -> bool:
+    """Active account in an active school; students only while the school allows student logins."""
+    if not user.is_active or not await _school_active(db, user):
+        return False
+    if user.role == Role.STUDENT:
+        return await settings_service.student_logins_enabled(db, user.school_id)
+    return True
 
 
 async def _lockout_limits(db: AsyncSession, user: User) -> tuple[int, int]:
@@ -103,7 +113,7 @@ async def authenticate(db: AsyncSession, identifier: str, password: str) -> User
     for user in candidates:
         locked = user.is_locked
         if password_ok[user.id] and user.is_active and not locked:
-            if await _school_active(db, user):
+            if await _login_allowed(db, user):
                 eligible.append(user)
 
     if len(eligible) == 1:
@@ -120,7 +130,7 @@ async def authenticate(db: AsyncSession, identifier: str, password: str) -> User
     for user in candidates:
         if user in eligible:
             continue  # ambiguous shared number with the same password: not counted
-        if not user.is_active or not await _school_active(db, user):
+        if not await _login_allowed(db, user):
             await _audit_failure(db, user, "inactive", False)
         elif user.is_locked:
             await _audit_failure(db, user, "locked", False)
@@ -143,11 +153,22 @@ async def _purge_old_tokens(db: AsyncSession) -> None:
     )
 
 
-def _new_refresh_token(db: AsyncSession, user: User, family_id: str, remember_me: bool) -> str:
+async def _session_lifetime(db: AsyncSession, user: User, remember_me: bool) -> timedelta:
+    """Refresh-token lifetime: short for a plain sign-in, the school's remember-me days if set."""
+    if not remember_me:
+        return timedelta(hours=get_settings().short_session_hours)
+    return timedelta(days=await settings_service.remember_me_days(db, user.school_id))
+
+
+def _new_refresh_token(
+    db: AsyncSession, user: User, family_id: str, remember_me: bool, lifetime: timedelta
+) -> str:
     jti = secrets.token_urlsafe(32)
-    expires_at = utcnow() + timedelta(days=get_settings().refresh_token_days)
+    expires_at = utcnow() + lifetime
     db.add(RefreshToken(user_id=user.id, family_id=family_id, jti=jti, expires_at=expires_at))
-    return create_token(user.id, "refresh", {"rem": remember_me, "jti": jti})
+    return create_token(
+        user.id, "refresh", {"rem": remember_me, "jti": jti}, lifetime=lifetime
+    )
 
 
 def _access_token(user: User) -> str:
@@ -158,9 +179,10 @@ async def start_session(db: AsyncSession, user: User, remember_me: bool) -> Sess
     """A new sign-in gets a new token family."""
     await _purge_old_tokens(db)
     family_id = secrets.token_hex(16)
-    refresh = _new_refresh_token(db, user, family_id, remember_me)
+    lifetime = await _session_lifetime(db, user, remember_me)
+    refresh = _new_refresh_token(db, user, family_id, remember_me, lifetime)
     await db.commit()
-    return Session(user, _access_token(user), refresh, remember_me)
+    return Session(user, _access_token(user), refresh, remember_me, lifetime)
 
 
 async def _revoke_family(db: AsyncSession, family_id: str) -> None:
@@ -200,12 +222,14 @@ async def rotate_session(db: AsyncSession, token: str) -> Session | None:
         await db.commit()
         return None
     user = await db.get(User, claims.user_id)
-    if user is None or not user.is_active or not await _school_active(db, user):
+    if user is None or not await _login_allowed(db, user):
         await db.commit()
         return None
-    refresh = _new_refresh_token(db, user, row.family_id, claims.remember_me)
+    # Rotation keeps the sign-in choice; the length follows the current policy.
+    lifetime = await _session_lifetime(db, user, claims.remember_me)
+    refresh = _new_refresh_token(db, user, row.family_id, claims.remember_me, lifetime)
     await db.commit()
-    return Session(user, _access_token(user), refresh, claims.remember_me)
+    return Session(user, _access_token(user), refresh, claims.remember_me, lifetime)
 
 
 async def end_session(db: AsyncSession, token: str) -> None:
@@ -247,7 +271,7 @@ async def complete_mfa_login(
         or not user.is_active
         or not user.mfa_enabled
         or user.token_version != token_version
-        or not await _school_active(db, user)
+        or not await _login_allowed(db, user)
     ):
         return None
     if user.is_locked:

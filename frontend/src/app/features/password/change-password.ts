@@ -12,7 +12,8 @@ import { Router } from '@angular/router';
 import { AdminApi } from '../../core/api/admin.api';
 import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
-import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { I18n } from '../../core/i18n/i18n';
 
 function passwordsMatch(group: AbstractControl): ValidationErrors | null {
   const next = group.get('new_password')?.value;
@@ -36,9 +37,9 @@ export class ChangePassword {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly fb = inject(NonNullableFormBuilder);
+  protected readonly i18n = inject(I18n);
 
   protected readonly forced = computed(() => this.auth.user()?.must_change_password === true);
-  protected readonly hint = PASSWORD_HINT;
   protected readonly minLength = PASSWORD_MIN_LENGTH;
   protected readonly maxLength = PASSWORD_MAX_LENGTH;
   protected readonly submitting = signal(false);
@@ -68,20 +69,18 @@ export class ChangePassword {
     }
     const { current_password, new_password } = this.form.getRawValue();
     this.submitting.set(true);
-    this.api
-      .changePassword(current_password, new_password)
-      .subscribe({
-        // The server ends every session when the password changes: sign in again.
-        next: () => this.auth.passwordChanged(),
-        error: (err: unknown) => {
-          this.submitting.set(false);
-          if (err instanceof HttpErrorResponse && err.status === 422) {
-            this.error.set(placeServerErrors(this.form, err));
-          } else {
-            this.error.set(apiErrorMessage(err));
-          }
-        },
-      });
+    this.api.changePassword(current_password, new_password).subscribe({
+      // The server ends every session when the password changes: sign in again.
+      next: () => this.auth.passwordChanged(),
+      error: (err: unknown) => {
+        this.submitting.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 422) {
+          this.error.set(placeServerErrors(this.form, err));
+        } else {
+          this.error.set(apiErrorMessage(err));
+        }
+      },
+    });
   }
 
   protected signOut(): void {

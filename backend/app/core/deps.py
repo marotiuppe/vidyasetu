@@ -3,12 +3,14 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import ApiError
 from app.core.security import decode_access_token
 from app.db.session import get_db
+from app.modules.consent.models import PolicyAcceptance
 from app.modules.schools.models import School
 from app.modules.settings import service as settings_service
 from app.modules.users.models import Role, User
@@ -33,11 +35,43 @@ PASSWORD_CHANGE_EXEMPT = frozenset(
 )
 
 
+# Until the current privacy policy and terms are accepted, only these and the consent endpoints
+# (under CONSENT_PREFIX) are open.
+POLICY_ACCEPTANCE_EXEMPT = frozenset(
+    {
+        "/api/v1/auth/me",
+        "/api/v1/auth/logout",
+        "/api/v1/auth/refresh",
+        "/api/v1/auth/change-password",
+        "/api/v1/auth/mfa/setup",
+        "/api/v1/auth/mfa/enable",
+        # Data-protection rights must never wait for a policy acceptance.
+        "/api/v1/me/export",
+        "/api/v1/data-requests",
+        "/api/v1/data-requests/mine",
+    }
+)
+CONSENT_PREFIX = "/api/v1/consent/"
+
+
 # While two-factor setup is required, only these (plus the lists above) are open.
 MFA_SETUP_EXEMPT = PASSWORD_CHANGE_EXEMPT | {
     "/api/v1/auth/mfa/setup",
     "/api/v1/auth/mfa/enable",
 }
+
+
+async def _policies_accepted(db: AsyncSession, user: User) -> bool:
+    """True when the user accepted the current version of every policy (one settings and one
+    acceptance query)."""
+    versions = await settings_service.policy_versions(db)
+    rows = await db.execute(
+        select(PolicyAcceptance.policy, PolicyAcceptance.version).where(
+            PolicyAcceptance.user_id == user.id
+        )
+    )
+    accepted = {(policy.value, version) for policy, version in rows}
+    return all((name, version) in accepted for name, version in versions.items())
 
 
 async def get_current_user(
@@ -60,11 +94,26 @@ async def get_current_user(
         school = await db.get(School, user.school_id)
         if school is None or not school.is_active:
             raise _UNAUTHORIZED
+    if user.role == Role.STUDENT and not await settings_service.student_logins_enabled(
+        db, user.school_id
+    ):
+        raise _UNAUTHORIZED
     if user.must_change_password and request.url.path not in PASSWORD_CHANGE_EXEMPT:
         raise ApiError(
             status.HTTP_403_FORBIDDEN,
             "Password change required",
             "password_change_required",
+        )
+    path = request.url.path
+    if (
+        path not in POLICY_ACCEPTANCE_EXEMPT
+        and not path.startswith(CONSENT_PREFIX)
+        and not await _policies_accepted(db, user)
+    ):
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN,
+            "Accept the current privacy policy and terms of use first",
+            "policy_acceptance_required",
         )
     if (
         not user.mfa_enabled

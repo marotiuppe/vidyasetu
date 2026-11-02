@@ -1,12 +1,13 @@
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel
 
+from app.core.schema_types import UtcDateTime
+
 
 class AuditEntry(BaseModel):
     id: int
-    at: datetime
+    at: UtcDateTime
     school_id: int | None
     branch_id: int | None
     actor_user_id: int | None

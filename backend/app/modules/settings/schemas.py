@@ -1,7 +1,8 @@
-from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel
+
+from app.core.schema_types import UtcDateTime
 
 Level = Literal["platform", "school", "branch", "user"]
 IntegrationName = Literal["sms", "whatsapp", "smtp", "razorpay", "storage"]
@@ -26,7 +27,7 @@ class SettingItem(BaseModel):
     default: Any
     can_edit: bool
     updated_by_name: str | None
-    updated_at: datetime | None
+    updated_at: UtcDateTime | None
 
 
 class SettingWrite(BaseModel):

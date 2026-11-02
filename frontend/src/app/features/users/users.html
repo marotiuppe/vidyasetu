@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Users</h1>
-    <p class="page-subtitle">Staff, parent and student accounts you can manage.</p>
+    <h1 class="page-title">{{ i18n.t('admin.users.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admin.users.subtitle') }}</p>
   </div>
   @if (creatableRoles().length) {
     <button
@@ -10,7 +10,7 @@
       [attr.aria-expanded]="showForm()"
       (click)="toggleForm()"
     >
-      {{ showForm() ? 'Close' : 'New user' }}
+      {{ showForm() ? i18n.t('admin.users.close') : i18n.t('admin.users.new') }}
     </button>
   }
 </div>
@@ -18,25 +18,27 @@
 <div class="stack">
   @if (showForm()) {
     <section class="card" aria-labelledby="new-user">
-      <h2 class="card-title" id="new-user">Create a user</h2>
+      <h2 class="card-title" id="new-user">{{ i18n.t('admin.users.createTitle') }}</h2>
       <form [formGroup]="form" (ngSubmit)="create()" novalidate>
         <p class="hint">
-          Fields marked <span class="req" aria-hidden="true">*</span> are required.
+          {{ i18n.t('admin.users.requiredBefore') }}
+          <span class="req" aria-hidden="true">*</span>
+          {{ i18n.t('admin.users.requiredAfter') }}
         </p>
         <div class="form-grid">
           <label class="field">
-            Role
+            {{ i18n.t('admin.users.role') }}
             <select class="input" formControlName="role">
               @for (r of creatableRoles(); track r) {
-                <option [value]="r">{{ roleLabels[r] }}</option>
+                <option [value]="r">{{ roleName(r) }}</option>
               }
             </select>
           </label>
           @if (needsSchool()) {
             <label class="field">
-              School
+              {{ i18n.t('admin.users.school') }}
               <select class="input" formControlName="school_id">
-                <option [value]="0" disabled>Select school</option>
+                <option [value]="0" disabled>{{ i18n.t('admin.users.selectSchool') }}</option>
                 @for (s of schools(); track s.id) {
                   <option [value]="s.id">{{ s.name }}</option>
                 }
@@ -45,9 +47,9 @@
           }
           @if (needsBranch()) {
             <label class="field">
-              Branch
+              {{ i18n.t('admin.users.branch') }}
               <select class="input" formControlName="branch_id">
-                <option [value]="0" disabled>Select branch</option>
+                <option [value]="0" disabled>{{ i18n.t('admin.users.selectBranch') }}</option>
                 @for (b of branchOptions(); track b.id) {
                   <option [value]="b.id">{{ b.name }}</option>
                 }
@@ -55,14 +57,20 @@
             </label>
           }
           <label class="field">
-            <span>Full name <span class="req" aria-hidden="true">*</span></span>
+            <span
+              >{{ i18n.t('admin.users.fullName') }}
+              <span class="req" aria-hidden="true">*</span></span
+            >
             <input class="input" formControlName="full_name" autocomplete="off" required />
             @if (form.controls.full_name.touched && form.controls.full_name.invalid) {
-              <span class="field-error" role="alert">Name is required.</span>
+              <span class="field-error" role="alert">{{ i18n.t('admin.users.nameRequired') }}</span>
             }
           </label>
           <label class="field">
-            <span>Username <span class="req" aria-hidden="true">*</span></span>
+            <span
+              >{{ i18n.t('admin.users.username') }}
+              <span class="req" aria-hidden="true">*</span></span
+            >
             <input
               class="input"
               formControlName="username"
@@ -73,22 +81,26 @@
               aria-describedby="new-username-hint"
               [attr.aria-invalid]="bad(form.controls.username) ? 'true' : null"
             />
-            <span class="hint" id="new-username-hint">{{ usernameHint }}</span>
+            <span class="hint" id="new-username-hint">{{
+              i18n.t('admin.users.usernameHint')
+            }}</span>
             @if (form.controls.username.touched && form.controls.username.hasError('required')) {
-              <span class="field-error" role="alert">Username is required.</span>
+              <span class="field-error" role="alert">{{
+                i18n.t('admin.users.usernameRequired')
+              }}</span>
             } @else if (
               form.controls.username.dirty && form.controls.username.hasError('username')
             ) {
-              <span class="field-error" role="alert"
-                >Use 3 to 50 allowed characters, with at least one letter.</span
-              >
+              <span class="field-error" role="alert">{{
+                i18n.t('admin.users.usernameFormat')
+              }}</span>
             }
             @if (form.controls.username.getError('server'); as message) {
               <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
           <label class="field">
-            Mobile number (optional)
+            {{ i18n.t('admin.users.mobile') }}
             <input
               class="input"
               type="tel"
@@ -97,16 +109,18 @@
               aria-describedby="new-phone-hint"
               [attr.aria-invalid]="bad(form.controls.phone) ? 'true' : null"
             />
-            <span class="hint" id="new-phone-hint">{{ mobileHint }}</span>
+            <span class="hint" id="new-phone-hint">{{ i18n.t('admin.users.mobileHint') }}</span>
             @if (form.controls.phone.dirty && form.controls.phone.hasError('mobile')) {
-              <span class="field-error" role="alert">Enter a valid mobile number.</span>
+              <span class="field-error" role="alert">{{
+                i18n.t('admin.users.mobileInvalid')
+              }}</span>
             }
             @if (form.controls.phone.getError('server'); as message) {
               <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
           <label class="field">
-            Email (optional)
+            {{ i18n.t('admin.users.email') }}
             <input
               class="input"
               type="email"
@@ -115,14 +129,17 @@
               [attr.aria-invalid]="bad(form.controls.email) ? 'true' : null"
             />
             @if (form.controls.email.touched && form.controls.email.invalid) {
-              <span class="field-error" role="alert">Enter a valid email address.</span>
+              <span class="field-error" role="alert">{{ i18n.t('admin.users.emailInvalid') }}</span>
             }
             @if (form.controls.email.getError('server'); as message) {
               <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
           <label class="field">
-            <span>Temporary password <span class="req" aria-hidden="true">*</span></span>
+            <span
+              >{{ i18n.t('admin.users.tempPassword') }}
+              <span class="req" aria-hidden="true">*</span></span
+            >
             <input
               class="input"
               type="password"
@@ -131,13 +148,19 @@
               required
               aria-describedby="new-user-password-hint"
             />
-            <span class="hint" id="new-user-password-hint">{{ passwordHint }}</span>
+            <span class="hint" id="new-user-password-hint">{{
+              i18n.t('admin.users.passwordHint')
+            }}</span>
             @if (form.controls.password.touched && form.controls.password.hasError('required')) {
-              <span class="field-error" role="alert">Enter a password.</span>
+              <span class="field-error" role="alert">{{
+                i18n.t('admin.users.passwordRequired')
+              }}</span>
             } @else if (
               form.controls.password.touched && form.controls.password.hasError('minlength')
             ) {
-              <span class="field-error" role="alert">Use at least {{ minLength }} characters.</span>
+              <span class="field-error" role="alert">{{
+                i18n.t('admin.users.passwordMin', { min: minLength })
+              }}</span>
             }
             @if (form.controls.password.getError('server'); as message) {
               <span class="field-error" role="alert">{{ message }}</span>
@@ -149,9 +172,11 @@
         }
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-            {{ submitting() ? 'Creating…' : 'Create user' }}
+            {{ submitting() ? i18n.t('admin.users.creating') : i18n.t('admin.users.createUser') }}
           </button>
-          <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancel</button>
+          <button type="button" class="btn btn-ghost" (click)="toggleForm()">
+            {{ i18n.t('admin.users.cancel') }}
+          </button>
         </div>
       </form>
     </section>
@@ -165,31 +190,31 @@
   }
 
   <section class="card" aria-labelledby="user-list">
-    <h2 class="card-title" id="user-list">All users</h2>
+    <h2 class="card-title" id="user-list">{{ i18n.t('admin.users.allUsers') }}</h2>
     <form class="toolbar" [formGroup]="filters" (submit)="$event.preventDefault()" role="search">
       <label class="field">
-        Search
+        {{ i18n.t('admin.users.search') }}
         <input
           class="input"
           type="search"
           formControlName="q"
-          placeholder="Name, username, mobile or email"
+          [placeholder]="i18n.t('admin.users.searchPlaceholder')"
           autocomplete="off"
         />
       </label>
       <label class="field">
-        Role
+        {{ i18n.t('admin.users.role') }}
         <select class="input" formControlName="role">
-          <option value="">All roles</option>
+          <option value="">{{ i18n.t('admin.users.allRoles') }}</option>
           @for (r of allRoles; track r) {
-            <option [value]="r">{{ roleLabels[r] }}</option>
+            <option [value]="r">{{ roleName(r) }}</option>
           }
         </select>
       </label>
     </form>
 
     @if (loading()) {
-      <p class="empty" role="status">Loading users…</p>
+      <p class="empty" role="status">{{ i18n.t('admin.users.loading') }}</p>
     } @else {
       <ul class="rows">
         @for (user of users(); track user.id) {
@@ -206,11 +231,11 @@
                 }
               </span>
               @if (user.must_change_password) {
-                <span class="hint">Must change password at next sign-in</span>
+                <span class="hint">{{ i18n.t('admin.users.mustChange') }}</span>
               }
             </span>
             <span class="row-main">
-              <span>{{ roleLabels[user.role] }}</span>
+              <span>{{ roleName(user.role) }}</span>
               <span class="row-sub">{{ branchName(user.branch_id) }}</span>
             </span>
             <span
@@ -218,10 +243,10 @@
               [class.badge-success]="user.is_active"
               [class.badge-muted]="!user.is_active"
             >
-              {{ user.is_active ? 'Active' : 'Inactive' }}
+              {{ user.is_active ? i18n.t('admin.users.active') : i18n.t('admin.users.inactive') }}
             </span>
             @if (user.is_locked) {
-              <span class="badge badge-warn">Locked</span>
+              <span class="badge badge-warn">{{ i18n.t('admin.users.locked') }}</span>
             }
             @if (user.mfa_enabled) {
               <span class="badge badge-success">{{ i18n.t('users.mfaOn') }}</span>
@@ -234,14 +259,14 @@
                   [disabled]="busyId() === user.id"
                   (click)="unlock(user)"
                 >
-                  Unlock
+                  {{ i18n.t('admin.users.unlock') }}
                 </button>
               }
               <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">
-                Edit
+                {{ i18n.t('admin.users.edit') }}
               </button>
               <button type="button" class="btn btn-ghost btn-sm" (click)="startReset(user)">
-                Reset password
+                {{ i18n.t('admin.users.resetPassword') }}
               </button>
               @if (canResetMfa && user.mfa_enabled !== false && user.id !== auth.user()?.id) {
                 @if (confirmMfaId() === user.id) {
@@ -268,7 +293,9 @@
               <form class="panel" [formGroup]="editForm" (ngSubmit)="saveEdit(user)" novalidate>
                 <div class="form-grid">
                   <div class="field">
-                    <span id="username-{{ user.id }}-label">Username</span>
+                    <span id="username-{{ user.id }}-label">{{
+                      i18n.t('admin.users.usernameLabel')
+                    }}</span>
                     <input
                       class="input"
                       [value]="user.username"
@@ -276,21 +303,26 @@
                       aria-labelledby="username-{{ user.id }}-label"
                       aria-describedby="username-{{ user.id }}-help"
                     />
-                    <span class="hint" id="username-{{ user.id }}-help"
-                      >Usernames cannot be changed.</span
-                    >
+                    <span class="hint" id="username-{{ user.id }}-help">{{
+                      i18n.t('admin.users.usernameFixed')
+                    }}</span>
                   </div>
                   <label class="field">
-                    <span>Full name <span class="req" aria-hidden="true">*</span></span>
+                    <span
+                      >{{ i18n.t('admin.users.fullName') }}
+                      <span class="req" aria-hidden="true">*</span></span
+                    >
                     <input class="input" formControlName="full_name" autocomplete="off" required />
                     @if (
                       editForm.controls.full_name.touched && editForm.controls.full_name.invalid
                     ) {
-                      <span class="field-error" role="alert">Name is required.</span>
+                      <span class="field-error" role="alert">{{
+                        i18n.t('admin.users.nameRequired')
+                      }}</span>
                     }
                   </label>
                   <label class="field">
-                    Mobile number (optional)
+                    {{ i18n.t('admin.users.mobile') }}
                     <input
                       class="input"
                       type="tel"
@@ -298,28 +330,35 @@
                       autocomplete="off"
                       aria-describedby="edit-phone-hint"
                     />
-                    <span class="hint" id="edit-phone-hint">{{ mobileHint }}</span>
+                    <span class="hint" id="edit-phone-hint">{{
+                      i18n.t('admin.users.mobileHint')
+                    }}</span>
                     @if (
                       editForm.controls.phone.dirty && editForm.controls.phone.hasError('mobile')
                     ) {
-                      <span class="field-error" role="alert">Enter a valid mobile number.</span>
+                      <span class="field-error" role="alert">{{
+                        i18n.t('admin.users.mobileInvalid')
+                      }}</span>
                     }
                     @if (editForm.controls.phone.getError('server'); as message) {
                       <span class="field-error" role="alert">{{ message }}</span>
                     }
                   </label>
                   <label class="field">
-                    Email (optional)
+                    {{ i18n.t('admin.users.email') }}
                     <input class="input" type="email" formControlName="email" autocomplete="off" />
                     @if (editForm.controls.email.touched && editForm.controls.email.invalid) {
-                      <span class="field-error" role="alert">Enter a valid email address.</span>
+                      <span class="field-error" role="alert">{{
+                        i18n.t('admin.users.emailInvalid')
+                      }}</span>
                     }
                     @if (editForm.controls.email.getError('server'); as message) {
                       <span class="field-error" role="alert">{{ message }}</span>
                     }
                   </label>
                   <label class="check"
-                    ><input type="checkbox" formControlName="is_active" /> Active</label
+                    ><input type="checkbox" formControlName="is_active" />
+                    {{ i18n.t('admin.users.isActive') }}</label
                   >
                 </div>
                 @if (editError(); as message) {
@@ -331,10 +370,10 @@
                     class="btn btn-primary btn-sm"
                     [disabled]="busyId() === user.id"
                   >
-                    Save
+                    {{ i18n.t('admin.users.save') }}
                   </button>
                   <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">
-                    Cancel
+                    {{ i18n.t('admin.users.cancel') }}
                   </button>
                 </div>
               </form>
@@ -342,20 +381,22 @@
             @if (resettingId() === user.id) {
               <form class="panel" (submit)="$event.preventDefault(); saveReset(user)" novalidate>
                 <label class="field">
-                  New password for {{ user.full_name }}
+                  {{ i18n.t('admin.users.newPasswordFor', { name: user.full_name }) }}
                   <input
                     class="input"
                     type="password"
                     [formControl]="resetControl"
                     autocomplete="new-password"
                   />
-                  <span class="hint">{{ passwordHint }}</span>
+                  <span class="hint">{{ i18n.t('admin.users.passwordHint') }}</span>
                   @if (resetControl.touched && resetControl.hasError('required')) {
-                    <span class="field-error" role="alert">Enter a new password.</span>
+                    <span class="field-error" role="alert">{{
+                      i18n.t('admin.users.enterNewPassword')
+                    }}</span>
                   } @else if (resetControl.touched && resetControl.hasError('minlength')) {
-                    <span class="field-error" role="alert"
-                      >Use at least {{ minLength }} characters.</span
-                    >
+                    <span class="field-error" role="alert">{{
+                      i18n.t('admin.users.passwordMin', { min: minLength })
+                    }}</span>
                   }
                 </label>
                 <div class="form-actions">
@@ -364,17 +405,17 @@
                     class="btn btn-primary btn-sm"
                     [disabled]="busyId() === user.id"
                   >
-                    Set password
+                    {{ i18n.t('admin.users.setPassword') }}
                   </button>
                   <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">
-                    Cancel
+                    {{ i18n.t('admin.users.cancel') }}
                   </button>
                 </div>
               </form>
             }
           </li>
         } @empty {
-          <li class="empty">No users match.</li>
+          <li class="empty">{{ i18n.t('admin.users.none') }}</li>
         }
       </ul>
     }

@@ -1,73 +1,74 @@
 <section class="card" aria-labelledby="structure-title">
-  <h2 class="card-title" id="structure-title">Fee structure</h2>
+  <h2 class="card-title" id="structure-title">{{ i18n.t('fees.setup.structure.title') }}</h2>
   <p class="hint">
-    Saving replaces the fee structure of the chosen class for the chosen academic year.
+    {{ i18n.t('fees.setup.structure.hint') }}
   </p>
 
   <form class="stack" (ngSubmit)="save()" [formGroup]="picker">
     <div class="toolbar">
       @if (canPickBranch) {
         <label class="field">
-          Branch
+          {{ i18n.t('fees.setup.structure.branch') }}
           <select class="input" formControlName="branchId" (change)="pickBranch()">
-            <option [ngValue]="0">All branches</option>
+            <option [ngValue]="0">{{ i18n.t('fees.setup.structure.allBranches') }}</option>
             @for (b of lookups.branches(); track b.id) {
               <option [ngValue]="b.id">{{ b.name }}</option>
             }
             @if (canCreate.branch) {
-              <option [ngValue]="createNew">{{ createNewLabel }}</option>
+              <option [ngValue]="createNew">{{ i18n.t('fees.setup.createNew') }}</option>
             }
           </select>
         </label>
       }
       <label class="field">
-        Academic year
+        {{ i18n.t('fees.setup.common.year') }}
         <select class="input" formControlName="yearId">
-          <option [ngValue]="0">Choose a year</option>
+          <option [ngValue]="0">{{ i18n.t('fees.setup.structure.chooseYear') }}</option>
           @for (y of lookups.years(); track y.id) {
             <option [ngValue]="y.id">{{ y.name }}</option>
           }
           @if (canCreate.academic_year) {
-            <option [ngValue]="createNew">{{ createNewLabel }}</option>
+            <option [ngValue]="createNew">{{ i18n.t('fees.setup.createNew') }}</option>
           }
         </select>
       </label>
       <label class="field">
-        Class
+        {{ i18n.t('fees.setup.common.class') }}
         <select class="input" formControlName="classId">
-          <option [ngValue]="0">Choose a class</option>
+          <option [ngValue]="0">{{ i18n.t('fees.setup.common.chooseClass') }}</option>
           @for (c of classOptions(); track c.id) {
             <option [ngValue]="c.id">{{ c.name }}</option>
           }
           @if (canCreate.class) {
-            <option [ngValue]="createNew">{{ createNewLabel }}</option>
+            <option [ngValue]="createNew">{{ i18n.t('fees.setup.createNew') }}</option>
           }
         </select>
       </label>
     </div>
 
     @if (!ready()) {
-      <p class="empty">Choose an academic year and a class to edit its fees.</p>
+      <p class="empty">{{ i18n.t('fees.setup.structure.pickFirst') }}</p>
     } @else if (loading()) {
-      <p class="empty" role="status">Loading fee structure…</p>
+      <p class="empty" role="status">{{ i18n.t('fees.setup.structure.loading') }}</p>
     } @else {
       <fieldset class="panel stack">
-        <legend class="hint">Fee heads and amounts</legend>
+        <legend class="hint">{{ i18n.t('fees.setup.structure.legend') }}</legend>
         @for (row of rows.controls; track row; let i = $index) {
           <div class="form-grid" [formGroup]="row">
             <label class="field">
-              Fee head
+              {{ i18n.t('fees.setup.structure.feeHead') }}
               <select class="input" formControlName="headId">
-                <option [ngValue]="0">Choose a fee head</option>
+                <option [ngValue]="0">{{ i18n.t('fees.setup.structure.chooseHead') }}</option>
                 @for (h of optionsFor(i); track h.id) {
                   <option [ngValue]="h.id">
-                    {{ h.name }}{{ h.is_active ? '' : ' (inactive)' }}
+                    {{ h.name
+                    }}{{ h.is_active ? '' : ' ' + i18n.t('fees.setup.structure.inactiveOption') }}
                   </option>
                 }
               </select>
             </label>
             <label class="field">
-              Amount (rupees)
+              {{ i18n.t('fees.setup.common.amount') }}
               <input
                 class="input"
                 type="text"
@@ -80,11 +81,11 @@
               <button
                 type="button"
                 class="btn btn-ghost btn-sm"
-                [attr.aria-label]="'Remove row ' + (i + 1)"
+                [attr.aria-label]="i18n.t('fees.setup.structure.removeRowAria', { n: i + 1 })"
                 (click)="removeRow(i)"
               >
                 <sms-icon name="trash" [size]="14" />
-                Remove
+                {{ i18n.t('fees.setup.common.remove') }}
               </button>
             </div>
           </div>
@@ -92,9 +93,11 @@
         <div class="form-actions">
           <button type="button" class="btn btn-ghost btn-sm" (click)="addRow()">
             <sms-icon name="plus" [size]="14" />
-            Add row
+            {{ i18n.t('fees.setup.structure.addRow') }}
           </button>
-          <span class="hint" aria-live="polite">Structure total {{ money(total()) }}</span>
+          <span class="hint" aria-live="polite">
+            {{ i18n.t('fees.setup.structure.total', { amount: money(total()) }) }}
+          </span>
         </div>
       </fieldset>
     }
@@ -108,7 +111,7 @@
     @if (ready()) {
       <div class="form-actions">
         <button type="submit" class="btn btn-primary" [disabled]="busy() || loading()">
-          {{ busy() ? 'Saving…' : 'Save fee structure' }}
+          {{ busy() ? i18n.t('fees.setup.structure.saving') : i18n.t('fees.setup.structure.save') }}
         </button>
       </div>
     }

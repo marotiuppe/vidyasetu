@@ -16,6 +16,7 @@ from sqlalchemy.orm import aliased
 from app.core.tenant import scope_branches, scope_fees, scope_students
 from app.db.base import utcnow
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.fees.models import (
     FeeHead,
@@ -111,7 +112,7 @@ async def _retry_once[T](db: AsyncSession, actor: User, fn: Callable[[], Awaitab
 
 
 async def _get_year(db: AsyncSession, actor: User, year_id: int) -> AcademicYear:
-    year = await db.scalar(
+    year: AcademicYear | None = await db.scalar(
         scope_fees(select(AcademicYear), AcademicYear, actor).where(AcademicYear.id == year_id)
     )
     if year is None:
@@ -120,7 +121,7 @@ async def _get_year(db: AsyncSession, actor: User, year_id: int) -> AcademicYear
 
 
 async def _get_class(db: AsyncSession, actor: User, class_id: int) -> SchoolClass:
-    cls = await db.scalar(
+    cls: SchoolClass | None = await db.scalar(
         scope_fees(select(SchoolClass), SchoolClass, actor).where(SchoolClass.id == class_id)
     )
     if cls is None:
@@ -178,6 +179,8 @@ async def create_head(db: AsyncSession, actor: User, data: HeadCreate) -> FeeHea
     head = FeeHead(school_id=school_id, name=data.name, name_key=key, is_active=True)
     db.add(head)
     try:
+        await db.flush()
+        await audit.record(db, actor, "fee.head_created", "fee_head", head.id)
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -186,7 +189,9 @@ async def create_head(db: AsyncSession, actor: User, data: HeadCreate) -> FeeHea
 
 
 async def update_head(db: AsyncSession, actor: User, head_id: int, data: HeadUpdate) -> FeeHead:
-    head = await db.scalar(scope_fees(select(FeeHead), FeeHead, actor).where(FeeHead.id == head_id))
+    head: FeeHead | None = await db.scalar(
+        scope_fees(select(FeeHead), FeeHead, actor).where(FeeHead.id == head_id)
+    )
     if head is None:
         raise _not_found("Fee head")
     if data.name is not None:
@@ -197,6 +202,10 @@ async def update_head(db: AsyncSession, actor: User, head_id: int, data: HeadUpd
     if data.is_active is not None:
         head.is_active = data.is_active
     try:
+        await audit.record(
+            db, actor, "fee.head_updated", "fee_head", head.id,
+            detail={"name_changed": data.name is not None, "is_active": data.is_active},
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -265,6 +274,11 @@ async def replace_structure(
         for i in data.items
     )
     try:
+        await audit.record(
+            db, actor, "fee.structure_updated", "class", cls.id,
+            detail={"academic_year_id": year.id, "items": len(data.items)},
+            school_id=cls.school_id, branch_id=cls.branch_id,
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -490,7 +504,7 @@ async def _lock_invoice(db: AsyncSession, actor: User, invoice_id: int) -> Invoi
     takes its (database-wide) write lock; either way concurrent payments, discounts and
     cancellations on one invoice are serialised and the row is re-read after the lock.
     """
-    inv = await db.scalar(
+    inv: Invoice | None = await db.scalar(
         scope_fees(select(Invoice), Invoice, actor)
         .where(Invoice.id == invoice_id)
         .with_for_update()
@@ -632,6 +646,17 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
             for inv, items in pending
             for hid, amount, name in items
         )
+        if pending:
+            await audit.record(
+                db, actor, "fee.invoice_created", "invoice", None,
+                detail={
+                    "batch": True,
+                    "academic_year_id": year.id,
+                    "created": len(pending),
+                    "skipped_existing": result.skipped_existing,
+                    "skipped_no_structure": result.skipped_no_structure,
+                },
+            )
         await db.commit()
         result.created = len(pending)
         return result
@@ -686,6 +711,11 @@ async def create_invoice(db: AsyncSession, actor: User, data: InvoiceCreate) -> 
                 amount_paise=ln.amount_paise,
             )
             for ln in data.lines
+        )
+        await audit.record(
+            db, actor, "fee.invoice_created", "invoice", inv.id,
+            detail={"lines": len(data.lines), "amount_paise": inv.gross_paise},
+            school_id=inv.school_id, branch_id=inv.branch_id,
         )
         await db.commit()
         return inv.id
@@ -1201,6 +1231,7 @@ async def collection(
 
 
 async def student_fees(db: AsyncSession, actor: User, student_id: int) -> StudentFees:
+    await settings_service.require_family_portal(db, actor, "portal.parent_sees_fees")
     student = await db.scalar(
         scope_students(select(Student.id), actor).where(Student.id == student_id)
     )
@@ -1225,6 +1256,7 @@ async def student_fees(db: AsyncSession, actor: User, student_id: int) -> Studen
 
 
 async def receipt_data(db: AsyncSession, actor: User, payment_id: int) -> dict[str, Any]:
+    await settings_service.require_family_portal(db, actor, "portal.parent_sees_fees")
     stmt = scope_students(
         select(Payment, Invoice, Student, School.name, User.full_name)
         .join(Student, Student.id == Payment.student_id)

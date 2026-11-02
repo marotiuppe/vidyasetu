@@ -22,6 +22,14 @@ export const MARK_LABEL: Record<StaffMark, string> = {
   half_day: 'Half day',
 };
 
+/** Translation key for each mark; resolve with i18n.t at render time. */
+export const MARK_KEY: Record<StaffMark, string> = {
+  present: 'ops.mark.present',
+  absent: 'ops.mark.absent',
+  leave: 'ops.mark.leave',
+  half_day: 'ops.mark.halfDay',
+};
+
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function isoDate(d: Date): string {

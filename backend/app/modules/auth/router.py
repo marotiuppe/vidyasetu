@@ -87,14 +87,14 @@ async def me_out(db: DbSession, user: User) -> MeOut:
     return MeOut(**UserOut.model_validate(user).model_dump(), mfa_setup_required=required)
 
 
-def _set_refresh_cookie(response: Response, token: str, remember_me: bool) -> None:
+def _set_refresh_cookie(response: Response, session: service.Session) -> None:
     settings = get_settings()
-    # Remembered sessions persist for refresh_token_days; otherwise the cookie is a session
-    # cookie that the browser drops when it closes.
+    # Remembered sessions get a persistent cookie for the school's remember-me length; otherwise
+    # the cookie is a session cookie that the browser drops when it closes.
     response.set_cookie(
         REFRESH_COOKIE,
-        token,
-        max_age=settings.refresh_token_days * 86400 if remember_me else None,
+        session.refresh_token,
+        max_age=int(session.lifetime.total_seconds()) if session.remember_me else None,
         httponly=True,
         secure=settings.is_production,
         samesite="strict",
@@ -115,7 +115,7 @@ def _delete_refresh_cookie(response: Response) -> None:
 async def _token_response(
     response: Response, session: service.Session, db: DbSession
 ) -> TokenResponse:
-    _set_refresh_cookie(response, session.refresh_token, session.remember_me)
+    _set_refresh_cookie(response, session)
     return TokenResponse(
         access_token=session.access_token, user=await me_out(db, session.user)
     )

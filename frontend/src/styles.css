@@ -14,7 +14,7 @@
   --sidebar-bg-soft: #244b41;
   --sidebar-text: #b6ccbf;
   --sidebar-muted: #a9c1b4;
-  --sidebar-label: #8ba99b;
+  --sidebar-label: #9fbcad;
   --accent: var(--lime); /* active nav item, highlights */
   --accent-ink: var(--forest);
   --primary: var(--forest);
@@ -30,18 +30,19 @@
 
   /* Text */
   --text: #263b35;
-  --muted: #728268;
-  --faint: #9aa29b;
+  --muted: #5a6b4e;
+  --faint: #637459;
   --text-soft: #55685f; /* secondary text that keeps 4.5:1 contrast on the surfaces */
+  --olive: #536b43; /* olive text and soft accents used by dashboard tiles */
 
   /* Status */
   --success: #3e7655;
   --success-bg: #e9f3ed;
-  --danger: #bb594e;
+  --danger: #a64a3f;
   --danger-bg: #fff4ef;
-  --amber: #946f30;
+  --amber: #7d5c24;
   --amber-bg: #faf0e1;
-  --focus: #77ad96;
+  --focus: #2f7f67;
 
   /* Shape and depth */
   --radius-sm: 7px;
@@ -58,13 +59,13 @@
 
   /* Tone pairs for icon chips (background / icon) */
   --tone-green-bg: #f0f4e9;
-  --tone-green-fg: #718957;
+  --tone-green-fg: #56703c;
   --tone-lavender-bg: #f1edf6;
-  --tone-lavender-fg: #8f7daa;
+  --tone-lavender-fg: #6e5e8e;
   --tone-peach-bg: #fcf1e5;
-  --tone-peach-fg: #b59161;
+  --tone-peach-fg: #7a5a2a;
   --tone-sky-bg: #edf3f5;
-  --tone-sky-fg: #7398a3;
+  --tone-sky-fg: #46707c;
 
   --font: 'DM Sans Variable', 'DM Sans', 'Noto Sans Devanagari', Arial, sans-serif;
   --font-display: 'Manrope Variable', 'Manrope', 'Noto Sans Devanagari', Arial, sans-serif;
@@ -141,7 +142,7 @@ svg {
   font-weight: 650;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #6d8a74;
+  color: var(--muted);
 }
 
 .page-title {
@@ -190,7 +191,7 @@ svg {
 }
 
 .btn-primary {
-  color: #fff;
+  color: var(--primary-ink);
   background: var(--primary);
 }
 
@@ -199,14 +200,14 @@ svg {
 }
 
 .btn-ghost {
-  color: #52674f;
+  color: var(--olive);
   background: var(--surface);
   border-color: var(--border);
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: #fbfcf9;
-  border-color: #b8cab3;
+  background: var(--bg);
+  border-color: var(--border-strong);
 }
 
 .btn-sm {
@@ -238,7 +239,7 @@ svg {
   gap: 7px;
   font-size: 0.72rem;
   font-weight: 500;
-  color: #7d8f6b;
+  color: var(--muted);
 }
 
 /* Tinted icon chip: <span class="chip tone-lavender"> */
@@ -275,8 +276,8 @@ svg {
   font-size: 0.68rem;
   font-weight: 500;
   white-space: nowrap;
-  color: #597343;
-  background: #eef3e7;
+  color: var(--olive);
+  background: var(--surface-tint);
   border-radius: 4px;
 }
 
@@ -356,7 +357,7 @@ svg {
   font-size: 0.8rem;
   color: var(--danger);
   background: var(--danger-bg);
-  border: 1px solid #f2d4ca;
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: 6px;
 }
 

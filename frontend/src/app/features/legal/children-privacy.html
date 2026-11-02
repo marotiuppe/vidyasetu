@@ -1,5 +1,5 @@
 <article class="legal-doc">
-  <h1>Children's privacy notice</h1>
+  <h1>{{ i18n.t('public.legal.children.title') }}</h1>
   <p class="lead">
     Many students who use the school's workspace are children. This notice explains how their
     personal data is handled and what parents and students can do about it. It should be read
@@ -8,20 +8,20 @@
   </p>
 
   <dl class="legal-facts">
-    <dt>Effective date</dt>
+    <dt>{{ i18n.t('public.legal.fact.effectiveDate') }}</dt>
     <dd><sms-legal-value [value]="legal()?.policy_effective_date" /></dd>
-    <dt>Privacy contact</dt>
+    <dt>{{ i18n.t('public.legal.fact.privacyContact') }}</dt>
     <dd><sms-legal-value [value]="legal()?.privacy_contact_email" kind="email" /></dd>
   </dl>
 
-  <h2>1. The school is in charge</h2>
+  <h2>{{ i18n.t('public.legal.children.school') }}</h2>
   <p>
     A school enrols its students and decides what information is kept about them. The school is the
     data fiduciary. The operator of the platform handles that information on the school's behalf and
     only as the school instructs.
   </p>
 
-  <h2>2. Parents and consent</h2>
+  <h2>{{ i18n.t('public.legal.children.parents') }}</h2>
   <ul>
     <li>
       The school is responsible for telling parents what it collects and why, and for obtaining any
@@ -37,13 +37,13 @@
     </li>
   </ul>
 
-  <h2>3. Students' accounts</h2>
+  <h2>{{ i18n.t('public.legal.children.students') }}</h2>
   <p>
     Student accounts are created by the school. The starting password set for a new account must be
     changed at the first sign-in. Schools should hand starting passwords over privately.
   </p>
 
-  <h2>4. What we do not do</h2>
+  <h2>{{ i18n.t('public.legal.children.notDo') }}</h2>
   <ul>
     <li>We do not track children's behaviour across websites or apps.</li>
     <li>We do not show advertising to students or parents.</li>
@@ -54,14 +54,14 @@
     <li>We do not collect biometric data about children.</li>
   </ul>
 
-  <h2>5. Sensitive identifiers</h2>
+  <h2>{{ i18n.t('public.legal.children.sensitive') }}</h2>
   <p>
     The platform does not store a Permanent Education Number (PEN) or an APAAR ID today. If a school
     enables them later, they will be treated as sensitive identifiers under the planned consent and
     access controls.
   </p>
 
-  <h2>6. Who can see a child's record</h2>
+  <h2>{{ i18n.t('public.legal.children.who') }}</h2>
   <ul>
     <li>A student sees only their own record.</li>
     <li>A parent sees only the records of their own children, through their own sign-in.</li>
@@ -69,7 +69,7 @@
     <li>Nobody outside the child's school can see the record.</li>
   </ul>
 
-  <h2>7. Correction and erasure</h2>
+  <h2>{{ i18n.t('public.legal.children.correction') }}</h2>
   <p>
     Parents and students can ask the school to correct a record that is wrong, or to delete
     information the school no longer needs. The school decides what it must keep for its legal
@@ -78,13 +78,13 @@
     <a routerLink="../grievance">Grievances page</a>.
   </p>
 
-  <h2>8. Security</h2>
+  <h2>{{ i18n.t('public.legal.children.security') }}</h2>
   <p>
     Children's records are protected by the same controls as all other data, described in the
     <a routerLink="../privacy">Privacy policy</a>. Planned controls, such as the audit log and the
     data request tools, are listed on the <a routerLink="../security">Security page</a>.
   </p>
 
-  <h2>9. Changes</h2>
+  <h2>{{ i18n.t('public.legal.children.changes') }}</h2>
   <p>When this notice changes, the effective date above changes too.</p>
 </article>

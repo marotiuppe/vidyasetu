@@ -71,7 +71,7 @@ export class SchoolProfile {
         next: (s) => {
           this.apply(s);
           this.saving.set(false);
-          this.detailsNotice.set('School details saved.');
+          this.detailsNotice.set(this.i18n.t('admin.profile.detailsSaved'));
           this.schoolService.load();
         },
         error: (err: unknown) => {
@@ -94,7 +94,7 @@ export class SchoolProfile {
         this.logoFile.set(null);
         this.picker()?.clear();
         this.logoBusy.set(false);
-        this.logoNotice.set('Logo updated.');
+        this.logoNotice.set(this.i18n.t('admin.profile.logoUpdated'));
         this.schoolService.load();
       },
       error: (err: unknown) => {
@@ -115,7 +115,7 @@ export class SchoolProfile {
         this.school.set({ ...current, logo_url: null });
         this.picker()?.clear();
         this.logoBusy.set(false);
-        this.logoNotice.set('Logo removed.');
+        this.logoNotice.set(this.i18n.t('admin.profile.logoRemoved'));
         this.schoolService.load();
       },
       error: (err: unknown) => {

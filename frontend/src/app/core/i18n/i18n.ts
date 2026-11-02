@@ -1,6 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { Injectable, inject, signal } from '@angular/core';
 
+import { setErrorTranslator } from '../api/api-error';
 import { EN } from './en';
 import { MR } from './mr';
 
@@ -14,6 +15,10 @@ export class I18n {
   private readonly doc = inject(DOCUMENT);
   private readonly current = signal<Lang>('en');
   readonly lang = this.current.asReadonly();
+
+  constructor() {
+    setErrorTranslator((key) => this.t(key));
+  }
 
   /** Switch language; unknown codes are ignored. */
   use(code: unknown): void {

@@ -12,6 +12,7 @@ import { apiErrorMessage } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
 import { safeReturnUrl } from '../../core/create/create-new';
 import { ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 
 @Component({
   selector: 'sms-branches',
@@ -26,6 +27,7 @@ export class Branches {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
 
   /** Set when a form elsewhere sent the user here to create a branch; the page returns there after saving. */
   protected readonly returnTo: string | null;
@@ -57,7 +59,7 @@ export class Branches {
     const params = this.route.snapshot.queryParamMap;
     this.returnTo =
       params.get('create') === 'branch' ? safeReturnUrl(params.get('returnTo')) : null;
-    this.from = params.get('from')?.trim() || 'your previous page';
+    this.from = params.get('from')?.trim() || this.i18n.t('admin.branches.defaultFrom');
     if (this.returnTo) this.showForm.set(true);
 
     if (this.isSuperAdmin()) {
@@ -75,7 +77,10 @@ export class Branches {
   }
 
   protected schoolName(id: number): string {
-    return this.schools().find((s) => s.id === id)?.name ?? `School #${id}`;
+    return (
+      this.schools().find((s) => s.id === id)?.name ??
+      this.i18n.t('admin.branches.schoolFallback', { id })
+    );
   }
 
   protected toggleForm(): void {
@@ -88,7 +93,9 @@ export class Branches {
     const needsSchool = this.isSuperAdmin();
     if (this.form.invalid || (needsSchool && school_id < 1)) {
       this.form.markAllAsTouched();
-      this.formError.set(needsSchool && school_id < 1 ? 'Select a school.' : null);
+      this.formError.set(
+        needsSchool && school_id < 1 ? this.i18n.t('admin.branches.selectSchoolError') : null,
+      );
       return;
     }
     this.submitting.set(true);

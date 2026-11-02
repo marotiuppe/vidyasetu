@@ -1,5 +1,5 @@
 <div class="app" [class.menu-open]="menuOpen()">
-  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+  <aside class="sidebar" id="sidebar" [attr.aria-label]="i18n.t('app.shell.mainNav')">
     <div class="brand">
       <span class="brand-mark" [class.has-logo]="showSchoolLogo()">
         @if (showSchoolLogo()) {
@@ -19,16 +19,18 @@
       </div>
     </div>
 
-    <p class="nav-label">School workspace</p>
-    <nav aria-label="Primary">
+    <p class="nav-label">{{ i18n.t('app.shell.workspace') }}</p>
+    <nav [attr.aria-label]="i18n.t('app.shell.primaryNav')">
       <ul class="nav">
         @for (item of navItems(); track item.path) {
           <li>
             @if (item.soon) {
               <span class="nav-item disabled" aria-disabled="true">
                 <sms-icon [name]="item.icon" [size]="17" />
-                <span class="nav-text">{{ item.label }}</span>
-                <span class="soon">Soon</span>
+                <span class="nav-text">{{
+                  item.labelKey ? i18n.t(item.labelKey) : item.label
+                }}</span>
+                <span class="soon">{{ i18n.t('app.shell.soon') }}</span>
               </span>
             } @else {
               <a
@@ -42,9 +44,11 @@
                   item.labelKey ? i18n.t(item.labelKey) : item.label
                 }}</span>
                 @if (item.unreadBadge && unread() > 0) {
-                  <span class="count" [attr.aria-label]="unread() + ' unread'">{{
-                    unread() > 99 ? '99+' : unread()
-                  }}</span>
+                  <span
+                    class="count"
+                    [attr.aria-label]="i18n.t('app.shell.unreadCount', { count: unread() })"
+                    >{{ unread() > 99 ? '99+' : unread() }}</span
+                  >
                 }
               </a>
             }
@@ -56,14 +60,14 @@
     <div class="sidebar-foot">
       <div class="tagline">
         <sms-icon name="cap" [size]="18" />
-        <strong>Learning, together.<br />Growing every day.</strong>
-        One school. Many possibilities.
+        <strong>{{ i18n.t('app.shell.tagline1') }}<br />{{ i18n.t('app.shell.tagline2') }}</strong>
+        {{ i18n.t('app.shell.tagline3') }}
         @if (year(); as y) {
-          <br />Academic year {{ y }}
+          <br />{{ i18n.t('app.shell.academicYear', { year: y }) }}
         }
       </div>
       <div class="private">
-        <sms-icon name="lock" [size]="14" /> Private school workspace <i class="dot"></i>
+        <sms-icon name="lock" [size]="14" /> {{ i18n.t('app.shell.private') }} <i class="dot"></i>
       </div>
       <div class="legal-menu">
         <sms-legal-links variant="disclosure" [schoolCode]="school.code()" />
@@ -71,14 +75,21 @@
     </div>
   </aside>
 
-  <div class="backdrop" (click)="closeOverlays()"></div>
+  <button
+    type="button"
+    class="backdrop"
+    tabindex="-1"
+    aria-hidden="true"
+    (click)="closeOverlays()"
+  ></button>
 
   <div class="main">
+    <sms-site-notice />
     <header class="topbar">
       <button
         type="button"
         class="icon-btn menu-btn"
-        aria-label="Open menu"
+        [attr.aria-label]="i18n.t('app.shell.openMenu')"
         aria-controls="sidebar"
         [attr.aria-expanded]="menuOpen()"
         (click)="toggleMenu()"
@@ -86,21 +97,21 @@
         <sms-icon [name]="menuOpen() ? 'close' : 'menu'" />
       </button>
 
-      <nav class="crumbs" aria-label="Breadcrumb">
-        <span class="crumb-root">School portal</span>
+      <nav class="crumbs" [attr.aria-label]="i18n.t('app.shell.breadcrumb')">
+        <span class="crumb-root">{{ i18n.t('app.shell.portal') }}</span>
         <span class="crumb-root" aria-hidden="true">/</span>
         <strong aria-current="page">{{ title() }}</strong>
       </nav>
 
       <div class="spacer"></div>
 
-      <label class="search" title="Search is coming soon">
+      <label class="search" [title]="i18n.t('app.shell.searchSoon')">
         <sms-icon name="search" [size]="15" />
         <input
           type="search"
-          placeholder="Search the portal…"
+          [placeholder]="i18n.t('app.shell.searchPlaceholder')"
           disabled
-          aria-label="Search (coming soon)"
+          [attr.aria-label]="i18n.t('app.shell.searchAria')"
         />
       </label>
 
@@ -110,7 +121,11 @@
         <a
           class="icon-btn bell"
           routerLink="/notices"
-          [attr.aria-label]="unread() > 0 ? 'Notices, ' + unread() + ' unread' : 'Notices'"
+          [attr.aria-label]="
+            unread() > 0
+              ? i18n.t('app.shell.noticesUnread', { count: unread() })
+              : i18n.t('app.shell.notices')
+          "
         >
           <sms-icon name="bell" [size]="17" />
           @if (unread() > 0) {
@@ -118,7 +133,12 @@
           }
         </a>
       } @else {
-        <button type="button" class="icon-btn" disabled aria-label="Notices (not available)">
+        <button
+          type="button"
+          class="icon-btn"
+          disabled
+          [attr.aria-label]="i18n.t('app.shell.noticesNa')"
+        >
           <sms-icon name="bell" [size]="17" />
         </button>
       }
@@ -141,14 +161,14 @@
         @if (userMenuOpen()) {
           <div class="menu">
             <p class="menu-id">
-              Signed in as <strong>{{ auth.user()?.username }}</strong>
+              {{ i18n.t('app.shell.signedInAs') }} <strong>{{ auth.user()?.username }}</strong>
             </p>
             <div role="menu">
               <a role="menuitem" routerLink="/account">
-                <sms-icon name="lock" [size]="16" /> Change password
+                <sms-icon name="lock" [size]="16" /> {{ i18n.t('app.shell.changePassword') }}
               </a>
               <button type="button" role="menuitem" (click)="auth.logout()">
-                <sms-icon name="logout" [size]="16" /> Sign out
+                <sms-icon name="logout" [size]="16" /> {{ i18n.t('app.shell.signOut') }}
               </button>
             </div>
           </div>

@@ -43,14 +43,13 @@ def normalise_logo(raw: bytes) -> bytes:
                     detail=f"Image too large (max {MAX_SOURCE_PIXELS}x{MAX_SOURCE_PIXELS} pixels)",
                 )
             probe.verify()
-            img = Image.open(io.BytesIO(raw), formats=_FORMATS)
-            img.seek(0)  # first frame only
-            img.load()
-            img = ImageOps.exif_transpose(img)
-            img = img.convert("RGBA")
-            img.thumbnail((LOGO_BOX, LOGO_BOX), Image.Resampling.LANCZOS)  # never upscales
+            frame = Image.open(io.BytesIO(raw), formats=_FORMATS)
+            frame.seek(0)  # first frame only
+            frame.load()
+            rgba = ImageOps.exif_transpose(frame).convert("RGBA")
+            rgba.thumbnail((LOGO_BOX, LOGO_BOX), Image.Resampling.LANCZOS)  # never upscales
             out = io.BytesIO()
-            img.save(out, format="PNG", optimize=True)  # no metadata is carried over
+            rgba.save(out, format="PNG", optimize=True)  # no metadata is carried over
             return out.getvalue()
     except HTTPException:
         raise

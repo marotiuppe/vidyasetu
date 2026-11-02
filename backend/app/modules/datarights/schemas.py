@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated
 
 from pydantic import BaseModel, StringConstraints
 
+from app.core.schema_types import UtcDateTime
 from app.modules.datarights.models import RequestStatus, RequestType
 
 Message = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]
@@ -33,8 +34,8 @@ class DataRequestOut(BaseModel):
     requester_name: str | None
     requester_role: str | None
     handled_by_user_id: int | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: UtcDateTime
+    updated_at: UtcDateTime
     due_on: date
     overdue: bool
 

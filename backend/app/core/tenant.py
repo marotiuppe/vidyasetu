@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Any
 
-from sqlalchemy import Select, and_, or_, select
+from sqlalchemy import Select, and_, false, or_, select
 
 from app.modules.academics.models import AcademicYear
 from app.modules.attendance.models import Holiday
@@ -12,54 +12,56 @@ from app.modules.notices.models import Notice, TargetType
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import Role, User
 
+type AnySelect = Select[*tuple[Any, ...]]
 
-def scope_branches(stmt: Select[tuple[Branch]], user: User) -> Select[tuple[Branch]]:
+
+def scope_branches(stmt: AnySelect, user: User) -> AnySelect:
     """Restrict a branch query to what `user` is allowed to see."""
     if user.role == Role.SUPER_ADMIN:
         return stmt
     if user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(Branch.school_id == user.school_id)
     if user.branch_id is not None:
         stmt = stmt.where(Branch.id == user.branch_id)
     return stmt
 
 
-def scope_tenant(stmt: Select[Any], model: Any, user: User) -> Select[Any]:
+def scope_tenant(stmt: AnySelect, model: Any, user: User) -> AnySelect:
     """Generic scope for any model with `school_id` (and optionally `branch_id`)."""
     if user.role == Role.SUPER_ADMIN:
         return stmt
     if user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(model.school_id == user.school_id)
     if user.branch_id is not None and hasattr(model, "branch_id"):
         stmt = stmt.where(model.branch_id == user.branch_id)
     return stmt
 
 
-def scope_fees(stmt: Select[Any], model: Any, user: User) -> Select[Any]:
+def scope_fees(stmt: AnySelect, model: Any, user: User) -> AnySelect:
     """Scope for fee data (heads, structure, invoices, payments) read or changed by fee staff.
 
     Fee staff see their branch (school owner: the whole school). Super admins, parents, students
     and teachers get nothing here: parents and students reach fees only through `scope_students`.
     """
     if user.role in (Role.SUPER_ADMIN, Role.PARENT, Role.STUDENT, Role.TEACHER):
-        return stmt.where(False)
+        return stmt.where(false())
     return scope_tenant(stmt, model, user)
 
 
-def scope_users(stmt: Select[tuple[User]], user: User) -> Select[tuple[User]]:
+def scope_users(stmt: AnySelect, user: User) -> AnySelect:
     if user.role == Role.SUPER_ADMIN:
         return stmt
     if user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(User.school_id == user.school_id)
     if user.branch_id is not None:
         stmt = stmt.where(User.branch_id == user.branch_id)
     return stmt
 
 
-def scope_students(stmt: Select[Any], user: User) -> Select[Any]:
+def scope_students(stmt: AnySelect, user: User) -> AnySelect:
     """Restrict a student query (any select that includes `Student`) to what `user` may see.
 
     Staff see their branch (school owner: whole school, super admin: everything); a parent only
@@ -68,7 +70,7 @@ def scope_students(stmt: Select[Any], user: User) -> Select[Any]:
     if user.role == Role.SUPER_ADMIN:
         return stmt
     if user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(Student.school_id == user.school_id)
     if user.role == Role.PARENT:
         return stmt.where(
@@ -79,11 +81,11 @@ def scope_students(stmt: Select[Any], user: User) -> Select[Any]:
     if user.role == Role.SCHOOL_OWNER:
         return stmt
     if user.branch_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     return stmt.where(Student.branch_id == user.branch_id)
 
 
-def scope_holidays(stmt: Select[tuple[Holiday]], user: User) -> Select[tuple[Holiday]]:
+def scope_holidays(stmt: AnySelect, user: User) -> AnySelect:
     """Holidays visible to `user`: school-wide ones plus their branch's (owner: all of the school).
 
     Users without a branch (e.g. parents) only see school-wide holidays.
@@ -91,7 +93,7 @@ def scope_holidays(stmt: Select[tuple[Holiday]], user: User) -> Select[tuple[Hol
     if user.role == Role.SUPER_ADMIN:
         return stmt
     if user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(Holiday.school_id == user.school_id)
     if user.role == Role.SCHOOL_OWNER:
         return stmt
@@ -110,15 +112,15 @@ def notice_manager_clause(user: User) -> Any:
 
 
 def scope_notices(
-    stmt: Select[Any], user: User, today: date, *, only_active: bool = False
-) -> Select[Any]:
+    stmt: AnySelect, user: User, today: date, *, only_active: bool = False
+) -> AnySelect:
     """Restrict a notice query to what `user` may see.
 
     Expired notices are hidden unless the user wrote them or administers them
     (`only_active=True` hides them for everyone, e.g. for unread counts).
     """
     if user.role == Role.SUPER_ADMIN or user.school_id is None:
-        return stmt.where(False)
+        return stmt.where(false())
     stmt = stmt.where(Notice.school_id == user.school_id)
     live = or_(Notice.expires_on.is_(None), Notice.expires_on >= today)
     if only_active:

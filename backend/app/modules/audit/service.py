@@ -8,12 +8,14 @@ from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 
 from fastapi import Request, status
-from sqlalchemy import Select, false, func, select
+from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import request_context
 from app.core.errors import ApiError
 from app.core.rate_limit import client_ip
+from app.core.schema_types import utc_iso
+from app.core.tenant import AnySelect
 from app.modules.audit.models import AuditLog
 from app.modules.audit.schemas import AuditEntry, AuditPage
 from app.modules.users.models import Role, User
@@ -81,14 +83,27 @@ async def record(
             request_id=rid,
             detail=_clean(detail),
         )
+    except Exception as exc:
+        # Type only: the message may carry personal data or SQL parameters.
+        logger.error("Audit row not built (%s) for %s", type(exc).__name__, action[:50])
+        return
+
+    # The caller's own pending writes are flushed first, outside the savepoint. An error there is
+    # the caller's error and propagates; it must not be hidden inside the audit's savepoint, where
+    # it would leave the session unusable (the caller's rows lost, PendingRollbackError later).
+    await db.flush()
+    try:
+        # The savepoint holds the audit row only. If its insert fails, only the savepoint is rolled
+        # back and the caller's transaction carries on without the audit row.
         async with db.begin_nested():
             db.add(row)
             await db.flush()
-        if commit:
-            await db.commit()
     except Exception as exc:
         # Type only: the message may carry SQL parameters.
         logger.error("Audit write failed (%s) for %s", type(exc).__name__, action[:50])
+        return
+    if commit:
+        await db.commit()
 
 
 # ------------------------------------------------------------------ viewer
@@ -104,7 +119,7 @@ class AuditFilters:
     school_id: int | None = None  # platform admin only
 
 
-def _scoped(stmt: Select[Any], actor: User, f: AuditFilters) -> Select[Any]:
+def _scoped(stmt: AnySelect, actor: User, f: AuditFilters) -> AnySelect:
     if actor.role not in VIEWER_ROLES:
         raise ApiError(status.HTTP_403_FORBIDDEN, "Not allowed", "forbidden")
     if actor.role == Role.SUPER_ADMIN:
@@ -199,7 +214,7 @@ async def export_csv(db: AsyncSession, actor: User, f: AuditFilters) -> str:
             _csv_cell(v)
             for v in (
                 r.id,
-                r.at.isoformat(),
+                utc_iso(r.at),
                 r.school_id,
                 r.branch_id,
                 r.actor_user_id,

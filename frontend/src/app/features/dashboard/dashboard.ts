@@ -6,6 +6,7 @@ import { AcademicsApi } from '../../core/api/academics.api';
 import { Notice, NoticesApi } from '../../core/api/notices.api';
 import { SchoolService } from '../../core/api/school.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon, IconName } from '../../core/ui/icon';
 import { relativeDate } from '../notices/notice-labels';
 
@@ -27,6 +28,7 @@ interface Stat {
 export class Dashboard {
   private readonly auth = inject(AuthService);
   private readonly api = inject(AcademicsApi);
+  protected readonly i18n = inject(I18n);
 
   protected readonly firstName = computed(() => this.auth.user()?.full_name.split(' ')[0] ?? '');
   protected readonly today = new Date().toLocaleDateString('en-IN', {
@@ -46,34 +48,38 @@ export class Dashboard {
   private readonly sections = signal<number | null>(null);
   private readonly school = inject(SchoolService);
   protected readonly yearName = this.school.year;
-  protected readonly schoolName = computed(() => this.school.name() ?? 'School portal');
+  protected readonly schoolName = computed(
+    () => this.school.name() ?? this.i18n.t('app.shell.portal'),
+  );
 
   protected readonly stats = computed<Stat[]>(() => [
     {
-      label: 'Branches',
+      label: this.i18n.t('app.dash.branches'),
       value: this.fmt(this.branches()),
-      note: 'Active in this school',
+      note: this.i18n.t('app.dash.branchesNote'),
       icon: 'building',
       tone: 'green',
     },
     {
-      label: 'Classes',
+      label: this.i18n.t('app.dash.classes'),
       value: this.fmt(this.classes()),
-      note: 'Across all branches',
+      note: this.i18n.t('app.dash.classesNote'),
       icon: 'book',
       tone: 'peach',
     },
     {
-      label: 'Sections',
+      label: this.i18n.t('app.dash.sections'),
       value: this.fmt(this.sections()),
-      note: 'Divisions of classes',
+      note: this.i18n.t('app.dash.sectionsNote'),
       icon: 'users',
       tone: 'sky',
     },
     {
-      label: 'Academic year',
+      label: this.i18n.t('app.dash.academicYear'),
       value: this.yearName() ?? '—',
-      note: this.yearName() ? 'Current year' : 'Not set yet',
+      note: this.yearName()
+        ? this.i18n.t('app.dash.currentYear')
+        : this.i18n.t('app.dash.notSetYet'),
       icon: 'calendar',
       tone: 'lavender',
     },

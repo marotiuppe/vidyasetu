@@ -1,19 +1,21 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { I18n } from '../../core/i18n/i18n';
 import { Reveal } from '../../core/ui/reveal';
 
+/** `title` and `text` are dictionary keys, resolved in the template so the page follows the language. */
 const STEPS = [
   {
-    title: 'Set up your school and branches',
-    text: 'Create the school, its branches, classes and academic year.',
+    title: 'public.steps.setup.title',
+    text: 'public.steps.setup.text',
   },
   {
-    title: 'Add students, guardians and staff',
-    text: 'Bring in student records, link guardians and invite your team with the right roles.',
+    title: 'public.steps.people.title',
+    text: 'public.steps.people.text',
   },
   {
-    title: 'Run the day: attendance, notices, fees',
-    text: 'Mark attendance, publish notices and collect fees while families stay informed.',
+    title: 'public.steps.run.title',
+    text: 'public.steps.run.text',
   },
 ];
 
@@ -25,5 +27,6 @@ const STEPS = [
   styleUrl: './landing-steps.css',
 })
 export class LandingSteps {
+  protected readonly i18n = inject(I18n);
   protected readonly steps = STEPS;
 }

@@ -1,21 +1,28 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Noticeboard</h1>
+    <h1 class="page-title">{{ i18n.t('ops.notice.title') }}</h1>
     <p class="page-subtitle">
-      @if (unread() > 0) {
-        {{ unread() }} unread {{ unread() === 1 ? 'notice' : 'notices' }}
+      @if (unread() === 1) {
+        {{ i18n.t('ops.notice.unreadOne', { n: 1 }) }}
+      } @else if (unread() > 1) {
+        {{ i18n.t('ops.notice.unreadMany', { n: unread() }) }}
       } @else {
-        You are all caught up.
+        {{ i18n.t('ops.notice.allCaughtUp') }}
       }
     </p>
   </div>
   <div class="header-actions">
-    <button type="button" class="btn btn-ghost" [disabled]="busy() || unread() === 0" (click)="markAll()">
-      <sms-icon name="check" [size]="16" /> Mark all as read
+    <button
+      type="button"
+      class="btn btn-ghost"
+      [disabled]="busy() || unread() === 0"
+      (click)="markAll()"
+    >
+      <sms-icon name="check" [size]="16" /> {{ i18n.t('ops.notice.markAll') }}
     </button>
     @if (canPost) {
       <button type="button" class="btn btn-primary" [disabled]="formOpen()" (click)="openNew()">
-        <sms-icon name="plus" [size]="16" /> New notice
+        <sms-icon name="plus" [size]="16" /> {{ i18n.t('ops.notice.new') }}
       </button>
     }
   </div>
@@ -26,31 +33,39 @@
     <sms-notice-form [notice]="editing()" (saved)="onSaved($event)" (cancelled)="closeForm()" />
   }
 
-  <section class="card" aria-label="Notices">
+  <section class="card" [attr.aria-label]="i18n.t('ops.notice.listAria')">
     <div class="toolbar">
       <label class="field">
-        Search
+        {{ i18n.t('ops.notice.search') }}
         <input
           class="input"
           type="search"
-          placeholder="Title or text"
+          [placeholder]="i18n.t('ops.notice.searchPlaceholder')"
           autocomplete="off"
           [value]="q()"
           (input)="setQuery($any($event.target).value)"
         />
       </label>
       <label class="field">
-        Category
-        <select class="input" [value]="category()" (change)="setCategory($any($event.target).value)">
-          <option value="">All categories</option>
+        {{ i18n.t('ops.notice.category') }}
+        <select
+          class="input"
+          [value]="category()"
+          (change)="setCategory($any($event.target).value)"
+        >
+          <option value="">{{ i18n.t('ops.notice.allCategories') }}</option>
           @for (c of categories; track c.value) {
-            <option [value]="c.value">{{ c.label }}</option>
+            <option [value]="c.value">{{ categoryName(c.value) }}</option>
           }
         </select>
       </label>
       <label class="check">
-        <input type="checkbox" [checked]="unreadOnly()" (change)="setUnreadOnly($any($event.target).checked)" />
-        Unread only
+        <input
+          type="checkbox"
+          [checked]="unreadOnly()"
+          (change)="setUnreadOnly($any($event.target).checked)"
+        />
+        {{ i18n.t('ops.notice.unreadOnly') }}
       </label>
     </div>
 
@@ -62,10 +77,14 @@
     }
 
     @if (loading()) {
-      <p class="empty" role="status">Loading notices…</p>
+      <p class="empty" role="status">{{ i18n.t('ops.notice.loading') }}</p>
     } @else if (!items().length) {
       <p class="empty">
-        {{ q() || category() || unreadOnly() ? 'No notices match these filters.' : 'There are no notices yet.' }}
+        {{
+          q() || category() || unreadOnly()
+            ? i18n.t('ops.notice.noMatch')
+            : i18n.t('ops.notice.none')
+        }}
       </p>
     } @else {
       <ul class="list">
@@ -74,22 +93,31 @@
             <article [attr.aria-labelledby]="'notice-' + n.id">
               <div class="meta">
                 @if (!n.is_read) {
-                  <span class="dot" role="img" aria-label="Unread"></span>
+                  <span
+                    class="dot"
+                    role="img"
+                    [attr.aria-label]="i18n.t('ops.notice.unreadDot')"
+                  ></span>
                 }
                 @if (n.is_pinned) {
-                  <span class="badge pin"><sms-icon name="pin" [size]="12" /> Pinned</span>
+                  <span class="badge pin"
+                    ><sms-icon name="pin" [size]="12" /> {{ i18n.t('ops.notice.pinned') }}</span
+                  >
                 }
-                <span class="badge" [class]="'badge cat-' + n.category">{{ categoryLabels[n.category] }}</span>
+                <span class="badge" [class]="'badge cat-' + n.category">{{
+                  categoryName(n.category)
+                }}</span>
                 <span class="badge badge-muted">{{ n.target_label }}</span>
                 @if (n.is_expired) {
-                  <span class="badge badge-muted">Expired</span>
+                  <span class="badge badge-muted">{{ i18n.t('ops.notice.expired') }}</span>
                 }
               </div>
               <h2 class="title" [id]="'notice-' + n.id">{{ n.title }}</h2>
               <p class="byline">
-                {{ n.author.full_name }} · {{ roleLabel(n.author.role) }} · {{ relativeDate(n.created_at) }}
+                {{ n.author.full_name }} · {{ roleName(n.author.role) }} ·
+                {{ when(n.created_at) }}
                 @if (n.expires_on) {
-                  · Until {{ shortDate(n.expires_on) }}
+                  · {{ i18n.t('ops.notice.until', { date: shortDate(n.expires_on) }) }}
                 }
               </p>
               <p class="body" [class.clamp]="isLong(n) && !isOpen(n)">{{ n.body }}</p>
@@ -101,31 +129,33 @@
                     [attr.aria-expanded]="isOpen(n)"
                     (click)="toggle(n)"
                   >
-                    {{ isOpen(n) ? 'Show less' : 'Read more' }}
+                    {{ isOpen(n) ? i18n.t('ops.notice.showLess') : i18n.t('ops.notice.readMore') }}
                   </button>
                 } @else if (!n.is_read) {
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="markRead(n)">Mark as read</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="markRead(n)">
+                    {{ i18n.t('ops.notice.markRead') }}
+                  </button>
                 }
                 @if (n.read_count !== null) {
-                  <span class="hint">Read by {{ n.read_count }}</span>
+                  <span class="hint">{{ i18n.t('ops.notice.readBy', { n: n.read_count }) }}</span>
                 }
                 @if (n.can_edit) {
                   <span class="row-actions end">
                     <button
                       type="button"
                       class="btn btn-ghost btn-sm"
-                      [attr.aria-label]="'Edit notice ' + n.title"
+                      [attr.aria-label]="i18n.t('ops.notice.editAria', { title: n.title })"
                       (click)="openEdit(n)"
                     >
-                      <sms-icon name="edit" [size]="14" /> Edit
+                      <sms-icon name="edit" [size]="14" /> {{ i18n.t('ops.common.edit') }}
                     </button>
                     <button
                       type="button"
                       class="btn btn-ghost btn-sm"
-                      [attr.aria-label]="'Delete notice ' + n.title"
+                      [attr.aria-label]="i18n.t('ops.notice.deleteAria', { title: n.title })"
                       (click)="remove(n)"
                     >
-                      <sms-icon name="trash" [size]="14" /> Delete
+                      <sms-icon name="trash" [size]="14" /> {{ i18n.t('ops.common.delete') }}
                     </button>
                   </span>
                 }
@@ -135,14 +165,26 @@
         }
       </ul>
 
-      <nav class="pager" aria-label="Pagination">
-        <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+      <nav class="pager" [attr.aria-label]="i18n.t('ops.common.pagination')">
+        <span>{{
+          i18n.t('ops.notice.pageRange', { from: from(), to: to(), total: total() })
+        }}</span>
         <span class="row-actions">
-          <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
-            Previous
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="page() <= 1"
+            (click)="prev()"
+          >
+            {{ i18n.t('ops.common.previous') }}
           </button>
-          <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
-            Next
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="to() >= total()"
+            (click)="next()"
+          >
+            {{ i18n.t('ops.common.next') }}
           </button>
         </span>
       </nav>

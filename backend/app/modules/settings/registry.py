@@ -165,7 +165,8 @@ _school("security.password_min_length", "int", G, "Minimum password length",
         "New passwords must be at least this long (never below 10).", 10, min=10, max=64,
         bounded_by=("limits.password_min_length", None))
 _school("security.remember_me_days", "int", G, "Remember-me days",
-        "How long 'keep me signed in' lasts.", 14, min=1, max=365,
+        "How long 'keep me signed in' lasts. Without it, sessions end after the short session "
+        "time set on the server.", 14, env="refresh_token_days", min=1, max=365,
         bounded_by=(None, "limits.remember_me_max_days"))
 _school("security.force_password_change_new_accounts", "bool", G, "Force password change",
         "New and reset accounts must choose their own password at first sign-in.", True)

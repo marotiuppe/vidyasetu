@@ -20,8 +20,8 @@ import { AdminApi, Branch, School } from '../../core/api/admin.api';
 import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { Role, User } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
-import { MOBILE_HINT, USERNAME_HINT, mobileFormat, usernameFormat } from '../../core/auth/identity';
-import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { mobileFormat, usernameFormat } from '../../core/auth/identity';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { I18n } from '../../core/i18n/i18n';
 import { ROLE_LABELS } from '../../core/layout/nav';
 import { PrivacyApi } from '../../core/api/privacy.api';
@@ -55,11 +55,7 @@ export class Users {
   protected readonly canResetMfa = this.auth.hasRole('super_admin', 'school_owner');
   protected readonly confirmMfaId = signal<number | null>(null);
 
-  protected readonly roleLabels = ROLE_LABELS;
   protected readonly allRoles = ALL_ROLES;
-  protected readonly usernameHint = USERNAME_HINT;
-  protected readonly mobileHint = MOBILE_HINT;
-  protected readonly passwordHint = PASSWORD_HINT;
   protected readonly minLength = PASSWORD_MIN_LENGTH;
 
   protected readonly users = signal<User[]>([]);
@@ -198,9 +194,17 @@ export class Users {
     return control.invalid && (control.dirty || control.touched);
   }
 
+  /** Translated role name (the role values themselves are server contract). */
+  protected roleName(role: Role): string {
+    return this.i18n.t(`admin.role.${role}`);
+  }
+
   protected branchName(id: number | null): string {
-    if (id == null) return 'All branches';
-    return this.branches().find((b) => b.id === id)?.name ?? `Branch #${id}`;
+    if (id == null) return this.i18n.t('admin.users.branchAll');
+    return (
+      this.branches().find((b) => b.id === id)?.name ??
+      this.i18n.t('admin.users.branchFallback', { id })
+    );
   }
 
   protected toggleForm(): void {
@@ -216,11 +220,11 @@ export class Users {
       return;
     }
     if (this.needsSchool() && Number(v.school_id) < 1) {
-      this.formError.set('Select a school.');
+      this.formError.set(this.i18n.t('admin.users.selectSchoolError'));
       return;
     }
     if (this.needsBranch() && Number(v.branch_id) < 1) {
-      this.formError.set('Select a branch for this role.');
+      this.formError.set(this.i18n.t('admin.users.selectBranchForRole'));
       return;
     }
     this.submitting.set(true);
@@ -241,7 +245,12 @@ export class Users {
           this.form.patchValue({ full_name: '', username: '', email: '', phone: '', password: '' });
           this.form.markAsUntouched();
           this.showForm.set(false);
-          this.notice.set(`Created ${user.full_name} (${user.username}).`);
+          this.notice.set(
+            this.i18n.t('admin.users.created', {
+              name: user.full_name,
+              username: user.username,
+            }),
+          );
           this.reload();
         },
         error: (err: unknown) => {
@@ -280,7 +289,7 @@ export class Users {
       }),
       () => {
         this.editingId.set(null);
-        this.notice.set('User updated.');
+        this.notice.set(this.i18n.t('admin.users.updated'));
       },
       (err) => this.editError.set(placeServerErrors(this.editForm, err)),
     );
@@ -300,15 +309,13 @@ export class Users {
     this.run(user.id, this.api.resetPassword(user.id, this.resetControl.value), () => {
       this.resetControl.reset('');
       this.resettingId.set(null);
-      this.notice.set(
-        `Password reset for ${user.full_name}. They will have to choose a new password at their next sign-in.`,
-      );
+      this.notice.set(this.i18n.t('admin.users.passwordResetDone', { name: user.full_name }));
     });
   }
 
   protected unlock(user: User): void {
     this.run(user.id, this.api.unlockUser(user.id), () => {
-      this.notice.set(`${user.full_name} can sign in again.`);
+      this.notice.set(this.i18n.t('admin.users.canSignIn', { name: user.full_name }));
     });
   }
 

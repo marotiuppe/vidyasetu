@@ -1,19 +1,29 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { catchError, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
-import { FeesApi, InvoiceDetail, PAYMENT_METHODS, Payment, PaymentMethod } from '../../core/api/fees.api';
+import {
+  FeesApi,
+  InvoiceDetail,
+  InvoiceStatus,
+  PAYMENT_METHODS,
+  Payment,
+  PaymentMethod,
+} from '../../core/api/fees.api';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise, paiseToInput, parseRupeesToPaise } from '../../core/ui/money';
-import {
-  classSection,
-  invoiceStatusClass,
-  invoiceStatusLabel,
-  methodLabel,
-  todayIso,
-} from './fee-labels';
+import { classSection, invoiceStatusClass, todayIso } from './fee-labels';
 
 /** One invoice: lines, discount, payments (record, reverse, receipt) and cancel. */
 @Component({
@@ -26,6 +36,7 @@ import {
 export class InvoicePanel {
   private readonly api = inject(FeesApi);
   private readonly fb = inject(NonNullableFormBuilder);
+  protected readonly i18n = inject(I18n);
 
   readonly invoiceId = input.required<number>();
   readonly canManage = input(false);
@@ -35,10 +46,7 @@ export class InvoicePanel {
 
   protected readonly money = formatPaise;
   protected readonly methods = PAYMENT_METHODS;
-  protected readonly methodLabel = methodLabel;
-  protected readonly statusLabel = invoiceStatusLabel;
   protected readonly statusClass = invoiceStatusClass;
-  protected readonly classSection = classSection;
   protected readonly today = todayIso();
 
   protected readonly invoice = signal<InvoiceDetail | null>(null);
@@ -69,11 +77,16 @@ export class InvoicePanel {
     const inv = this.invoice();
     return this.canPay() && !!inv && inv.status !== 'cancelled' && inv.balance_paise > 0;
   });
-  protected readonly canEdit = computed(() => this.canManage() && this.invoice()?.status !== 'cancelled');
+  protected readonly canEdit = computed(
+    () => this.canManage() && this.invoice()?.status !== 'cancelled',
+  );
   protected readonly canCancel = computed(() => {
     const inv = this.invoice();
     return (
-      this.canManage() && !!inv && inv.status !== 'cancelled' && !inv.payments.some((p) => p.status === 'received')
+      this.canManage() &&
+      !!inv &&
+      inv.status !== 'cancelled' &&
+      !inv.payments.some((p) => p.status === 'received')
     );
   });
 
@@ -98,13 +111,28 @@ export class InvoicePanel {
         this.loading.set(false);
         if (!inv) return;
         this.invoice.set(inv);
-        this.payForm.patchValue({ amount: inv.balance_paise > 0 ? paiseToInput(inv.balance_paise) : '' });
+        this.payForm.patchValue({
+          amount: inv.balance_paise > 0 ? paiseToInput(inv.balance_paise) : '',
+        });
         this.editForm.setValue({
           dueDate: inv.due_date,
           discount: paiseToInput(inv.discount_paise),
           reason: inv.discount_reason ?? '',
         });
       });
+  }
+
+  /** "Class - Section", or the translated "Not enrolled" when the student has no class. */
+  protected classText(className: string | null, sectionName: string | null): string {
+    return className ? classSection(className, sectionName) : this.i18n.t('fees.daily.notEnrolled');
+  }
+
+  protected methodText(method: PaymentMethod): string {
+    return this.i18n.t(`fees.daily.method.${method}`);
+  }
+
+  protected statusText(status: InvoiceStatus): string {
+    return this.i18n.t(`fees.daily.status.${status}`);
   }
 
   protected openEdit(): void {
@@ -137,15 +165,19 @@ export class InvoicePanel {
     const v = this.payForm.getRawValue();
     const amount = parseRupeesToPaise(v.amount);
     if (amount === null || amount <= 0) {
-      this.payError.set('Enter an amount in rupees greater than zero, with at most 2 decimals.');
+      this.payError.set(this.i18n.t('fees.daily.err.amountInvalid'));
       return;
     }
     if (amount > inv.balance_paise) {
-      this.payError.set(`The amount cannot be more than the balance of ${formatPaise(inv.balance_paise)}.`);
+      this.payError.set(
+        this.i18n.t('fees.daily.err.amountOverBalance', {
+          amount: formatPaise(inv.balance_paise),
+        }),
+      );
       return;
     }
     if (v.paidOn && v.paidOn > this.today) {
-      this.payError.set('The payment date cannot be in the future.');
+      this.payError.set(this.i18n.t('fees.daily.err.paidOnFuture'));
       return;
     }
     this.busy.set(true);
@@ -160,7 +192,7 @@ export class InvoicePanel {
       .subscribe({
         next: (p) => {
           this.payForm.patchValue({ reference: '', note: '' });
-          this.done(`Payment recorded. Receipt ${p.receipt_no}.`);
+          this.done(this.i18n.t('fees.daily.msg.paymentRecorded', { no: p.receipt_no }));
         },
         error: (err: unknown) => this.fail(err, this.payError),
       });
@@ -171,22 +203,28 @@ export class InvoicePanel {
     const v = this.editForm.getRawValue();
     const discount = parseRupeesToPaise(v.discount || '0');
     if (discount === null) {
-      this.editError.set('Enter the discount in rupees with at most 2 decimals.');
+      this.editError.set(this.i18n.t('fees.daily.err.discountInvalid'));
       return;
     }
     if (discount > inv.gross_paise) {
-      this.editError.set(`The discount cannot be more than ${formatPaise(inv.gross_paise)}.`);
+      this.editError.set(
+        this.i18n.t('fees.daily.err.discountOverGross', { amount: formatPaise(inv.gross_paise) }),
+      );
       return;
     }
     if (!v.dueDate) {
-      this.editError.set('Choose a due date.');
+      this.editError.set(this.i18n.t('fees.daily.err.dueDateRequired'));
       return;
     }
     this.busy.set(true);
     this.api
-      .updateInvoice(inv.id, { due_date: v.dueDate, discount_paise: discount, discount_reason: v.reason.trim() })
+      .updateInvoice(inv.id, {
+        due_date: v.dueDate,
+        discount_paise: discount,
+        discount_reason: v.reason.trim(),
+      })
       .subscribe({
-        next: () => this.done('Invoice updated.'),
+        next: () => this.done(this.i18n.t('fees.daily.msg.invoiceUpdated')),
         error: (err: unknown) => this.fail(err, this.editError),
       });
   }
@@ -194,12 +232,12 @@ export class InvoicePanel {
   protected cancelInvoice(inv: InvoiceDetail): void {
     const reason = this.reasonControl.value.trim();
     if (!reason) {
-      this.error.set('Enter a reason for cancelling.');
+      this.error.set(this.i18n.t('fees.daily.err.cancelReasonRequired'));
       return;
     }
     this.busy.set(true);
     this.api.cancelInvoice(inv.id, reason).subscribe({
-      next: () => this.done('Invoice cancelled.'),
+      next: () => this.done(this.i18n.t('fees.daily.msg.invoiceCancelled')),
       error: (err: unknown) => this.fail(err, this.error),
     });
   }
@@ -207,12 +245,12 @@ export class InvoicePanel {
   protected reverse(p: Payment): void {
     const reason = this.reasonControl.value.trim();
     if (!reason) {
-      this.error.set('Enter a reason for reversing the payment.');
+      this.error.set(this.i18n.t('fees.daily.err.reverseReasonRequired'));
       return;
     }
     this.busy.set(true);
     this.api.reversePayment(p.id, reason).subscribe({
-      next: () => this.done(`Payment ${p.receipt_no} reversed.`),
+      next: () => this.done(this.i18n.t('fees.daily.msg.paymentReversed', { no: p.receipt_no })),
       error: (err: unknown) => this.fail(err, this.error),
     });
   }

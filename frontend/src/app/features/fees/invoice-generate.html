@@ -1,17 +1,19 @@
 <section class="card" aria-labelledby="generate-title">
   <div class="card-head">
-    <h2 class="card-title" id="generate-title">Generate invoices</h2>
+    <h2 class="card-title" id="generate-title">{{ i18n.t('fees.setup.generate.title') }}</h2>
     <button type="button" class="btn btn-ghost btn-sm" (click)="closed.emit()">
       <sms-icon name="close" [size]="14" />
-      Close
+      {{ i18n.t('fees.setup.common.close') }}
     </button>
   </div>
-  <p class="hint">Invoices are created from the fee structure. Students who already have an invoice with the same title are skipped.</p>
+  <p class="hint">
+    {{ i18n.t('fees.setup.generate.hint') }}
+  </p>
 
   <form class="stack" [formGroup]="form" (ngSubmit)="submit()">
     <div class="form-grid">
       <label class="field">
-        Academic year
+        {{ i18n.t('fees.setup.common.year') }}
         <select class="input" formControlName="yearId">
           @for (y of lookups.years(); track y.id) {
             <option [ngValue]="y.id">{{ y.name }}</option>
@@ -19,26 +21,36 @@
         </select>
       </label>
       <label class="field">
-        Title
-        <input class="input" type="text" maxlength="120" placeholder="For example Term 1 fees" formControlName="title" />
+        {{ i18n.t('fees.setup.common.title') }}
+        <input
+          class="input"
+          type="text"
+          maxlength="120"
+          [attr.placeholder]="i18n.t('fees.setup.generate.titlePlaceholder')"
+          formControlName="title"
+        />
       </label>
       <label class="field">
-        Due date
+        {{ i18n.t('fees.setup.common.dueDate') }}
         <input class="input" type="date" formControlName="dueDate" />
       </label>
       <label class="field">
-        Generate for
+        {{ i18n.t('fees.setup.generate.for') }}
         <select class="input" formControlName="target">
-          <option value="class">A whole class</option>
-          <option value="section">One section</option>
-          <option value="students">Selected students</option>
+          <option value="class">{{ i18n.t('fees.setup.generate.wholeClass') }}</option>
+          <option value="section">{{ i18n.t('fees.setup.generate.oneSection') }}</option>
+          <option value="students">{{ i18n.t('fees.setup.generate.selected') }}</option>
         </select>
       </label>
       @if (target() !== 'students') {
         <label class="field">
-          Class
-          <select class="input" formControlName="classId" (change)="form.controls.sectionId.setValue(0)">
-            <option [ngValue]="0">Choose a class</option>
+          {{ i18n.t('fees.setup.common.class') }}
+          <select
+            class="input"
+            formControlName="classId"
+            (change)="form.controls.sectionId.setValue(0)"
+          >
+            <option [ngValue]="0">{{ i18n.t('fees.setup.common.chooseClass') }}</option>
             @for (c of lookups.classes(); track c.id) {
               <option [ngValue]="c.id">{{ c.name }}</option>
             }
@@ -47,9 +59,9 @@
       }
       @if (target() === 'section') {
         <label class="field">
-          Section
+          {{ i18n.t('fees.setup.generate.section') }}
           <select class="input" formControlName="sectionId">
-            <option [ngValue]="0">Choose a section</option>
+            <option [ngValue]="0">{{ i18n.t('fees.setup.common.chooseSection') }}</option>
             @for (s of sectionOptions(); track s.id) {
               <option [ngValue]="s.id">{{ s.name }}</option>
             }
@@ -60,10 +72,14 @@
 
     @if (target() !== 'students' && structure().length) {
       <fieldset class="panel">
-        <legend class="hint">Fee heads to include</legend>
+        <legend class="hint">{{ i18n.t('fees.setup.generate.headsLegend') }}</legend>
         @for (i of structure(); track i.id) {
           <label class="check">
-            <input type="checkbox" [checked]="isChecked(i.fee_head_id)" (change)="toggleHead(i.fee_head_id)" />
+            <input
+              type="checkbox"
+              [checked]="isChecked(i.fee_head_id)"
+              (change)="toggleHead(i.fee_head_id)"
+            />
             {{ i.fee_head_name }} · {{ money(i.amount_paise) }}
           </label>
         }
@@ -74,20 +90,24 @@
       <div class="panel stack">
         <sms-student-picker [excludeIds]="studentIds()" (picked)="addStudent($event)" />
         @if (students().length) {
-          <ul class="rows" aria-label="Selected students">
+          <ul class="rows" [attr.aria-label]="i18n.t('fees.setup.generate.selected')">
             @for (s of students(); track s.id) {
               <li class="row">
                 <span class="row-main">
                   {{ s.full_name }}
-                  <span class="row-sub">Admission no. {{ s.admission_no }}</span>
+                  <span class="row-sub">
+                    {{ i18n.t('fees.setup.picker.admissionNo', { no: s.admission_no }) }}
+                  </span>
                 </span>
                 <button
                   type="button"
                   class="btn btn-ghost btn-sm"
-                  [attr.aria-label]="'Remove ' + s.full_name"
+                  [attr.aria-label]="
+                    i18n.t('fees.setup.common.removeNameAria', { name: s.full_name })
+                  "
                   (click)="removeStudent(s.id)"
                 >
-                  Remove
+                  {{ i18n.t('fees.setup.common.remove') }}
                 </button>
               </li>
             }
@@ -101,13 +121,25 @@
     }
     @if (result(); as r) {
       <p class="notice" role="status">
-        Created {{ r.created }} invoice{{ r.created === 1 ? '' : 's' }}. Skipped {{ r.skipped_existing }} that already
-        existed and {{ r.skipped_no_structure }} with no fee structure.
+        {{
+          i18n.t(
+            r.created === 1 ? 'fees.setup.generate.createdOne' : 'fees.setup.generate.createdMany',
+            { count: r.created }
+          )
+        }}
+        {{
+          i18n.t('fees.setup.generate.skipped', {
+            existing: r.skipped_existing,
+            noStructure: r.skipped_no_structure,
+          })
+        }}
       </p>
     }
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="busy()">
-        {{ busy() ? 'Generating…' : 'Generate invoices' }}
+        {{
+          busy() ? i18n.t('fees.setup.generate.generating') : i18n.t('fees.setup.generate.submit')
+        }}
       </button>
     </div>
   </form>

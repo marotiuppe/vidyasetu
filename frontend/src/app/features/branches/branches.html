@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Branches</h1>
-    <p class="page-subtitle">Each branch has its own classes, staff and records.</p>
+    <h1 class="page-title">{{ i18n.t('admin.branches.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admin.branches.subtitle') }}</p>
   </div>
   <button
     type="button"
@@ -9,29 +9,29 @@
     [attr.aria-expanded]="showForm()"
     (click)="toggleForm()"
   >
-    {{ showForm() ? 'Close' : 'New branch' }}
+    {{ showForm() ? i18n.t('admin.branches.close') : i18n.t('admin.branches.new') }}
   </button>
 </div>
 
 <div class="stack">
   @if (returnTo) {
     <div class="return-banner" role="status">
-      <p>Creating a new branch for {{ from }}. You will return automatically after saving.</p>
+      <p>{{ i18n.t('admin.branches.returning', { from }) }}</p>
       <button type="button" class="btn btn-ghost" (click)="cancelCreate()">
-        Cancel and go back
+        {{ i18n.t('admin.branches.cancelBack') }}
       </button>
     </div>
   }
   @if (showForm()) {
     <section class="card" aria-labelledby="new-branch">
-      <h2 class="card-title" id="new-branch">Create a branch</h2>
+      <h2 class="card-title" id="new-branch">{{ i18n.t('admin.branches.createTitle') }}</h2>
       <form [formGroup]="form" (ngSubmit)="create()" novalidate>
         <div class="form-grid">
           @if (isSuperAdmin()) {
             <label class="field">
-              School
+              {{ i18n.t('admin.branches.school') }}
               <select class="input" formControlName="school_id">
-                <option [value]="0" disabled>Select school</option>
+                <option [value]="0" disabled>{{ i18n.t('admin.branches.selectSchool') }}</option>
                 @for (s of schools(); track s.id) {
                   <option [value]="s.id">{{ s.name }}</option>
                 }
@@ -39,14 +39,14 @@
             </label>
           }
           <label class="field">
-            Branch name
+            {{ i18n.t('admin.branches.name') }}
             <input class="input" formControlName="name" autocomplete="off" />
             @if (form.controls.name.touched && form.controls.name.invalid) {
-              <span class="field-error">Name is required.</span>
+              <span class="field-error">{{ i18n.t('admin.branches.nameRequired') }}</span>
             }
           </label>
           <label class="field">
-            Code
+            {{ i18n.t('admin.branches.code') }}
             <input
               class="input"
               formControlName="code"
@@ -54,7 +54,7 @@
               placeholder="short-code"
             />
             @if (form.controls.code.touched && form.controls.code.invalid) {
-              <span class="field-error">Use lowercase letters, digits, hyphen or underscore.</span>
+              <span class="field-error">{{ i18n.t('admin.branches.codeError') }}</span>
             }
           </label>
         </div>
@@ -63,9 +63,15 @@
         }
         <div class="form-actions">
           <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-            {{ submitting() ? 'Creating…' : 'Create branch' }}
+            {{
+              submitting()
+                ? i18n.t('admin.branches.creating')
+                : i18n.t('admin.branches.createBranch')
+            }}
           </button>
-          <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancel</button>
+          <button type="button" class="btn btn-ghost" (click)="toggleForm()">
+            {{ i18n.t('admin.branches.cancel') }}
+          </button>
         </div>
       </form>
     </section>
@@ -76,9 +82,9 @@
   }
 
   <section class="card" aria-labelledby="branch-list">
-    <h2 class="card-title" id="branch-list">All branches</h2>
+    <h2 class="card-title" id="branch-list">{{ i18n.t('admin.branches.allBranches') }}</h2>
     @if (loading()) {
-      <p class="empty" role="status">Loading branches…</p>
+      <p class="empty" role="status">{{ i18n.t('admin.branches.loading') }}</p>
     } @else {
       <ul class="rows">
         @for (branch of branches(); track branch.id) {
@@ -88,7 +94,7 @@
                 <input
                   class="input"
                   [formControl]="renameControl"
-                  [attr.aria-label]="'New name for ' + branch.name"
+                  [attr.aria-label]="i18n.t('admin.branches.newName', { name: branch.name })"
                   autocomplete="off"
                 />
                 <button
@@ -96,17 +102,17 @@
                   class="btn btn-primary btn-sm"
                   [disabled]="busyId() === branch.id || renameControl.invalid"
                 >
-                  Save
+                  {{ i18n.t('admin.branches.save') }}
                 </button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="cancelRename()">
-                  Cancel
+                  {{ i18n.t('admin.branches.cancel') }}
                 </button>
               </form>
             } @else {
               <span class="row-main">
                 <strong>{{ branch.name }}</strong>
                 <span class="row-sub">
-                  Code {{ branch.code }}
+                  {{ i18n.t('admin.branches.codeOnly', { code: branch.code }) }}
                   @if (isSuperAdmin()) {
                     · {{ schoolName(branch.school_id) }}
                   }
@@ -117,11 +123,15 @@
                 [class.badge-success]="branch.is_active"
                 [class.badge-muted]="!branch.is_active"
               >
-                {{ branch.is_active ? 'Active' : 'Inactive' }}
+                {{
+                  branch.is_active
+                    ? i18n.t('admin.branches.active')
+                    : i18n.t('admin.branches.inactive')
+                }}
               </span>
               <span class="row-actions">
                 <button type="button" class="btn btn-ghost btn-sm" (click)="startRename(branch)">
-                  Rename
+                  {{ i18n.t('admin.branches.rename') }}
                 </button>
                 <button
                   type="button"
@@ -129,13 +139,17 @@
                   [disabled]="busyId() === branch.id"
                   (click)="toggleActive(branch)"
                 >
-                  {{ branch.is_active ? 'Deactivate' : 'Activate' }}
+                  {{
+                    branch.is_active
+                      ? i18n.t('admin.branches.deactivate')
+                      : i18n.t('admin.branches.activate')
+                  }}
                 </button>
               </span>
             }
           </li>
         } @empty {
-          <li class="empty">No branches yet. Create the first one above.</li>
+          <li class="empty">{{ i18n.t('admin.branches.none') }}</li>
         }
       </ul>
     }

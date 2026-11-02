@@ -7,14 +7,9 @@ import { catchError, filter, of, switchMap, take, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { FeeHead, FeesApi, StructureItem } from '../../core/api/fees.api';
 import { AuthService } from '../../core/auth/auth.service';
-import {
-  CREATE_NEW,
-  CREATE_NEW_LABEL,
-  CreateKind,
-  createPermissions,
-  isCreateNewChange,
-} from '../../core/create/create-new';
+import { CREATE_NEW, CreateKind, createPermissions } from '../../core/create/create-new';
 import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise, paiseToInput, parseRupeesToPaise } from '../../core/ui/money';
 import { FeeLookups } from './fee-lookups';
@@ -33,8 +28,8 @@ export class FeeStructure {
   protected readonly lookups = inject(FeeLookups);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
 
   readonly heads = input.required<FeeHead[]>();
@@ -161,7 +156,7 @@ export class FeeStructure {
         this.returnState.openCreate(
           kind,
           { picker: this.picker.getRawValue() },
-          'Fee setup',
+          this.i18n.t('fees.setup.fromLabel'),
           extra,
         );
       });
@@ -175,7 +170,8 @@ export class FeeStructure {
     this.error.set(null);
     this.notice.set(null);
     const p = this.picker.getRawValue();
-    if (!p.yearId || !p.classId) return this.error.set('Choose an academic year and a class.');
+    if (!p.yearId || !p.classId)
+      return this.error.set(this.i18n.t('fees.setup.structure.needPicks'));
 
     const items: { fee_head_id: number; amount_paise: number }[] = [];
     const seen = new Set<number>();
@@ -183,11 +179,9 @@ export class FeeStructure {
       if (!r.headId && !r.amount.trim()) continue; // untouched empty row
       const amount = parseRupeesToPaise(r.amount);
       if (!r.headId || amount === null || amount <= 0) {
-        return this.error.set(
-          `Row ${i + 1} needs a fee head and an amount in rupees above zero (up to 2 decimals).`,
-        );
+        return this.error.set(this.i18n.t('fees.setup.structure.rowInvalid', { n: i + 1 }));
       }
-      if (seen.has(r.headId)) return this.error.set('Each fee head can appear only once.');
+      if (seen.has(r.headId)) return this.error.set(this.i18n.t('fees.setup.structure.duplicate'));
       seen.add(r.headId);
       items.push({ fee_head_id: r.headId, amount_paise: amount });
     }
@@ -197,7 +191,7 @@ export class FeeStructure {
       next: (saved) => {
         this.busy.set(false);
         this.fill(saved);
-        this.notice.set('Fee structure saved.');
+        this.notice.set(this.i18n.t('fees.setup.structure.saved'));
       },
       error: (err: unknown) => {
         this.busy.set(false);

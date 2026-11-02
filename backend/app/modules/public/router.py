@@ -5,9 +5,10 @@ from fastapi.responses import PlainTextResponse
 
 from app.core.deps import DbSession
 from app.modules.public import service
-from app.modules.public.schemas import LegalInfo
+from app.modules.public.schemas import LegalInfo, SiteInfo
 
 PUBLIC_CACHE = "public, max-age=300"
+SITE_CACHE = "public, max-age=60"
 TEXT_CACHE = "public, max-age=3600"
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -25,6 +26,13 @@ async def get_legal_info(
     # The global middleware sets no-store on /api paths only when no Cache-Control is present.
     response.headers["Cache-Control"] = PUBLIC_CACHE
     return await service.legal_info(db, school)
+
+
+@router.get("/site", response_model=SiteInfo)
+async def get_site_info(response: Response, db: DbSession) -> SiteInfo:
+    # Short cache: a new banner or maintenance notice should show within a minute.
+    response.headers["Cache-Control"] = SITE_CACHE
+    return await service.site_info(db)
 
 
 @site_router.get("/.well-known/security.txt")

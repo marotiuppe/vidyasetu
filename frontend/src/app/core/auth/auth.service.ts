@@ -7,6 +7,32 @@ import { AuthOptions, LoginResult, MfaChallenge, Role, TokenResponse, User } fro
 
 const API = '/api/v1/auth';
 
+/**
+ * A non-sensitive marker in localStorage saying "a session was started here". It holds no token and
+ * no personal data. Without it, a logged-out visitor would not trigger a silent refresh at all.
+ */
+const SESSION_HINT_KEY = 'sms_session';
+
+function readSessionHint(): boolean {
+  try {
+    return localStorage.getItem(SESSION_HINT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSessionHint(on: boolean): void {
+  try {
+    if (on) {
+      localStorage.setItem(SESSION_HINT_KEY, '1');
+    } else {
+      localStorage.removeItem(SESSION_HINT_KEY);
+    }
+  } catch {
+    // Storage can be blocked (private mode): the app then just asks the user to sign in again.
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -70,11 +96,20 @@ export class AuthService {
     return this.http.get<AuthOptions>(`${API}/options`);
   }
 
-  /** Try to restore a session from the refresh cookie (page reload). */
+  /**
+   * Try to restore a session from the refresh cookie (page reload). Skipped when there is no sign-in
+   * hint, so a logged-out visitor makes no refresh call.
+   */
   restore(): Observable<boolean> {
+    if (!readSessionHint()) {
+      return of(false);
+    }
     return this.refresh().pipe(
       map(() => true),
-      catchError(() => of(false)),
+      catchError(() => {
+        writeSessionHint(false);
+        return of(false);
+      }),
     );
   }
 
@@ -110,6 +145,7 @@ export class AuthService {
 
   /** Clear local session without calling the server (used when refresh fails). */
   clear(): void {
+    writeSessionHint(false);
     this.accessToken = null;
     this.currentUser.set(null);
     this.policiesPending.set(null);
@@ -141,6 +177,7 @@ export class AuthService {
   }
 
   private accept(res: TokenResponse): User {
+    writeSessionHint(true);
     this.accessToken = res.access_token;
     this.currentUser.set(res.user);
     return res.user;

@@ -16,7 +16,9 @@ async def list_branches(db: AsyncSession, actor: User) -> list[Branch]:
 
 
 async def get_branch(db: AsyncSession, actor: User, branch_id: int) -> Branch:
-    branch = await db.scalar(scope_branches(select(Branch), actor).where(Branch.id == branch_id))
+    branch: Branch | None = await db.scalar(
+        scope_branches(select(Branch), actor).where(Branch.id == branch_id)
+    )
     if branch is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Branch not found")
     return branch

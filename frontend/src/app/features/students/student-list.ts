@@ -22,16 +22,16 @@ import { AuthService } from '../../core/auth/auth.service';
 import { canWriteStudents, isStudentSelfService } from '../../core/auth/permissions';
 import {
   CREATE_NEW,
-  CREATE_NEW_LABEL,
   CreateKind,
   FILTER_KINDS,
   canCreateRecord,
   isCreateNewChange,
 } from '../../core/create/create-new';
 import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { StudentImport } from './student-import';
-import { initials, statusLabel } from './student-labels';
+import { initials, statusKey } from './student-labels';
 
 const PAGE_SIZE = 25;
 
@@ -57,8 +57,8 @@ export class StudentList {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate: Record<CreateKind, boolean> = {
     academic_year: canCreateRecord(this.auth, 'academic_year'),
     class: canCreateRecord(this.auth, 'class'),
@@ -67,16 +67,19 @@ export class StudentList {
   };
 
   protected readonly statuses = STATUSES;
-  protected readonly statusLabel = statusLabel;
   protected readonly initials = initials;
 
   protected readonly canWrite = canWriteStudents(this.auth);
   protected readonly selfService = isStudentSelfService(this.auth);
-  protected readonly title = this.auth.hasRole('student')
-    ? 'My profile'
-    : this.selfService
-      ? 'My children'
-      : 'Student records';
+  protected readonly title = computed(() =>
+    this.i18n.t(
+      this.auth.hasRole('student')
+        ? 'students.list.title.mine'
+        : this.selfService
+          ? 'students.list.title.children'
+          : 'students.list.title.records',
+    ),
+  );
   protected readonly canPickBranch = !this.selfService && this.auth.user()?.branch_id == null;
 
   protected readonly branches = signal<Branch[]>([]);
@@ -101,7 +104,14 @@ export class StudentList {
   protected readonly error = signal<string | null>(null);
   protected readonly exporting = signal(false);
   protected readonly showImport = signal(false);
-  protected readonly notice = signal<string | null>(null);
+  /** Students created by the last CSV import (0 = no notice); the text follows the language. */
+  protected readonly importedCount = signal(0);
+  protected readonly importedText = computed(() => {
+    const n = this.importedCount();
+    return this.i18n.t(n === 1 ? 'students.list.importedOne' : 'students.list.importedMany', {
+      count: n,
+    });
+  });
   private readonly reloadTick = signal(0);
 
   protected readonly classOptions = computed(() => {
@@ -217,7 +227,11 @@ export class StudentList {
         : kind === 'class' && f.branchId
           ? { branchId: f.branchId }
           : {};
-    this.returnState.openCreate(kind, f, 'Student records', extra);
+    this.returnState.openCreate(kind, f, this.i18n.t('students.list.from.records'), extra);
+  }
+
+  protected statusLabel(status: StudentStatus): string {
+    return this.i18n.t(statusKey(status));
   }
 
   protected onStatus(e: Event): void {
@@ -249,7 +263,7 @@ export class StudentList {
 
   protected imported(created: number): void {
     if (created > 0) {
-      this.notice.set(`Imported ${created} student${created === 1 ? '' : 's'}.`);
+      this.importedCount.set(created);
       this.page.set(1);
       this.reloadTick.update((t) => t + 1);
     }

@@ -18,7 +18,14 @@ export const IMPORT_FIELDS = [
   'roll_no',
 ] as const;
 
-const REQUIRED = ['first_name', 'last_name', 'gender', 'date_of_birth', 'guardian_name', 'guardian_phone'];
+const REQUIRED = [
+  'first_name',
+  'last_name',
+  'gender',
+  'date_of_birth',
+  'guardian_name',
+  'guardian_phone',
+];
 
 const EXAMPLE = [
   'Asha',
@@ -79,20 +86,34 @@ export function parseCsv(input: string): string[][] {
   return rows;
 }
 
+/** A problem to show, as an i18n key with its parameters (translated by the caller). */
+export interface ImportIssue {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
 export interface ParsedImport {
   rows: ImportRow[];
-  error: string | null;
+  error: ImportIssue | null;
 }
 
 /** Turn parsed CSV records into import rows using the header row (case-insensitive names). */
 export function toImportRows(records: string[][]): ParsedImport {
   const [header, ...body] = records;
-  if (!header) return { rows: [], error: 'The file is empty.' };
+  if (!header) return { rows: [], error: { key: 'students.form.import.empty' } };
 
-  const names = header.map((h) => h.trim().toLowerCase().replace(/[\s-]+/g, '_'));
+  const names = header.map((h) =>
+    h
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, '_'),
+  );
   const missing = REQUIRED.filter((r) => !names.includes(r));
   if (missing.length) {
-    return { rows: [], error: `Missing required column(s): ${missing.join(', ')}.` };
+    return {
+      rows: [],
+      error: { key: 'students.form.import.missing', params: { columns: missing.join(', ') } },
+    };
   }
 
   const rows: ImportRow[] = [];
@@ -106,7 +127,7 @@ export function toImportRows(records: string[][]): ParsedImport {
     }
     rows.push(obj as unknown as ImportRow);
   }
-  if (!rows.length) return { rows: [], error: 'The file has no data rows.' };
+  if (!rows.length) return { rows: [], error: { key: 'students.form.import.noRows' } };
   return { rows, error: null };
 }
 

@@ -1,13 +1,13 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Attendance</h1>
+    <h1 class="page-title">{{ i18n.t('ops.att.title') }}</h1>
     <p class="page-subtitle">
-      {{ selfService ? 'Daily attendance and school holidays.' : 'Mark, review and export daily attendance.' }}
+      {{ selfService ? i18n.t('ops.att.subSelf') : i18n.t('ops.att.subStaff') }}
     </p>
   </div>
 </div>
 
-<div class="tabs" role="tablist" aria-label="Attendance sections" (keydown)="onTabKey($event)">
+<div class="tabs" role="tablist" [attr.aria-label]="i18n.t('ops.att.tabsAria')">
   @for (t of tabs; track t.id) {
     <button
       type="button"
@@ -18,8 +18,9 @@
       [attr.aria-controls]="'panel-' + t.id"
       [attr.tabindex]="active() === t.id ? 0 : -1"
       (click)="select(t.id)"
+      (keydown)="onTabKey($event)"
     >
-      {{ t.label }}
+      {{ i18n.t(t.labelKey) }}
     </button>
   }
 </div>
@@ -44,13 +45,13 @@
           <p class="form-error" role="alert">{{ message }}</p>
         }
         @if (childrenLoading()) {
-          <p class="empty" role="status">Loading…</p>
+          <p class="empty" role="status">{{ i18n.t('ops.common.loading') }}</p>
         } @else if (!childId()) {
-          <p class="empty">No student record is linked to your account.</p>
+          <p class="empty">{{ i18n.t('ops.att.noStudent') }}</p>
         } @else {
           @if (children().length > 1) {
             <label class="field child-pick">
-              Child
+              {{ i18n.t('ops.att.child') }}
               <select class="input" (change)="pickChild($event)">
                 @for (c of children(); track c.id) {
                   <option [value]="c.id" [selected]="c.id === childId()">{{ c.full_name }}</option>

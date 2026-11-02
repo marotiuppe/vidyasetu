@@ -1,0 +1,8 @@
+@if (site.notices(); as notices) {
+  @if (notices.maintenance_message; as message) {
+    <p class="site-notice maintenance" role="status">{{ message }}</p>
+  }
+  @if (notices.announcement_banner; as banner) {
+    <p class="site-notice announcement" role="status">{{ banner }}</p>
+  }
+}

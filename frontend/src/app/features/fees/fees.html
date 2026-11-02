@@ -1,14 +1,14 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Fees</h1>
+    <h1 class="page-title">{{ i18n.t('fees.setup.title') }}</h1>
     <p class="page-subtitle">
-      {{ selfService ? 'Fee invoices, payments and receipts.' : 'Invoices, payments, dues and collection.' }}
+      {{ selfService ? i18n.t('fees.setup.subtitle.self') : i18n.t('fees.setup.subtitle.staff') }}
     </p>
   </div>
 </div>
 
 @if (tabs.length > 1) {
-  <div class="tabs" role="tablist" aria-label="Fee sections" (keydown)="onTabKey($event)">
+  <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('fees.setup.sections')">
     @for (t of tabs; track t.id) {
       <button
         type="button"
@@ -19,14 +19,19 @@
         [attr.aria-controls]="'panel-' + t.id"
         [attr.tabindex]="active() === t.id ? 0 : -1"
         (click)="select(t.id)"
+        (keydown)="onTabKey($event)"
       >
-        {{ t.label }}
+        {{ i18n.t(t.labelKey) }}
       </button>
     }
   </div>
 }
 
-<div role="tabpanel" [id]="'panel-' + active()" [attr.aria-labelledby]="tabs.length > 1 ? 'tab-' + active() : null">
+<div
+  role="tabpanel"
+  [id]="'panel-' + active()"
+  [attr.aria-labelledby]="tabs.length > 1 ? 'tab-' + active() : null"
+>
   @switch (active()) {
     @case ('invoices') {
       <sms-fee-invoices [canManage]="canManage" [canPay]="canPay" />

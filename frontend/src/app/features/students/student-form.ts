@@ -38,16 +38,12 @@ import {
   StudentsApi,
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
-import {
-  CREATE_NEW,
-  CREATE_NEW_LABEL,
-  CreateKind,
-  canCreateRecord,
-} from '../../core/create/create-new';
+import { CREATE_NEW, CreateKind, canCreateRecord } from '../../core/create/create-new';
 import { PendingReturn, ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { LoginDetails } from './login-details';
 import { ParentPicker } from './parent-picker';
-import { PHONE_PATTERN, titleCase, todayIso } from './student-labels';
+import { PHONE_PATTERN, todayIso } from './student-labels';
 
 function notFuture(control: AbstractControl<string>): ValidationErrors | null {
   const v = control.value;
@@ -106,14 +102,13 @@ export class StudentForm {
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly i18n = inject(I18n);
 
   protected readonly genders = GENDERS;
   protected readonly relations = RELATIONS;
-  protected readonly titleCase = titleCase;
   protected readonly today = todayIso();
   protected readonly needsBranch = this.auth.user()?.branch_id == null;
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreateYear = canCreateRecord(this.auth, 'academic_year');
   protected readonly canCreateClass = canCreateRecord(this.auth, 'class');
   protected readonly canCreateSection = canCreateRecord(this.auth, 'section');
@@ -217,6 +212,16 @@ export class StudentForm {
     return this.form.controls.guardians;
   }
 
+  /** Display name for a gender option value. */
+  protected genderLabel(g: Gender): string {
+    return this.i18n.t(`students.form.gender.${g}`);
+  }
+
+  /** Display name for a relation option value. */
+  protected relationLabel(r: Relation): string {
+    return this.i18n.t(`students.form.relation.${r}`);
+  }
+
   private newGuardian(primary: boolean) {
     return this.fb.group({
       parent_mode: ['new' as ParentMode],
@@ -286,26 +291,24 @@ export class StudentForm {
     }
     if (this.form.invalid || (this.needsBranch && Number(v.branch_id) < 1)) {
       this.form.markAllAsTouched();
-      this.error.set('Please correct the highlighted fields.');
+      this.error.set(this.i18n.t('students.form.errCorrect'));
       return;
     }
     const missing = v.guardians.findIndex(
       (g) => g.parent_mode === 'existing' && Number(g.existing_parent_user_id) < 1,
     );
     if (missing >= 0) {
-      this.error.set(
-        `Search for and select the existing parent of guardian ${missing + 1}, or choose New parent.`,
-      );
+      this.error.set(this.i18n.t('students.form.errExistingParent', { n: missing + 1 }));
       return;
     }
     const rollNo = v.roll_no.trim() === '' ? null : Number(v.roll_no);
     if (rollNo !== null && (!Number.isInteger(rollNo) || rollNo < 1)) {
-      this.error.set('Roll number must be a positive whole number.');
+      this.error.set(this.i18n.t('students.form.errRollNo'));
       return;
     }
     const enrolling = Number(v.class_id) > 0;
     if (enrolling && Number(v.academic_year_id) < 1) {
-      this.error.set('Select an academic year for the enrolment.');
+      this.error.set(this.i18n.t('students.form.errYear'));
       return;
     }
 
@@ -356,7 +359,7 @@ export class StudentForm {
       error: (err: unknown) => {
         this.submitting.set(false);
         this.error.set(
-          placeServerErrors(this.form, err) ?? 'Please correct the highlighted fields.',
+          placeServerErrors(this.form, err) ?? this.i18n.t('students.form.errCorrect'),
         );
       },
     });
@@ -392,7 +395,13 @@ export class StudentForm {
     const draft = back.draft as StudentDraft | null;
     const picked = back.createdId;
     if (draft) {
-      const { guardians, branch_id, academic_year_id, class_id, section_id, ...scalars } = draft;
+      const { guardians, ...rest } = draft;
+      // The ids are set below from the picker state, so they are not patched from the draft.
+      const scalars: Partial<StudentDraft> = { ...rest };
+      delete scalars.branch_id;
+      delete scalars.academic_year_id;
+      delete scalars.class_id;
+      delete scalars.section_id;
       this.guardians.clear();
       guardians.forEach(() => this.guardians.push(this.newGuardian(false)));
       this.guardians.patchValue(guardians);

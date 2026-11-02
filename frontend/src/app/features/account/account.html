@@ -1,44 +1,44 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">Account</h1>
-    <p class="page-subtitle">Your sign-in details and password.</p>
+    <h1 class="page-title">{{ i18n.t('app.account.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('app.account.subtitle') }}</p>
   </div>
 </div>
 
 <div class="grid">
   <section class="card" aria-labelledby="profile">
-    <h2 class="card-title" id="profile">Profile</h2>
+    <h2 class="card-title" id="profile">{{ i18n.t('app.account.profile') }}</h2>
     @if (auth.user(); as user) {
       <dl>
         <div>
-          <dt>Name</dt>
+          <dt>{{ i18n.t('app.account.name') }}</dt>
           <dd>{{ user.full_name }}</dd>
         </div>
         <div>
-          <dt>Username</dt>
+          <dt>{{ i18n.t('app.account.username') }}</dt>
           <dd>{{ user.username }}</dd>
         </div>
         <div>
-          <dt>Mobile</dt>
-          <dd>{{ user.phone ?? 'Not set' }}</dd>
+          <dt>{{ i18n.t('app.account.mobile') }}</dt>
+          <dd>{{ user.phone ?? i18n.t('app.account.notSet') }}</dd>
         </div>
         <div>
-          <dt>Email</dt>
-          <dd>{{ user.email ?? 'Not set' }}</dd>
+          <dt>{{ i18n.t('app.account.email') }}</dt>
+          <dd>{{ user.email ?? i18n.t('app.account.notSet') }}</dd>
         </div>
         <div>
-          <dt>Role</dt>
-          <dd>{{ roleLabels[user.role] }}</dd>
+          <dt>{{ i18n.t('app.account.role') }}</dt>
+          <dd>{{ i18n.t(roleKeys[user.role]) }}</dd>
         </div>
       </dl>
     }
   </section>
 
   <section class="card" aria-labelledby="change-password">
-    <h2 class="card-title" id="change-password">Change password</h2>
+    <h2 class="card-title" id="change-password">{{ i18n.t('app.account.changeTitle') }}</h2>
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <label class="field">
-        Current password
+        {{ i18n.t('app.password.currentLabel') }}
         <input
           class="input"
           type="password"
@@ -46,11 +46,11 @@
           autocomplete="current-password"
         />
         @if (form.controls.current_password.touched && form.controls.current_password.invalid) {
-          <span class="field-error">Enter your current password.</span>
+          <span class="field-error">{{ i18n.t('app.password.currentRequired') }}</span>
         }
       </label>
       <label class="field">
-        New password
+        {{ i18n.t('app.password.newLabel') }}
         <input
           class="input"
           type="password"
@@ -58,22 +58,24 @@
           autocomplete="new-password"
           aria-describedby="account-password-hint"
         />
-        <span class="hint" id="account-password-hint">{{ passwordHint }}</span>
+        <span class="hint" id="account-password-hint">{{ i18n.t('app.password.hint') }}</span>
         @if (
           form.controls.new_password.touched && form.controls.new_password.hasError('required')
         ) {
-          <span class="field-error">Enter a new password.</span>
+          <span class="field-error">{{ i18n.t('app.password.newRequired') }}</span>
         } @else if (
           form.controls.new_password.touched && form.controls.new_password.hasError('minlength')
         ) {
-          <span class="field-error">Use at least {{ minLength }} characters.</span>
+          <span class="field-error">{{
+            i18n.t('app.password.minLength', { min: minLength })
+          }}</span>
         }
         @if (form.controls.new_password.getError('server'); as message) {
           <span class="field-error" role="alert">{{ message }}</span>
         }
       </label>
       <label class="field">
-        Confirm new password
+        {{ i18n.t('app.password.confirmLabel') }}
         <input
           class="input"
           type="password"
@@ -81,17 +83,17 @@
           autocomplete="new-password"
         />
         @if (form.controls.confirm.touched && form.hasError('mismatch')) {
-          <span class="field-error">Passwords do not match.</span>
+          <span class="field-error">{{ i18n.t('app.password.mismatch') }}</span>
         }
       </label>
       @if (error(); as message) {
         <p class="form-error" role="alert">{{ message }}</p>
       }
       @if (done()) {
-        <p class="notice" role="status">Password changed.</p>
+        <p class="notice" role="status">{{ i18n.t('app.account.done') }}</p>
       }
       <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-        {{ submitting() ? 'Saving…' : 'Change password' }}
+        {{ submitting() ? i18n.t('app.password.saving') : i18n.t('app.account.changeTitle') }}
       </button>
     </form>
   </section>

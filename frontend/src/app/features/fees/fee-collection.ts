@@ -4,17 +4,13 @@ import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, filter, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
-import { Collection, FeesApi } from '../../core/api/fees.api';
+import { Collection, FeesApi, PaymentMethod } from '../../core/api/fees.api';
 import { AuthService } from '../../core/auth/auth.service';
-import {
-  CREATE_NEW,
-  CREATE_NEW_LABEL,
-  createPermissions,
-  isCreateNewChange,
-} from '../../core/create/create-new';
+import { CREATE_NEW, createPermissions, isCreateNewChange } from '../../core/create/create-new';
 import { ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { formatPaise, percentOf } from '../../core/ui/money';
-import { methodLabel, monthStartIso, todayIso, value } from './fee-labels';
+import { monthStartIso, todayIso, value } from './fee-labels';
 import { FeeLookups } from './fee-lookups';
 
 @Component({
@@ -29,12 +25,11 @@ export class FeeCollection {
   protected readonly lookups = inject(FeeLookups);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
-  protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);
 
   protected readonly money = formatPaise;
-  protected readonly methodLabel = methodLabel;
   protected readonly onValue = value;
   protected readonly today = todayIso();
   protected readonly canPickBranch = this.auth.user()?.branch_id == null;
@@ -98,5 +93,16 @@ export class FeeCollection {
 
   protected pct(part: number, total: number): number {
     return percentOf(part, total);
+  }
+
+  protected methodText(method: PaymentMethod): string {
+    return this.i18n.t(`fees.daily.method.${method}`);
+  }
+
+  protected paymentCount(count: number): string {
+    return this.i18n.t(
+      count === 1 ? 'fees.daily.count.payment.one' : 'fees.daily.count.payment.other',
+      { count },
+    );
   }
 }

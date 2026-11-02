@@ -5,6 +5,7 @@ Consent rows are only ever added; the latest row per student and purpose is the 
 
 from fastapi import status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import request_context
@@ -72,29 +73,54 @@ async def accept_policy(db: AsyncSession, user: User, data: PolicyAccept) -> Pol
         raise _err(
             status.HTTP_409_CONFLICT, "This is not the current version", "version_mismatch"
         )
+    user_id = user.id
+    ip = request_context.request_ip.get()
+    # Two requests from the same user can race (two tabs, a double click). The loser gets a lock
+    # or unique-key error at commit. After a rollback the winner's row is visible, so the retry
+    # finds it and succeeds without writing again.
+    for attempt in (1, 2):
+        try:
+            await _save_acceptance(db, user_id, data, ip)
+            break
+        except (OperationalError, IntegrityError):
+            await db.rollback()
+            if attempt == 2:
+                raise _err(status.HTTP_409_CONFLICT, "Please try again", "retry_later") from None
+    refreshed = await db.get(User, user_id)
+    if refreshed is None:
+        raise _err(status.HTTP_401_UNAUTHORIZED, "Not signed in", "unauthorized")
+    return await policies_for(db, refreshed)
+
+
+async def _save_acceptance(
+    db: AsyncSession, user_id: int, data: PolicyAccept, ip: str | None
+) -> None:
+    user = await db.get(User, user_id)
+    if user is None:
+        raise _err(status.HTTP_401_UNAUTHORIZED, "Not signed in", "unauthorized")
     exists = await db.scalar(
         select(PolicyAcceptance.id).where(
-            PolicyAcceptance.user_id == user.id,
+            PolicyAcceptance.user_id == user_id,
             PolicyAcceptance.policy == data.policy,
             PolicyAcceptance.version == data.version,
         )
     )
-    if exists is None:
-        db.add(
-            PolicyAcceptance(
-                user_id=user.id,
-                policy=data.policy,
-                version=data.version,
-                accepted_at=utcnow(),
-                ip=request_context.request_ip.get(),
-            )
+    if exists is not None:
+        return
+    db.add(
+        PolicyAcceptance(
+            user_id=user_id,
+            policy=data.policy,
+            version=data.version,
+            accepted_at=utcnow(),
+            ip=ip,
         )
-        await audit.record(
-            db, user, "consent.recorded", "policy", data.policy.value,
-            detail={"policy": data.policy.value, "version": data.version},
-        )
-        await db.commit()
-    return await policies_for(db, user)
+    )
+    await audit.record(
+        db, user, "consent.recorded", "policy", data.policy.value,
+        detail={"policy": data.policy.value, "version": data.version},
+    )
+    await db.commit()
 
 
 # --------------------------------------------------------- parental consent

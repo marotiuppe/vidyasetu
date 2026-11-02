@@ -1,7 +1,7 @@
 @if (variant() === 'disclosure') {
   <details class="disclosure">
-    <summary>Legal</summary>
-    <nav aria-label="Legal">
+    <summary>{{ i18n.t('public.legal.menu') }}</summary>
+    <nav [attr.aria-label]="i18n.t('public.legal.menu')">
       <ul class="links">
         @for (link of links(); track link.path) {
           <li>
@@ -14,7 +14,7 @@
     </nav>
   </details>
 } @else {
-  <nav aria-label="Legal">
+  <nav [attr.aria-label]="i18n.t('public.legal.menu')">
     <ul class="links">
       @for (link of links(); track link.path) {
         <li>

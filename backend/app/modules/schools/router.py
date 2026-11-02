@@ -88,7 +88,7 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
                 full_name=data.owner_full_name,
                 password_hash=hash_password(data.owner_password),
                 role=Role.SCHOOL_OWNER,
-                must_change_password=True,
+                must_change_password=await settings_service.force_password_change(db, school.id),
             )
         )
         await db.commit()

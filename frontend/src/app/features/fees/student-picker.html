@@ -1,10 +1,10 @@
 <div class="stack">
   <label class="field">
-    Find a student
+    {{ i18n.t('fees.setup.picker.find') }}
     <input
       class="input"
       type="search"
-      placeholder="Type at least 2 letters of the name or admission no."
+      [attr.placeholder]="i18n.t('fees.setup.picker.placeholder')"
       autocomplete="off"
       [value]="query()"
       (input)="onInput($event)"
@@ -15,7 +15,7 @@
   }
   <div aria-live="polite">
     @if (loading()) {
-      <p class="empty">Searching…</p>
+      <p class="empty">{{ i18n.t('fees.setup.picker.searching') }}</p>
     } @else if (query().trim().length >= 2) {
       <ul class="rows">
         @for (s of results(); track s.id) {
@@ -23,22 +23,32 @@
             <span class="row-main">
               <span>{{ s.full_name }}</span>
               <span class="row-sub">
-                Admission no. {{ s.admission_no }} ·
-                {{ classSection(s.current_enrollment?.class_name ?? null, s.current_enrollment?.section_name ?? null) }}
+                {{ i18n.t('fees.setup.picker.admissionNo', { no: s.admission_no }) }} ·
+                {{
+                  classSection(
+                    s.current_enrollment?.class_name ?? null,
+                    s.current_enrollment?.section_name ?? null
+                  )
+                }}
               </span>
             </span>
             <button
               type="button"
               class="btn btn-ghost btn-sm"
               [disabled]="excluded(s.id)"
-              [attr.aria-label]="actionLabel() + ' ' + s.full_name"
+              [attr.aria-label]="
+                i18n.t('fees.setup.picker.actionAria', {
+                  action: buttonLabel(),
+                  name: s.full_name,
+                })
+              "
               (click)="pick(s)"
             >
-              {{ excluded(s.id) ? 'Added' : actionLabel() }}
+              {{ excluded(s.id) ? i18n.t('fees.setup.picker.added') : buttonLabel() }}
             </button>
           </li>
         } @empty {
-          <li class="empty">No students match.</li>
+          <li class="empty">{{ i18n.t('fees.setup.picker.none') }}</li>
         }
       </ul>
     }

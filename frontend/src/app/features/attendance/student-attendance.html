@@ -1,15 +1,20 @@
 <section class="card" aria-labelledby="att-title">
   <div class="head">
-    <h2 class="card-title" id="att-title">Attendance</h2>
+    <h2 class="card-title" id="att-title">{{ i18n.t('ops.att.title') }}</h2>
     <div class="month-nav">
-      <button type="button" class="btn btn-ghost btn-sm" aria-label="Previous month" (click)="shift(-1)">
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        [attr.aria-label]="i18n.t('ops.stu.prevMonth')"
+        (click)="shift(-1)"
+      >
         <sms-icon name="chevronLeft" [size]="16" />
       </button>
       <strong class="month-label" aria-live="polite">{{ monthLabel() }}</strong>
       <button
         type="button"
         class="btn btn-ghost btn-sm"
-        aria-label="Next month"
+        [attr.aria-label]="i18n.t('ops.stu.nextMonth')"
         [disabled]="isCurrentMonth()"
         (click)="shift(1)"
       >
@@ -23,16 +28,22 @@
   }
 
   @if (report(); as r) {
-    <ul class="stat-strip" aria-label="Summary for the month">
-      <li class="badge st-tone st-present">Present {{ r.summary.present }}</li>
-      <li class="badge st-tone st-absent">Absent {{ r.summary.absent }}</li>
-      <li class="badge st-tone st-leave">Leave {{ r.summary.leave }}</li>
+    <ul class="stat-strip" [attr.aria-label]="i18n.t('ops.stu.summaryAria')">
+      <li class="badge st-tone st-present">
+        {{ i18n.t('ops.count.present', { n: r.summary.present }) }}
+      </li>
+      <li class="badge st-tone st-absent">
+        {{ i18n.t('ops.count.absent', { n: r.summary.absent }) }}
+      </li>
+      <li class="badge st-tone st-leave">
+        {{ i18n.t('ops.count.leave', { n: r.summary.leave }) }}
+      </li>
       <li class="badge badge-success">
-        Attendance
+        {{ i18n.t('ops.att.title') }}
         @if (r.summary.percentage !== null) {
           {{ r.summary.percentage }}%
         } @else {
-          not marked yet
+          {{ i18n.t('ops.stu.notMarkedYet') }}
         }
       </li>
     </ul>
@@ -40,10 +51,15 @@
 
   <div class="cal" aria-hidden="true">
     @for (d of weekdays; track d) {
-      <span class="dow">{{ d }}</span>
+      <span class="dow">{{ i18n.t(d) }}</span>
     }
   </div>
-  <div class="cal" role="list" aria-label="Attendance calendar" [attr.aria-busy]="loading()">
+  <div
+    class="cal"
+    role="list"
+    [attr.aria-label]="i18n.t('ops.stu.calendarAria')"
+    [attr.aria-busy]="loading()"
+  >
     @for (b of blanks(); track b) {
       <div role="listitem" aria-hidden="true"></div>
     }
@@ -57,11 +73,19 @@
       >
         <span class="num" aria-hidden="true">{{ c.day }}</span>
         @if (c.status) {
-          <span class="mark" aria-hidden="true">{{ letter[c.status] }}</span>
+          <span class="mark" aria-hidden="true">{{ i18n.t(letterKey[c.status]) }}</span>
         }
       </div>
     }
   </div>
 
-  <p class="hint legend">P present · A absent · L leave · muted days are Sundays or not yet marked.</p>
+  <p class="hint legend">
+    {{
+      i18n.t('ops.stu.legend', {
+        p: i18n.t('ops.stu.letter.present'),
+        a: i18n.t('ops.stu.letter.absent'),
+        l: i18n.t('ops.stu.letter.leave'),
+      })
+    }}
+  </p>
 </section>

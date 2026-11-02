@@ -1,6 +1,22 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import {
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 
 import { AcademicsApi, Branch, SchoolClass, Section } from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -13,7 +29,8 @@ import {
   NoticesApi,
 } from '../../core/api/notices.api';
 import { AuthService } from '../../core/auth/auth.service';
-import { todayIso } from './notice-labels';
+import { I18n } from '../../core/i18n/i18n';
+import { CATEGORY_KEYS, todayIso } from './notice-labels';
 
 export const TITLE_MAX = 150;
 export const BODY_MAX = 5000;
@@ -35,6 +52,7 @@ export class NoticeForm implements OnInit {
   private readonly academics = inject(AcademicsApi);
   private readonly auth = inject(AuthService);
   private readonly fb = inject(NonNullableFormBuilder);
+  protected readonly i18n = inject(I18n);
 
   readonly notice = input<Notice | null>(null);
   readonly saved = output<string>();
@@ -50,22 +68,22 @@ export class NoticeForm implements OnInit {
   protected readonly canPin = this.auth.hasRole('school_owner', 'management', 'headmaster');
   private readonly ownBranchId = this.auth.user()?.branch_id ?? null;
 
-  protected readonly levels: { value: NoticeTargetType; label: string }[] = this.isOwner
+  protected readonly levels: { value: NoticeTargetType; labelKey: string }[] = this.isOwner
     ? [
-        { value: 'school', label: 'Whole school' },
-        { value: 'branch', label: 'A branch' },
-        { value: 'class', label: 'A class' },
-        { value: 'section', label: 'A section' },
+        { value: 'school', labelKey: 'ops.common.wholeSchool' },
+        { value: 'branch', labelKey: 'ops.level.branch' },
+        { value: 'class', labelKey: 'ops.level.class' },
+        { value: 'section', labelKey: 'ops.level.section' },
       ]
     : this.role === 'teacher'
       ? [
-          { value: 'class', label: 'A class' },
-          { value: 'section', label: 'A section' },
+          { value: 'class', labelKey: 'ops.level.class' },
+          { value: 'section', labelKey: 'ops.level.section' },
         ]
       : [
-          { value: 'branch', label: 'My whole branch' },
-          { value: 'class', label: 'A class' },
-          { value: 'section', label: 'A section' },
+          { value: 'branch', labelKey: 'ops.level.myBranch' },
+          { value: 'class', labelKey: 'ops.level.class' },
+          { value: 'section', labelKey: 'ops.level.section' },
         ];
 
   protected readonly form = this.fb.group({
@@ -87,7 +105,9 @@ export class NoticeForm implements OnInit {
   protected readonly submitted = signal(false);
   protected readonly error = signal<string | null>(null);
 
-  private readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  private readonly value = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
   protected readonly titleLength = computed(() => this.value().title?.length ?? 0);
   protected readonly bodyLength = computed(() => this.value().body?.length ?? 0);
   protected readonly level = computed(() => this.value().level ?? this.levels[0].value);
@@ -101,14 +121,19 @@ export class NoticeForm implements OnInit {
     return c ? this.sections().filter((s) => s.class_id === c) : [];
   });
 
+  /** Translation key of the target error to show, or null when the target is complete. */
   protected readonly targetError = computed(() => {
     const v = this.value();
     const level = this.level();
-    if (this.isOwner && level !== 'school' && !v.branchId) return 'Choose a branch.';
-    if ((level === 'class' || level === 'section') && !v.classId) return 'Choose a class.';
-    if (level === 'section' && !v.sectionId) return 'Choose a section.';
+    if (this.isOwner && level !== 'school' && !v.branchId) return 'ops.form.errBranch';
+    if ((level === 'class' || level === 'section') && !v.classId) return 'ops.form.errClass';
+    if (level === 'section' && !v.sectionId) return 'ops.form.errSection';
     return null;
   });
+
+  protected categoryName(category: NoticeCategory): string {
+    return this.i18n.t(CATEGORY_KEYS[category]);
+  }
 
   constructor() {
     effect(() => {
@@ -120,10 +145,16 @@ export class NoticeForm implements OnInit {
   ngOnInit(): void {
     // Targets are only needed when composing; the lists are already scoped to the user by the backend.
     if (this.isOwner) {
-      this.academics.branches().subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
+      this.academics
+        .branches()
+        .subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
     }
-    this.academics.classes().subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
-    this.academics.sections().subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
+    this.academics
+      .classes()
+      .subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
+    this.academics
+      .sections()
+      .subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
   }
 
   private fill(n: Notice | null): void {
@@ -169,7 +200,7 @@ export class NoticeForm implements OnInit {
     const done = {
       next: () => {
         this.busy.set(false);
-        this.saved.emit(existing ? 'Notice updated.' : 'Notice posted.');
+        this.saved.emit(this.i18n.t(existing ? 'ops.form.updated' : 'ops.form.posted'));
       },
       error: (err: unknown) => {
         this.busy.set(false);

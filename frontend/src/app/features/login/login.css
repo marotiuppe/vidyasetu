@@ -50,7 +50,7 @@ h1 {
 .field > label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: #7d8f6b;
+  color: var(--muted);
 }
 
 .password-wrap {

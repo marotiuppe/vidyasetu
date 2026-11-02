@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import date
 from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from app.core.schema_types import UtcDateTime
 from app.modules.fees.models import PaymentMethod, PaymentStatus
 
 MAX_PAISE = 10_000_000_00  # per single amount
@@ -163,7 +164,7 @@ class PaymentOut(BaseModel):
     received_by_name: str
     note: str | None
     reversed_reason: str | None
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class InvoiceOut(BaseModel):

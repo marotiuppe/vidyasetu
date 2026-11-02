@@ -1,16 +1,17 @@
 <main class="login">
+  <sms-site-notice />
   @if (step() === 'password') {
     <form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="brand">
         <img class="brand-mark" src="brand/logo-mark.svg" alt="" width="48" height="48" />
         <div>
           <h1>Vidyasetu</h1>
-          <p>School workspace</p>
+          <p>{{ i18n.t('app.login.workspace') }}</p>
         </div>
       </div>
 
       <label class="field" for="identifier">
-        Username, mobile or email
+        {{ i18n.t('app.login.identifier') }}
         <input
           class="input"
           id="identifier"
@@ -23,11 +24,11 @@
         />
       </label>
       @if (form.controls.identifier.touched && form.controls.identifier.invalid) {
-        <p class="field-error" role="alert">Enter your username, mobile number or email.</p>
+        <p class="field-error" role="alert">{{ i18n.t('app.login.identifierRequired') }}</p>
       }
 
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ i18n.t('app.login.password') }}</label>
         <div class="password-wrap">
           <input
             class="input"
@@ -40,7 +41,9 @@
           <button
             type="button"
             class="eye-btn"
-            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-label]="
+              showPassword() ? i18n.t('app.login.hidePassword') : i18n.t('app.login.showPassword')
+            "
             [attr.aria-pressed]="showPassword()"
             (click)="togglePassword()"
           >
@@ -49,7 +52,7 @@
         </div>
       </div>
       @if (form.controls.password.touched && form.controls.password.invalid) {
-        <p class="field-error" role="alert">Enter your password.</p>
+        <p class="field-error" role="alert">{{ i18n.t('app.login.passwordRequired') }}</p>
       }
 
       <div class="row-between">
@@ -61,10 +64,10 @@
               formControlName="rememberMe"
               aria-describedby="remember-help"
             />
-            Remember me
+            {{ i18n.t('app.login.remember') }}
           </label>
           <p class="hint" id="remember-help">
-            Keep me signed in on this device. Do not tick on a shared computer.
+            {{ i18n.t('app.login.rememberHelp') }}
           </p>
         </div>
         <button
@@ -73,29 +76,29 @@
           [attr.aria-expanded]="resetInfo()"
           (click)="forgotPassword()"
         >
-          Forgot password?
+          {{ i18n.t('app.login.forgot') }}
         </button>
       </div>
       @if (resetInfo()) {
         <p class="info-note" role="status">
-          Please ask your school administrator to reset your password.
+          {{ i18n.t('app.login.resetInfo') }}
         </p>
       }
 
       @if (passwordChanged) {
-        <p class="hint" role="status">Password changed. Please sign in with your new password.</p>
+        <p class="hint" role="status">{{ i18n.t('app.login.changed') }}</p>
       }
       @if (error(); as message) {
         <p class="form-error" role="alert">{{ message }}</p>
       }
       @if (blocked()) {
         <p class="form-error" role="status">
-          Too many attempts. Please wait {{ retryIn() }} seconds and try again.
+          {{ i18n.t('app.login.tooMany', { seconds: retryIn() }) }}
         </p>
       }
 
       <button class="btn btn-primary" type="submit" [disabled]="loading() || blocked()">
-        {{ loading() ? 'Signing in…' : 'Sign in' }}
+        {{ loading() ? i18n.t('app.login.signingIn') : i18n.t('app.login.signIn') }}
       </button>
     </form>
   } @else {
@@ -122,7 +125,6 @@
           autocapitalize="none"
           spellcheck="false"
           required
-          autofocus
           aria-describedby="mfa-code-help"
         />
       </label>
@@ -136,10 +138,15 @@
       <div aria-live="assertive">
         @if (error(); as message) {
           <p class="form-error" role="alert">{{ message }}</p>
+          @if (restartNeeded()) {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="backToPassword()">
+              {{ i18n.t('mfa.login.startAgain') }}
+            </button>
+          }
         }
         @if (blocked()) {
           <p class="form-error" role="status">
-            Too many attempts. Please wait {{ retryIn() }} seconds and try again.
+            {{ i18n.t('app.login.tooMany', { seconds: retryIn() }) }}
           </p>
         }
       </div>

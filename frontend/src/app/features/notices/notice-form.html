@@ -1,62 +1,69 @@
 <section class="card" aria-labelledby="notice-form-title">
-  <h2 class="card-title" id="notice-form-title">{{ notice() ? 'Edit notice' : 'New notice' }}</h2>
+  <h2 class="card-title" id="notice-form-title">
+    {{ notice() ? i18n.t('ops.form.edit') : i18n.t('ops.notice.new') }}
+  </h2>
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
     <div class="form-grid">
       <label class="field wide">
-        Title
+        {{ i18n.t('ops.form.title') }}
         <input class="input" formControlName="title" [maxlength]="titleMax" autocomplete="off" />
         <span class="hint">{{ titleLength() }} / {{ titleMax }}</span>
         @if (form.controls.title.touched && form.controls.title.invalid) {
-          <span class="field-error">Enter a title (up to {{ titleMax }} characters).</span>
+          <span class="field-error">{{ i18n.t('ops.form.titleError', { max: titleMax }) }}</span>
         }
       </label>
 
       <label class="field wide">
-        Message
-        <textarea class="input body" rows="6" formControlName="body" [maxlength]="bodyMax"></textarea>
+        {{ i18n.t('ops.form.message') }}
+        <textarea
+          class="input body"
+          rows="6"
+          formControlName="body"
+          [maxlength]="bodyMax"
+        ></textarea>
         <span class="hint">{{ bodyLength() }} / {{ bodyMax }}</span>
         @if (form.controls.body.touched && form.controls.body.invalid) {
-          <span class="field-error">Enter the message (up to {{ bodyMax }} characters).</span>
+          <span class="field-error">{{ i18n.t('ops.form.messageError', { max: bodyMax }) }}</span>
         }
       </label>
 
       <label class="field">
-        Category
+        {{ i18n.t('ops.notice.category') }}
         <select class="input" formControlName="category">
           @for (c of categories; track c.value) {
-            <option [value]="c.value">{{ c.label }}</option>
+            <option [value]="c.value">{{ categoryName(c.value) }}</option>
           }
         </select>
       </label>
 
       <label class="field">
-        Expires on (optional)
+        {{ i18n.t('ops.form.expires') }}
         <input class="input" type="date" formControlName="expires_on" [min]="today" />
         @if (form.controls.expires_on.invalid) {
-          <span class="field-error">Choose today or a later date.</span>
+          <span class="field-error">{{ i18n.t('ops.form.expiresError') }}</span>
         }
       </label>
 
       @if (notice(); as n) {
         <div class="field">
-          Sent to
+          {{ i18n.t('ops.form.sentTo') }}
           <span class="badge badge-muted fixed">{{ n.target_label }}</span>
-          <span class="hint">The audience cannot be changed after posting.</span>
+          <span class="hint">{{ i18n.t('ops.form.audienceLocked') }}</span>
         </div>
       } @else {
         <label class="field">
-          Send to
+          {{ i18n.t('ops.form.sendTo') }}
           <select class="input" formControlName="level" (change)="onLevelChange()">
             @for (l of levels; track l.value) {
-              <option [value]="l.value">{{ l.label }}</option>
+              <option [value]="l.value">{{ i18n.t(l.labelKey) }}</option>
             }
           </select>
         </label>
         @if (isOwner && level() !== 'school') {
           <label class="field">
-            Branch
+            {{ i18n.t('ops.common.branch') }}
             <select class="input" formControlName="branchId" (change)="onBranchChange()">
-              <option [ngValue]="0">Choose a branch</option>
+              <option [ngValue]="0">{{ i18n.t('ops.form.chooseBranch') }}</option>
               @for (b of branches(); track b.id) {
                 <option [ngValue]="b.id">{{ b.name }}</option>
               }
@@ -65,9 +72,9 @@
         }
         @if (level() === 'class' || level() === 'section') {
           <label class="field">
-            Class
+            {{ i18n.t('ops.common.class') }}
             <select class="input" formControlName="classId" (change)="onClassChange()">
-              <option [ngValue]="0">Choose a class</option>
+              <option [ngValue]="0">{{ i18n.t('ops.form.chooseClass') }}</option>
               @for (c of classOptions(); track c.id) {
                 <option [ngValue]="c.id">{{ c.name }}</option>
               }
@@ -76,24 +83,24 @@
         }
         @if (level() === 'section') {
           <label class="field">
-            Section
+            {{ i18n.t('ops.common.section') }}
             <select class="input" formControlName="sectionId">
-              <option [ngValue]="0">Choose a section</option>
+              <option [ngValue]="0">{{ i18n.t('ops.form.chooseSection') }}</option>
               @for (s of sectionOptions(); track s.id) {
                 <option [ngValue]="s.id">{{ s.name }}</option>
               }
             </select>
           </label>
         }
-        @if (submitted() && targetError(); as message) {
-          <p class="field-error wide" role="alert">{{ message }}</p>
+        @if (submitted() && targetError(); as key) {
+          <p class="field-error wide" role="alert">{{ i18n.t(key) }}</p>
         }
       }
 
       @if (canPin) {
         <label class="check wide">
           <input type="checkbox" formControlName="is_pinned" />
-          Pin to the top of the noticeboard
+          {{ i18n.t('ops.form.pin') }}
         </label>
       }
     </div>
@@ -104,9 +111,17 @@
 
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="busy()">
-        {{ busy() ? 'Saving…' : notice() ? 'Save changes' : 'Post notice' }}
+        {{
+          busy()
+            ? i18n.t('ops.common.saving')
+            : notice()
+              ? i18n.t('ops.form.save')
+              : i18n.t('ops.form.post')
+        }}
       </button>
-      <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="cancelled.emit()">Cancel</button>
+      <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="cancelled.emit()">
+        {{ i18n.t('ops.common.cancel') }}
+      </button>
     </div>
   </form>
 </section>

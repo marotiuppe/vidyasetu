@@ -1,7 +1,10 @@
 /** Single place for the currency; can become a school setting later. */
 export const CURRENCY = { locale: 'en-IN', code: 'INR' } as const;
 
-const formatter = new Intl.NumberFormat(CURRENCY.locale, { style: 'currency', currency: CURRENCY.code });
+const formatter = new Intl.NumberFormat(CURRENCY.locale, {
+  style: 'currency',
+  currency: CURRENCY.code,
+});
 
 /** "₹1,23,456.00" from integer paise. Only integer maths; the paise part is written from the remainder. */
 export function formatPaise(paise: number): string {

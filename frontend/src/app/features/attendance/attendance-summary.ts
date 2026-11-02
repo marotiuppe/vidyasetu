@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { Params, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap, tap } from 'rxjs';
 
 import { AcademicsApi, Branch } from '../../core/api/academics.api';
@@ -10,11 +10,11 @@ import { AuthService } from '../../core/auth/auth.service';
 import {
   CREATE_NEW,
   CREATE_NEW_LABEL,
-  CreateKind,
   createPermissions,
   isCreateNewChange,
 } from '../../core/create/create-new';
-import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
+import { ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 import { isoDate, percent } from './attendance-labels';
 
 @Component({
@@ -30,6 +30,7 @@ export class AttendanceSummary {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
   protected readonly createNew = CREATE_NEW;
   protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreate = createPermissions(this.auth);

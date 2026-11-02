@@ -1,8 +1,8 @@
 <div class="page-header">
   <div>
-    <h1 class="page-title">{{ title }}</h1>
+    <h1 class="page-title">{{ title() }}</h1>
     @if (!selfService) {
-      <p class="page-subtitle">Admissions, classes and guardians.</p>
+      <p class="page-subtitle">{{ i18n.t('students.list.subtitle') }}</p>
     }
   </div>
   @if (canWrite || !selfService) {
@@ -10,7 +10,7 @@
       @if (!selfService) {
         <button type="button" class="btn btn-ghost" [disabled]="exporting()" (click)="exportCsv()">
           <sms-icon name="download" [size]="16" />
-          {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+          {{ exporting() ? i18n.t('students.list.exporting') : i18n.t('students.list.export') }}
         </button>
       }
       @if (canWrite) {
@@ -21,11 +21,11 @@
           (click)="showImport.set(!showImport())"
         >
           <sms-icon name="upload" [size]="16" />
-          Import CSV
+          {{ i18n.t('students.list.import') }}
         </button>
         <a class="btn btn-primary" routerLink="/students/new">
           <sms-icon name="plus" [size]="16" />
-          New admission
+          {{ i18n.t('students.list.newAdmission') }}
         </a>
       }
     </div>
@@ -46,21 +46,23 @@
   @if (error(); as message) {
     <p class="form-error" role="alert">{{ message }}</p>
   }
-  @if (notice(); as message) {
-    <p class="notice" role="status">{{ message }}</p>
+  @if (importedCount() > 0) {
+    <p class="notice" role="status">{{ importedText() }}</p>
   }
 
   <section class="card" aria-labelledby="student-list">
-    <h2 class="card-title" id="student-list">{{ selfService ? title : 'All students' }}</h2>
+    <h2 class="card-title" id="student-list">
+      {{ selfService ? title() : i18n.t('students.list.all') }}
+    </h2>
 
     @if (!selfService) {
       <div class="toolbar" role="search">
         <label class="field">
-          Search
+          {{ i18n.t('students.list.search') }}
           <input
             class="input"
             type="search"
-            placeholder="Name or admission no."
+            [placeholder]="i18n.t('students.list.searchPlaceholder')"
             autocomplete="off"
             [value]="filters().q"
             (input)="onSearch($event)"
@@ -68,64 +70,74 @@
         </label>
         @if (canPickBranch) {
           <label class="field">
-            Branch
+            {{ i18n.t('students.list.branch') }}
             <select class="input" (change)="onSelect('branchId', $event)">
-              <option value="0" [selected]="filters().branchId === 0">All branches</option>
+              <option value="0" [selected]="filters().branchId === 0">
+                {{ i18n.t('students.list.allBranches') }}
+              </option>
               @for (b of branches(); track b.id) {
                 <option [value]="b.id" [selected]="filters().branchId === b.id">
                   {{ b.name }}
                 </option>
               }
               @if (canCreate.branch) {
-                <option [value]="createNew">{{ createNewLabel }}</option>
+                <option [value]="createNew">{{ i18n.t('students.list.createNew') }}</option>
               }
             </select>
           </label>
         }
         <label class="field">
-          Academic year
+          {{ i18n.t('students.list.academicYear') }}
           <select class="input" (change)="onSelect('yearId', $event)">
-            <option value="0" [selected]="filters().yearId === 0">All years</option>
+            <option value="0" [selected]="filters().yearId === 0">
+              {{ i18n.t('students.list.allYears') }}
+            </option>
             @for (y of years(); track y.id) {
               <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
             }
             @if (canCreate.academic_year) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.list.createNew') }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Class
+          {{ i18n.t('students.list.class') }}
           <select class="input" (change)="onSelect('classId', $event)">
-            <option value="0" [selected]="filters().classId === 0">All classes</option>
+            <option value="0" [selected]="filters().classId === 0">
+              {{ i18n.t('students.list.allClasses') }}
+            </option>
             @for (c of classOptions(); track c.id) {
               <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
             }
             @if (canCreate.class) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.list.createNew') }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Section
+          {{ i18n.t('students.list.section') }}
           <select
             class="input"
             [disabled]="!filters().classId"
             (change)="onSelect('sectionId', $event)"
           >
-            <option value="0" [selected]="filters().sectionId === 0">All sections</option>
+            <option value="0" [selected]="filters().sectionId === 0">
+              {{ i18n.t('students.list.allSections') }}
+            </option>
             @for (s of sectionOptions(); track s.id) {
               <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
             }
             @if (canCreate.section && filters().classId) {
-              <option [value]="createNew">{{ createNewLabel }}</option>
+              <option [value]="createNew">{{ i18n.t('students.list.createNew') }}</option>
             }
           </select>
         </label>
         <label class="field">
-          Status
+          {{ i18n.t('students.list.status') }}
           <select class="input" (change)="onStatus($event)">
-            <option value="" [selected]="filters().status === ''">All statuses</option>
+            <option value="" [selected]="filters().status === ''">
+              {{ i18n.t('students.list.allStatuses') }}
+            </option>
             @for (s of statuses; track s) {
               <option [value]="s" [selected]="filters().status === s">{{ statusLabel(s) }}</option>
             }
@@ -135,7 +147,7 @@
     }
 
     @if (loading()) {
-      <p class="empty" role="status">Loading students…</p>
+      <p class="empty" role="status">{{ i18n.t('students.list.loading') }}</p>
     } @else {
       <ul class="rows">
         @for (s of items(); track s.id) {
@@ -143,7 +155,9 @@
             <span class="avatar" aria-hidden="true">{{ initials(s.full_name) }}</span>
             <span class="row-main">
               <a class="name" [routerLink]="['/students', s.id]">{{ s.full_name }}</a>
-              <span class="row-sub">Admission no. {{ s.admission_no }}</span>
+              <span class="row-sub">
+                {{ i18n.t('students.list.admissionNo', { admission: s.admission_no }) }}
+              </span>
             </span>
             <span class="row-main cell">
               @if (s.current_enrollment; as e) {
@@ -155,12 +169,12 @@
                 </span>
                 <span class="row-sub">
                   @if (e.roll_no !== null) {
-                    Roll {{ e.roll_no }} ·
+                    {{ i18n.t('students.list.roll', { roll: e.roll_no }) }} ·
                   }
                   {{ e.academic_year_name }}
                 </span>
               } @else {
-                <span class="row-sub">Not enrolled</span>
+                <span class="row-sub">{{ i18n.t('students.list.notEnrolled') }}</span>
               }
             </span>
             <span class="row-main cell">
@@ -168,7 +182,7 @@
                 <span>{{ g.full_name }}</span>
                 <span class="row-sub">{{ g.phone }}</span>
               } @else {
-                <span class="row-sub">No guardian</span>
+                <span class="row-sub">{{ i18n.t('students.list.noGuardian') }}</span>
               }
             </span>
             <span
@@ -181,16 +195,16 @@
           </li>
         } @empty {
           <li class="empty">
-            {{
-              selfService ? 'No student records are linked to your account.' : 'No students match.'
-            }}
+            {{ selfService ? i18n.t('students.list.noRecords') : i18n.t('students.list.noMatch') }}
           </li>
         }
       </ul>
 
       @if (total() > 0) {
-        <nav class="pager" aria-label="Pagination">
-          <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+        <nav class="pager" [attr.aria-label]="i18n.t('students.list.pagination')">
+          <span>
+            {{ i18n.t('students.list.range', { from: from(), to: to(), total: total() }) }}
+          </span>
           <span class="row-actions">
             <button
               type="button"
@@ -198,7 +212,7 @@
               [disabled]="page() <= 1"
               (click)="prev()"
             >
-              Previous
+              {{ i18n.t('students.list.previous') }}
             </button>
             <button
               type="button"
@@ -206,7 +220,7 @@
               [disabled]="to() >= total()"
               (click)="next()"
             >
-              Next
+              {{ i18n.t('students.list.next') }}
             </button>
           </span>
         </nav>

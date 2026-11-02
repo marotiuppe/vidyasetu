@@ -22,8 +22,9 @@ import {
   Section,
 } from '../../core/api/academics.api';
 import { AuthService } from '../../core/auth/auth.service';
-import { CREATE_LABELS, CreateKind, idParam, safeReturnUrl } from '../../core/create/create-new';
+import { CreateKind, idParam, safeReturnUrl } from '../../core/create/create-new';
 import { ReturnStateService } from '../../core/create/return-state.service';
+import { I18n } from '../../core/i18n/i18n';
 
 /** Record kinds this screen can create (branches are created on the Branches screen). */
 const SETUP_KINDS: CreateKind[] = ['academic_year', 'class', 'section'];
@@ -41,6 +42,7 @@ export class Setup {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly returnState = inject(ReturnStateService);
+  protected readonly i18n = inject(I18n);
 
   protected readonly years = signal<AcademicYear[]>([]);
   protected readonly branches = signal<Branch[]>([]);
@@ -58,7 +60,7 @@ export class Setup {
   });
   protected readonly returnTo = computed(() => safeReturnUrl(this.query().get('returnTo')));
   protected readonly from = computed(
-    () => this.query().get('from')?.trim() || 'your previous page',
+    () => this.query().get('from')?.trim() || this.i18n.t('admin.setup.defaultFrom'),
   );
   /** The banner and the automatic return only apply when both parameters are valid. */
   protected readonly returning = computed(
@@ -66,7 +68,7 @@ export class Setup {
   );
   protected readonly kindLabel = computed(() => {
     const kind = this.createKind();
-    return kind ? CREATE_LABELS[kind] : '';
+    return kind ? this.i18n.t(`admin.setup.kind.${kind}`) : '';
   });
 
   private readonly yearCard = viewChild<ElementRef<HTMLElement>>('yearCard');
@@ -198,8 +200,8 @@ export class Setup {
     if (err instanceof HttpErrorResponse) {
       const detail: unknown = err.error?.detail;
       if (typeof detail === 'string') return detail;
-      if (err.status === 403) return 'You are not allowed to do this.';
+      if (err.status === 403) return this.i18n.t('admin.setup.forbidden');
     }
-    return 'Something went wrong. Please try again.';
+    return this.i18n.t('admin.setup.generic');
   }
 }

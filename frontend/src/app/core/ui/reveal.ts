@@ -1,4 +1,12 @@
-import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Directive,
+  ElementRef,
+  afterNextRender,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 
 /**
  * Reveal an element when it scrolls into view. Without IntersectionObserver or with
@@ -13,7 +21,10 @@ import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input, sign
   },
 })
 export class Reveal {
-  readonly delay = input(0, { alias: 'smsReveal', transform: (v: number | string) => Number(v) || 0 });
+  readonly delay = input(0, {
+    alias: 'smsReveal',
+    transform: (v: number | string) => Number(v) || 0,
+  });
 
   protected readonly state = signal<'pending' | 'shown' | null>(null);
 

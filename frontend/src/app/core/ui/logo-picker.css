@@ -47,7 +47,7 @@
   font-size: 0.8rem;
   font-weight: 600;
   text-align: center;
-  color: #52674f;
+  color: var(--olive);
   background: var(--surface);
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--radius-sm);

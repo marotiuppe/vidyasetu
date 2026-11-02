@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.public.schemas import LegalInfo
+from app.modules.public.schemas import LegalInfo, SiteInfo
 from app.modules.schools.models import School
 from app.modules.settings import service as settings_service
 
@@ -35,6 +35,23 @@ async def legal_info(db: AsyncSession, school_code: str | None = None) -> LegalI
         hosting_region=v["legal.hosting_region"],
         policy_effective_date=v["legal.policy_effective_date"],
         data_retention_note=v["legal.data_retention_note"],
+    )
+
+
+async def site_info(db: AsyncSession) -> SiteInfo:
+    """Platform name, support contact, banner and maintenance text (platform settings)."""
+    keys = [
+        "platform.name",
+        "platform.support_contact",
+        "platform.announcement_banner",
+        "platform.maintenance_message",
+    ]
+    v = await settings_service.resolve_many(db, keys, settings_service.ctx_for())
+    return SiteInfo(
+        platform_name=v["platform.name"],
+        support_contact=v["platform.support_contact"],
+        announcement_banner=v["platform.announcement_banner"],
+        maintenance_message=v["platform.maintenance_message"],
     )
 
 
