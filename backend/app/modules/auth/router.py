@@ -82,7 +82,8 @@ async def _school_active(db: DbSession, user: User) -> bool:
     return school is not None and school.is_active
 
 
-async def _find_login_user(db: AsyncSession, identifier: str) -> User | None:
+async def _find_login_users(db: AsyncSession, identifier: str) -> list[User]:
+    """Accounts matching the identifier. Only a mobile number can match several (one per school)."""
     kind = detect_kind(identifier)
     try:
         if kind == "email":
@@ -92,8 +93,8 @@ async def _find_login_user(db: AsyncSession, identifier: str) -> User | None:
         else:
             condition = User.username == identifier.strip().lower()
     except ValueError:
-        return None
-    return await db.scalar(select(User).where(condition))
+        return []
+    return list((await db.scalars(select(User).where(condition).limit(10))).all())
 
 
 @router.get("/options", response_model=AuthOptions)
@@ -103,11 +104,21 @@ async def auth_options() -> AuthOptions:
 
 @router.post("/login", response_model=TokenResponse)
 async def login(data: LoginRequest, response: Response, db: DbSession) -> TokenResponse:
-    user = await _find_login_user(db, data.identifier)
+    candidates = await _find_login_users(db, data.identifier)
     # Always run a hash verification so timing does not reveal whether the account exists.
-    ok = verify_password(data.password, user.password_hash if user else DUMMY_HASH)
-    if user is None or not ok or not user.is_active or not await _school_active(db, user):
+    # A mobile number shared by schools is told apart by the password: exactly one must match.
+    matches = [
+        u
+        for u in candidates
+        if verify_password(data.password, u.password_hash)
+        and u.is_active
+        and await _school_active(db, u)
+    ]
+    if not candidates:
+        verify_password(data.password, DUMMY_HASH)
+    if len(matches) != 1:
         raise _invalid
+    user = matches[0]
     _set_refresh_cookie(response, user.id, data.remember_me)
     return TokenResponse(
         access_token=create_token(user.id, "access"), user=UserOut.model_validate(user)

@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, Enum, ForeignKey, ForeignKeyConstraint, String
+from sqlalchemy import Boolean, Enum, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -32,6 +32,8 @@ BRANCH_ROLES = {
 class User(TimestampMixin, Base):
     __tablename__ = "users"
     __table_args__ = (
+        # A mobile number is unique per school (NULLs are allowed many times).
+        UniqueConstraint("school_id", "phone", name="uq_users_school_phone"),
         ForeignKeyConstraint(
             ["branch_id", "school_id"], ["branches.id", "branches.school_id"]
         ),
@@ -46,7 +48,7 @@ class User(TimestampMixin, Base):
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     email: Mapped[str | None] = mapped_column(String(254), unique=True)
     full_name: Mapped[str] = mapped_column(String(200))
-    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
+    phone: Mapped[str | None] = mapped_column(String(20), index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[Role] = mapped_column(Enum(
             Role,

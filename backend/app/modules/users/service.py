@@ -74,18 +74,26 @@ async def ensure_identity_available(
     username: str | None = None,
     email: str | None = None,
     phone: str | None = None,
+    phone_school_id: int | None = None,
     exclude_id: int | None = None,
 ) -> None:
     """Raise IdentityInUse (409) if another account already uses one of these identifiers.
 
-    Identifiers are the login handles, so they are unique across schools.
+    Username and email are unique across schools. A mobile number is unique only within one
+    school (`phone_school_id`; NULL means the platform admins), so two schools may share it.
     """
     if username is not None and await _other_user_has(db, User.username == username, exclude_id):
         raise IdentityInUse("Username already in use", "username_taken")
     if email is not None and await _other_user_has(db, User.email == email, exclude_id):
         raise IdentityInUse("Email already in use", "email_taken")
-    if phone is not None and await _other_user_has(db, User.phone == phone, exclude_id):
-        raise IdentityInUse("Mobile number already in use", "phone_taken")
+    if phone is not None:
+        same_school = (
+            User.school_id.is_(None)
+            if phone_school_id is None
+            else User.school_id == phone_school_id
+        )
+        if await _other_user_has(db, (User.phone == phone) & same_school, exclude_id):
+            raise IdentityInUse("Mobile number already in use", "phone_taken")
 
 
 async def derive_unique_username(db: AsyncSession, email: str) -> str:
@@ -125,7 +133,13 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
             if branch is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Branch not found")
 
-    await ensure_identity_available(db, username=data.username, email=data.email, phone=data.phone)
+    await ensure_identity_available(
+        db,
+        username=data.username,
+        email=data.email,
+        phone=data.phone,
+        phone_school_id=school_id,
+    )
     user = User(
         school_id=school_id,
         branch_id=branch_id,
@@ -165,7 +179,11 @@ async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpd
     if changes.get("is_active") is False and target.id == actor.id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate yourself")
     await ensure_identity_available(
-        db, email=changes.get("email"), phone=changes.get("phone"), exclude_id=target.id
+        db,
+        email=changes.get("email"),
+        phone=changes.get("phone"),
+        phone_school_id=target.school_id,
+        exclude_id=target.id,
     )
     for field, value in changes.items():
         setattr(target, field, value)

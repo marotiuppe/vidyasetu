@@ -662,13 +662,13 @@ async def _login_username(db: AsyncSession, data: LoginCreate) -> str:
     raise _unprocessable("Give a username or an email")
 
 
-async def _parent_phone(db: AsyncSession, raw: str | None) -> str | None:
+async def _parent_phone(db: AsyncSession, raw: str | None, school_id: int) -> str | None:
     """The guardian's mobile for the new login, if it is a valid and unused number."""
     if not raw:
         return None
     try:
         phone = normalize_phone(raw)
-        await ensure_identity_available(db, phone=phone)
+        await ensure_identity_available(db, phone=phone, phone_school_id=school_id)
     except (ValueError, IdentityInUse):
         return None
     return phone
@@ -697,7 +697,7 @@ async def create_guardian_login(
             username=username,
             email=email,
             full_name=guardian.full_name,
-            phone=await _parent_phone(db, guardian.phone),
+            phone=await _parent_phone(db, guardian.phone, student.school_id),
             password_hash=hash_password(data.password),
             role=Role.PARENT,
         )
