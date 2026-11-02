@@ -34,6 +34,10 @@ The school runs two branches with **separate timings and separate management**. 
 | Primary | 1 to 5 | *to be filled* | *to be filled* |
 | Secondary | 6 to 10 | *to be filled* | *to be filled* |
 
+## Local reference material (not committed)
+
+- `rlmv-school-portal/` in the repo root: the ChatGPT-made prototype used as the design reference (listed in `.gitignore`). Read only; its data is fictional.
+
 ## Still to confirm with the school
 
 - Board (CBSE or State Board) and the grading and exam pattern
