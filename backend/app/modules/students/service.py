@@ -493,6 +493,15 @@ async def set_enrollment(
     student = await _get_student(db, actor, student_id)
     try:
         await _apply_enrollment(db, student, data)
+        await audit.record(
+            db, actor, "enrollment.set", "student", student.id,
+            detail={
+                "academic_year_id": data.academic_year_id,
+                "class_id": data.class_id,
+                "section_id": data.section_id,
+            },
+            school_id=student.school_id, branch_id=student.branch_id,
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()

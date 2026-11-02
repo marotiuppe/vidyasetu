@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.tenant import scope_branches
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.branches.schemas import BranchCreate, BranchUpdate
 from app.modules.schools.models import School
@@ -31,6 +32,11 @@ async def create_branch(db: AsyncSession, actor: User, data: BranchCreate) -> Br
     branch = Branch(school_id=school_id, name=data.name, code=data.code)
     db.add(branch)
     try:
+        await db.flush()
+        # School-level event: no branch on the row, so branch managers do not see it.
+        await audit.record(
+            db, actor, "branch.created", "branch", branch.id, school_id=school_id, branch_id=None
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -42,7 +48,13 @@ async def update_branch(
     db: AsyncSession, actor: User, branch_id: int, data: BranchUpdate
 ) -> Branch:
     branch = await get_branch(db, actor, branch_id)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(branch, field, value)
+    await audit.record(
+        db, actor, "branch.updated", "branch", branch.id,
+        detail={"changed": ",".join(sorted(changes))},
+        school_id=branch.school_id, branch_id=branch.id,
+    )
     await db.commit()
     return branch

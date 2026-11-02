@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.tenant import scope_branches, scope_notices, scope_tenant
 from app.modules.academics.models import SchoolClass, Section
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.notices.models import Notice, NoticeCategory, NoticeRead, TargetType
 from app.modules.notices.schemas import (
@@ -323,6 +324,13 @@ async def create_notice(db: AsyncSession, actor: User, data: NoticeCreate) -> No
         created_by=actor.id,
     )
     db.add(notice)
+    await db.flush()
+    # The row carries the notice's branch (None for school-wide), never its title or body.
+    await audit.record(
+        db, actor, "notice.created", "notice", notice.id,
+        detail={"target": str(data.target.type), "pinned": bool(notice.is_pinned)},
+        school_id=actor.school_id, branch_id=branch_id,
+    )
     await db.commit()
     await db.refresh(notice)
     return (await _build(db, actor, [notice], day))[0]
@@ -341,8 +349,21 @@ async def update_notice(
     new_expiry = changes.get("expires_on")
     if new_expiry is not None and new_expiry < day:
         raise _unprocessable("expires_on cannot be in the past")
+    was_pinned = notice.is_pinned
     for field, value in changes.items():
         setattr(notice, field, value)
+    if "is_pinned" in changes and bool(changes["is_pinned"]) != was_pinned:
+        await audit.record(
+            db, actor, "notice.pinned" if notice.is_pinned else "notice.unpinned", "notice",
+            notice.id, school_id=notice.school_id, branch_id=notice.branch_id,
+        )
+    other = sorted(k for k in changes if k != "is_pinned")
+    if other:
+        await audit.record(
+            db, actor, "notice.updated", "notice", notice.id,
+            detail={"changed": ",".join(other)},
+            school_id=notice.school_id, branch_id=notice.branch_id,
+        )
     await db.commit()
     await db.refresh(notice)
     return (await _build(db, actor, [notice], day))[0]
@@ -354,6 +375,10 @@ async def delete_notice(db: AsyncSession, actor: User, notice_id: int) -> None:
         raise _forbidden()
     await db.execute(delete(NoticeRead).where(NoticeRead.notice_id == notice.id))
     await db.delete(notice)
+    await audit.record(
+        db, actor, "notice.deleted", "notice", notice.id,
+        school_id=notice.school_id, branch_id=notice.branch_id,
+    )
     await db.commit()
 
 

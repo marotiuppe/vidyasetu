@@ -1,3 +1,4 @@
+from collections.abc import Awaitable
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -15,6 +16,7 @@ from app.modules.academics.schemas import (
     SectionCreate,
     SectionUpdate,
 )
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.schools.models import School
 from app.modules.users.models import Role, User
@@ -24,7 +26,14 @@ def _not_found(what: str) -> HTTPException:
     return HTTPException(status.HTTP_404_NOT_FOUND, detail=f"{what} not found")
 
 
-async def _commit(db: AsyncSession, conflict: str) -> None:
+def _changed(changes: dict[str, Any]) -> str:
+    """Names of the fields an update touched (never their values)."""
+    return ",".join(sorted(changes))
+
+
+async def _commit(
+    db: AsyncSession, conflict: str, audit_row: Awaitable[None] | None = None
+) -> None:
     try:
         await db.commit()
     except IntegrityError:
@@ -75,7 +84,14 @@ async def create_year(db: AsyncSession, actor: User, data: AcademicYearCreate) -
         ) from None
     if data.is_current:
         await _clear_current(db, school_id, year.id)
-    await _commit(db, "Academic year name already used")
+    await _commit(
+        db,
+        "Academic year name already used",
+        audit.record(
+            db, actor, "academic_year.created", "academic_year", year.id,
+            detail={"is_current": data.is_current}, school_id=school_id, branch_id=None,
+        ),
+    )
     return year
 
 
@@ -83,7 +99,8 @@ async def update_year(
     db: AsyncSession, actor: User, year_id: int, data: AcademicYearUpdate
 ) -> AcademicYear:
     year: AcademicYear = await _get_scoped(db, actor, AcademicYear, year_id, "Academic year")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(year, field, value)
     if year.end_date <= year.start_date:
         raise HTTPException(
@@ -91,7 +108,14 @@ async def update_year(
         )
     if year.is_current:
         await _clear_current(db, year.school_id, year.id)
-    await _commit(db, "Academic year name already used")
+    await _commit(
+        db,
+        "Academic year name already used",
+        audit.record(
+            db, actor, "academic_year.updated", "academic_year", year.id,
+            detail={"changed": _changed(changes)}, school_id=year.school_id, branch_id=None,
+        ),
+    )
     return year
 
 
@@ -116,7 +140,18 @@ async def create_class(db: AsyncSession, actor: User, data: ClassCreate) -> Scho
         school_id=branch.school_id, branch_id=branch.id, name=data.name, level=data.level
     )
     db.add(school_class)
-    await _commit(db, "A class with this level already exists in the branch")
+    try:
+        await db.flush()
+        await audit.record(
+            db, actor, "school_class.created", "school_class", school_class.id,
+            school_id=branch.school_id, branch_id=branch.id,
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="A class with this level already exists in the branch"
+        ) from None
     return school_class
 
 
@@ -124,9 +159,18 @@ async def update_class(
     db: AsyncSession, actor: User, class_id: int, data: ClassUpdate
 ) -> SchoolClass:
     school_class: SchoolClass = await _get_scoped(db, actor, SchoolClass, class_id, "Class")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(school_class, field, value)
-    await _commit(db, "A class with this level already exists in the branch")
+    await _commit(
+        db,
+        "A class with this level already exists in the branch",
+        audit.record(
+            db, actor, "school_class.updated", "school_class", school_class.id,
+            detail={"changed": _changed(changes)},
+            school_id=school_class.school_id, branch_id=school_class.branch_id,
+        ),
+    )
     return school_class
 
 
@@ -149,7 +193,18 @@ async def create_section(db: AsyncSession, actor: User, data: SectionCreate) -> 
         name=data.name,
     )
     db.add(section)
-    await _commit(db, "Section already exists in this class")
+    try:
+        await db.flush()
+        await audit.record(
+            db, actor, "section.created", "section", section.id,
+            school_id=section.school_id, branch_id=section.branch_id,
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="Section already exists in this class"
+        ) from None
     return section
 
 
@@ -158,5 +213,12 @@ async def update_section(
 ) -> Section:
     section: Section = await _get_scoped(db, actor, Section, section_id, "Section")
     section.name = data.name
-    await _commit(db, "Section already exists in this class")
+    await _commit(
+        db,
+        "Section already exists in this class",
+        audit.record(
+            db, actor, "section.updated", "section", section.id,
+            detail={"changed": "name"}, school_id=section.school_id, branch_id=section.branch_id,
+        ),
+    )
     return section

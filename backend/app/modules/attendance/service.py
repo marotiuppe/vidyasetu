@@ -1,6 +1,7 @@
 import csv
 import io
-from collections.abc import Iterable
+from collections import Counter
+from collections.abc import Awaitable, Iterable
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -42,6 +43,7 @@ from app.modules.attendance.schemas import (
     StudentAttendance,
     StudentSummary,
 )
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.settings import service as settings_service
 from app.modules.students.models import Enrollment, Student, StudentStatus
@@ -70,8 +72,18 @@ def _forbidden(detail: str = "Not allowed") -> HTTPException:
     return HTTPException(status.HTTP_403_FORBIDDEN, detail=detail)
 
 
-async def _commit(db: AsyncSession, conflict: str) -> None:
+def _tally(statuses: Iterable[object]) -> dict[str, int]:
+    """Counts per status value for an audit detail (no names, ids or remarks)."""
+    return {str(k): v for k, v in Counter(str(s) for s in statuses).items()}
+
+
+async def _commit(
+    db: AsyncSession, conflict: str, audit_row: Awaitable[None] | None = None
+) -> None:
+    """Commit; `audit_row` (an audit.record call) runs first so its row joins the same commit."""
     try:
+        if audit_row is not None:
+            await audit_row
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -323,7 +335,19 @@ async def save_sheet(
             rec.class_id = section.class_id
             rec.academic_year_id = year.id
             rec.updated_by = actor.id
-    await _commit(db, "Attendance was changed by someone else; reload and retry")
+    await _commit(
+        db,
+        "Attendance was changed by someone else; reload and retry",
+        audit.record(
+            db, actor, "attendance.saved", "section", section.id,
+            detail={
+                "section_id": section.id,
+                "date": day.isoformat(),
+                **_tally(e.status for e in entries),
+            },
+            school_id=section.school_id, branch_id=section.branch_id,
+        ),
+    )
     return await _build_sheet(db, actor, section, school_class, day, year, None, roster)
 
 
@@ -592,7 +616,16 @@ async def save_staff_sheet(
             rec.status = e.status
             rec.remark = e.remark
             rec.marked_by = actor.id
-    await _commit(db, "Attendance was changed by someone else; reload and retry")
+    await _commit(
+        db,
+        "Attendance was changed by someone else; reload and retry",
+        audit.record(
+            db, actor, "staff_attendance.saved", "staff_attendance", None,
+            detail={"date": day.isoformat(), **_tally(e.status for e in entries)},
+            school_id=actor.school_id,
+            branch_id=branch_id if branch_id is not None else actor.branch_id,
+        ),
+    )
     return await _staff_sheet(db, actor, day, users, rules)
 
 
@@ -697,7 +730,19 @@ async def create_holiday(db: AsyncSession, actor: User, data: HolidayCreate) -> 
         created_by=actor.id,
     )
     db.add(holiday)
-    await _commit(db, "A holiday already exists for this date")
+    try:
+        await db.flush()
+        await audit.record(
+            db, actor, "holiday.created", "holiday", holiday.id,
+            detail={"date": data.date.isoformat(), "school_wide": data.branch_id is None},
+            school_id=actor.school_id, branch_id=data.branch_id,
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail="A holiday already exists for this date"
+        ) from None
     return holiday
 
 
@@ -710,4 +755,9 @@ async def delete_holiday(db: AsyncSession, actor: User, holiday_id: int) -> None
     if holiday.branch_id is None and actor.role != Role.SCHOOL_OWNER:
         raise _forbidden("Only the school owner can remove school-wide holidays")
     await db.delete(holiday)
+    await audit.record(
+        db, actor, "holiday.deleted", "holiday", holiday.id,
+        detail={"date": holiday.date.isoformat(), "school_wide": holiday.branch_id is None},
+        school_id=holiday.school_id, branch_id=holiday.branch_id,
+    )
     await db.commit()

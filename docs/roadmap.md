@@ -162,19 +162,17 @@ The route stays `/`; the backend returns data per role, scoped by the token (nev
 - Open decision for the owner: how the parent username and password are generated. Suggested: username = parent's first name + first letter of last name + last 4 digits of the mobile number (a number is added on a clash), password = random, shown once. A password built from public facts about a family is guessable, so a random one is safer than the student pattern.
 - Secondary guardians (mother, father, guardian) can each be selected or created the same way; the primary guardian is the one that gets the login by default.
 
-## Phase 5.6 follow-ups
+## Phase 5.6 and 5.7 follow-ups (updated 2026-11-02, after the verification pass)
 
-- Built: registry, `settings` and `user_preferences` tables (migration `0011`), encrypted write-only secrets (`SETTINGS_ENCRYPTION_KEY`), Settings page with platform, school, branch and personal tabs, per-school legal pages at `/s/<code>/...`, feature flags (students, attendance, notices, fees), minimal EN/MR i18n service.
-- Stored but not yet consumed by any code: remember-me days, forced password change toggle, year start month, attendance edit window and absent alerts, payment link, portal visibility, retention days, branch timings, notification preferences, all integration keys (adapters arrive in phase 11), platform banner and maintenance message.
-- The frontend has no `ng lint` target or eslint config yet; CLAUDE.md promises angular-eslint. Add it.
-- Only new screens are translated to Marathi; the rest is covered in phase 5.12.
-- Settings page was build-verified only, not clicked through in a browser.
-
-## Phase 5.7 follow-ups
-
-- The backend was verified against a scratch SQLite database and later a scratch PostgreSQL; the new screens (MFA login and setup, policy gate, audit, data requests, consent card, privacy page) were only partly click-tested.
-- Erasure requests are a workflow only; nothing is deleted automatically.
-- Audit retention and CERT-In 180-day retention in India are decided in phase 5.8.
+- Built and verified by API (SQLite, and PostgreSQL 16 from a portable copy): settings registry and resolution, encrypted write-only secrets, feature flags, lockout limits, password minimum, MFA with replay protection, forced password change, policy acceptance (now also enforced by the backend), consent (latest wins), data requests, exports, tenant isolation (43 cross-school and cross-branch checks), audit log with append-only triggers on PostgreSQL, concurrent payments (`SELECT ... FOR UPDATE`).
+- A QA click-through found and fixed: the home route showed a legal page to everyone, a 500 when privacy and terms were accepted at the same time, missing audit rows for money and attendance writes (added; the last batch for attendance, notices, schools, branches and academics is committed but not yet re-tested through the UI), naive timestamps (now UTC with offset), colour contrast, the login rate limit default (now 30 per minute).
+- Still NOT click-tested in a browser: super admin screens and the forced MFA setup, student creation with the parent picker, fee, attendance and notice screens, every Settings tab, privacy page, audit and data-request screens, role navigation for management, headmaster, accountant, clerk, teacher, parent and student, PWA install, and the fix for the home route.
+- Settings that are stored but have no consumer yet: portal marks visibility (needs exams), payment link (needs the Razorpay adapter), absent alerts (needs SMS/WhatsApp), branch timings, notification preferences, all integration keys, retention days, year start month, default language of a school.
+- Open decision: the student starter password is built from name and date of birth (as specified in "Requested changes" item 3); a random password shown once is safer.
+- Erasure requests are a workflow only; nothing is deleted automatically. A school owner can reset another owner's two-factor in the same school.
+- Marathi was written by an agent and needs a native-speaker review; long legal prose stays English only.
+- Audit retention and the CERT-In 180-day rule for logs in India are decided in phase 5.8. TRUNCATE is not blocked on the append-only tables.
+- Check at deploy: the `uharfbuzz` wheel installs on Render's Linux.
 
 ## Dependencies
 
@@ -184,8 +182,8 @@ The route stays `/`; the backend returns data per role, scoped by the token (nev
 
 ## Known gaps to close later
 
-- Phase 5.3 follow-ups: the shorter server-side expiry for "remember me" off is not done; uvicorn access logs include query strings (search terms), so switch them off or scrub them before real data; rate limit and lockout counters are per process (fine for one instance, revisit if scaled); migration `0010` is untested on PostgreSQL (phase 12).
+- Rate limit and lockout counters are per process (fine for one instance, revisit if scaled). Closed in the verification pass: the "remember me off" server-side expiry, access-log query strings, the receipt font (Noto Sans and Devanagari, rupee sign) and PostgreSQL testing of migrations `0010` to `0012`.
 - The overview page shows only counts that exist today; student, attendance and marks cards arrive with their modules.
-- Search in the top bar is a disabled placeholder.
-- Fees: the receipt PDF uses Helvetica and writes "Rs." (no rupee sign, no Devanagari names) until a Unicode font is bundled; there is no standalone payments list screen yet (the API exists); the currency is a single constant in the frontend (`core/ui/money.ts`) and could become a school setting; payment concurrency (`SELECT ... FOR UPDATE`) is only tested on SQLite, so recheck on PostgreSQL (phase 12). Online payment arrives in phase 11.
+- Search in the top bar is a disabled placeholder (phase 5.12).
+- Fees: there is no standalone payments list screen yet (the API exists); the currency is a single constant in the frontend (`core/ui/money.ts`) and could become a school setting. Online payment arrives in phase 11.
 - The academic-year to school link is checked in services, not by a database constraint.

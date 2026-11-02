@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import utcnow
+from app.modules.audit import service as audit
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.schools.schemas import SchoolOut
 from app.modules.settings import service as settings_service
@@ -126,6 +127,18 @@ async def apply_school_update(
     for field, key in _LOCKOUT_FIELDS.items():
         if field in changes:
             await settings_service.set_school_value(db, actor, school.id, key, changes.pop(field))
+    if "is_active" in changes:
+        active = bool(changes["is_active"])
+        await audit.record(
+            db, actor, "school.activated" if active else "school.deactivated", "school", school.id,
+            school_id=school.id, branch_id=None,
+        )
+    rest = sorted(k for k in changes if k != "is_active")
+    if rest:
+        await audit.record(
+            db, actor, "school.updated", "school", school.id,
+            detail={"changed": ",".join(rest)}, school_id=school.id, branch_id=None,
+        )
     for field, value in changes.items():
         setattr(school, field, value)
     await db.commit()
@@ -141,7 +154,7 @@ def can_manage_logo(user: User, school_id: int) -> bool:
     )
 
 
-async def set_logo(db: AsyncSession, school_id: int, png: bytes) -> None:
+async def set_logo(db: AsyncSession, actor: User, school_id: int, png: bytes) -> None:
     logo = await db.get(SchoolLogo, school_id)
     if logo is None:
         db.add(SchoolLogo(school_id=school_id, content_type="image/png", data=png))
@@ -149,11 +162,18 @@ async def set_logo(db: AsyncSession, school_id: int, png: bytes) -> None:
         logo.data = png
         logo.content_type = "image/png"
         logo.updated_at = utcnow()
+    await audit.record(
+        db, actor, "school.logo_uploaded", "school", school_id, school_id=school_id, branch_id=None
+    )
     await db.commit()
 
 
-async def delete_logo(db: AsyncSession, school_id: int) -> None:
+async def delete_logo(db: AsyncSession, actor: User, school_id: int) -> None:
     logo = await db.get(SchoolLogo, school_id)
     if logo is not None:
         await db.delete(logo)
+        await audit.record(
+            db, actor, "school.logo_deleted", "school", school_id,
+            school_id=school_id, branch_id=None,
+        )
         await db.commit()

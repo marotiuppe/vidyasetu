@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.core.password_policy import enforce_password
 from app.core.security import hash_password
+from app.modules.audit import service as audit
 from app.modules.schools import service
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.schools.schemas import SchoolCreate, SchoolOut, SchoolOwnerUpdate, SchoolUpdate
@@ -60,7 +61,7 @@ async def get_school(school_id: int, db: DbSession) -> SchoolOut:
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(_platform)],
 )
-async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
+async def create_school(data: SchoolCreate, db: DbSession, actor: CurrentUser) -> SchoolOut:
     """Create a new school together with its owner account."""
     email = data.owner_email.lower()
     username = data.owner_username or await derive_unique_username(db, email)
@@ -90,6 +91,11 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
                 role=Role.SCHOOL_OWNER,
                 must_change_password=await settings_service.force_password_change(db, school.id),
             )
+        )
+        await db.flush()
+        await audit.record(
+            db, actor, "school.created", "school", school.id,
+            school_id=school.id, branch_id=None,
         )
         await db.commit()
     except IntegrityError:
@@ -144,14 +150,14 @@ async def upload_logo(
     if not raw:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid image")
     png = await run_in_threadpool(service.normalise_logo, raw)
-    await service.set_logo(db, school.id, png)
+    await service.set_logo(db, user, school.id, png)
     return await service.school_out(db, school)
 
 
 @router.delete("/{school_id}/logo", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_logo(school_id: int, db: DbSession, user: CurrentUser) -> Response:
     school = await _logo_target(db, user, school_id)
-    await service.delete_logo(db, school.id)
+    await service.delete_logo(db, user, school.id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
