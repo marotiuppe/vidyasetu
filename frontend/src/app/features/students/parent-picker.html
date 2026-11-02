@@ -1,0 +1,48 @@
+<div class="picker">
+  <label class="field">
+    Search existing parent
+    <input
+      class="input"
+      type="search"
+      [formControl]="query"
+      autocomplete="off"
+      aria-describedby="parent-search-hint"
+    />
+    <span class="hint" id="parent-search-hint"
+      >Type at least 2 characters of a name, mobile number or username.</span
+    >
+  </label>
+
+  @if (searching()) {
+    <p class="hint" role="status">Searching…</p>
+  }
+  @if (searchError(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (results().length > 0) {
+    <ul class="parent-list" aria-label="Matching parents">
+      @for (p of results(); track p.id) {
+        <li>
+          <button
+            type="button"
+            class="parent-card"
+            [class.is-selected]="p.id === selectedId()"
+            [attr.aria-pressed]="p.id === selectedId()"
+            (click)="selected.emit(p)"
+          >
+            <span class="parent-name">{{ p.full_name }}</span>
+            <span class="parent-meta">
+              Username {{ p.username }}
+              @if (p.phone) {
+                · Mobile {{ p.phone }}
+              }
+            </span>
+            <span class="parent-meta">{{ childrenText(p) }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (searched() && !searching() && query.value.trim().length >= 2) {
+    <p class="hint" role="status">No parent found. Try another spelling, or choose New parent.</p>
+  }
+</div>

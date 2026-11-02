@@ -3,188 +3,318 @@
     <h1 class="page-title">New admission</h1>
     <p class="page-subtitle">Student details, guardians and an optional class enrolment.</p>
   </div>
-  <a class="btn btn-ghost" routerLink="/students">Back to students</a>
+  @if (!credentials()) {
+    <a class="btn btn-ghost" routerLink="/students">Back to students</a>
+  }
 </div>
 
-<form [formGroup]="form" (ngSubmit)="submit()" novalidate class="stack">
-  <section class="card" aria-labelledby="student-details">
-    <h2 class="card-title" id="student-details">Student</h2>
-    <div class="form-grid">
-      @if (needsBranch) {
-        <label class="field">
-          Branch
-          <select class="input" formControlName="branch_id" [attr.aria-invalid]="form.controls.branch_id.touched && +form.controls.branch_id.value < 1">
-            <option [value]="0" disabled>Select branch</option>
-            @for (b of branches(); track b.id) {
-              <option [value]="b.id">{{ b.name }}</option>
+@if (credentials(); as list) {
+  <sms-login-details [credentials]="list" (done)="done()" />
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="stack">
+    <section class="card" aria-labelledby="student-details">
+      <h2 class="card-title" id="student-details">Student</h2>
+      <div class="form-grid">
+        @if (needsBranch) {
+          <label class="field">
+            Branch
+            <select
+              class="input"
+              formControlName="branch_id"
+              [attr.aria-invalid]="
+                form.controls.branch_id.touched && +form.controls.branch_id.value < 1
+              "
+            >
+              <option [value]="0" disabled>Select branch</option>
+              @for (b of branches(); track b.id) {
+                <option [value]="b.id">{{ b.name }}</option>
+              }
+              @if (canCreateBranch) {
+                <option [value]="createNew">{{ createNewLabel }}</option>
+              }
+            </select>
+            @if (form.controls.branch_id.touched && +form.controls.branch_id.value < 1) {
+              <span class="field-error">Select a branch.</span>
             }
-          </select>
-          @if (form.controls.branch_id.touched && +form.controls.branch_id.value < 1) {
-            <span class="field-error">Select a branch.</span>
+          </label>
+        }
+        <label class="field">
+          First name
+          <input class="input" formControlName="first_name" autocomplete="off" />
+          @if (form.controls.first_name.touched && form.controls.first_name.invalid) {
+            <span class="field-error">{{
+              fieldError(form.controls.first_name, 'First name is required.')
+            }}</span>
           }
         </label>
-      }
-      <label class="field">
-        First name
-        <input class="input" formControlName="first_name" autocomplete="off" />
-        @if (form.controls.first_name.touched && form.controls.first_name.invalid) {
-          <span class="field-error">First name is required.</span>
-        }
-      </label>
-      <label class="field">
-        Last name
-        <input class="input" formControlName="last_name" autocomplete="off" />
-        @if (form.controls.last_name.touched && form.controls.last_name.invalid) {
-          <span class="field-error">Last name is required.</span>
-        }
-      </label>
-      <label class="field">
-        Gender
-        <select class="input" formControlName="gender">
-          @for (g of genders; track g) {
-            <option [value]="g">{{ titleCase(g) }}</option>
+        <label class="field">
+          Last name
+          <input class="input" formControlName="last_name" autocomplete="off" />
+          @if (form.controls.last_name.touched && form.controls.last_name.invalid) {
+            <span class="field-error">{{
+              fieldError(form.controls.last_name, 'Last name is required.')
+            }}</span>
           }
-        </select>
-      </label>
-      <label class="field">
-        Date of birth
-        <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
-        @if (form.controls.date_of_birth.touched && form.controls.date_of_birth.invalid) {
-          <span class="field-error">
-            {{ form.controls.date_of_birth.hasError('future') ? 'Date of birth cannot be in the future.' : 'Date of birth is required.' }}
-          </span>
-        }
-      </label>
-      <label class="field">
-        Admission date
-        <input class="input" type="date" formControlName="admission_date" />
-        @if (form.controls.admission_date.touched && form.controls.admission_date.invalid) {
-          <span class="field-error">Admission date is required.</span>
-        }
-      </label>
-      <label class="field">
-        Admission number (optional)
-        <input class="input" formControlName="admission_no" autocomplete="off" />
-        <span class="hint">Generated automatically when left blank.</span>
-      </label>
-      <label class="field">
-        Previous school (optional)
-        <input class="input" formControlName="previous_school" autocomplete="off" />
-      </label>
-      <label class="field wide">
-        Address (optional)
-        <input class="input" formControlName="address" autocomplete="off" />
-      </label>
-    </div>
-  </section>
-
-  <section class="card" aria-labelledby="guardians-title">
-    <h2 class="card-title" id="guardians-title">Guardians</h2>
-    <div formArrayName="guardians" class="stack">
-      @for (g of guardians.controls; track g; let i = $index) {
-        <fieldset class="guardian" [formGroupName]="i">
-          <legend>Guardian {{ i + 1 }}</legend>
-          <div class="form-grid">
-            <label class="field">
-              Full name
-              <input class="input" formControlName="full_name" autocomplete="off" />
-              @if (g.controls.full_name.touched && g.controls.full_name.invalid) {
-                <span class="field-error">Name is required.</span>
-              }
-            </label>
-            <label class="field">
-              Relation
-              <select class="input" formControlName="relation">
-                @for (r of relations; track r) {
-                  <option [value]="r">{{ titleCase(r) }}</option>
-                }
-              </select>
-            </label>
-            <label class="field">
-              Phone
-              <input class="input" type="tel" formControlName="phone" autocomplete="off" />
-              @if (g.controls.phone.touched && g.controls.phone.invalid) {
-                <span class="field-error">Use 7 to 20 digits, spaces, + or -.</span>
-              }
-            </label>
-            <label class="field">
-              Email (optional)
-              <input class="input" type="email" formControlName="email" autocomplete="off" />
-              @if (g.controls.email.touched && g.controls.email.invalid) {
-                <span class="field-error">Enter a valid email address.</span>
-              }
-            </label>
-          </div>
-          <div class="form-actions">
-            <label class="check">
-              <input
-                type="radio"
-                name="primary-guardian"
-                [checked]="g.controls.is_primary.value"
-                (change)="setPrimary(i)"
-              />
-              Primary contact
-            </label>
-            @if (guardians.length > 1) {
-              <button type="button" class="btn btn-ghost btn-sm" (click)="removeGuardian(i)">Remove</button>
+        </label>
+        <label class="field">
+          Gender
+          <select class="input" formControlName="gender">
+            @for (g of genders; track g) {
+              <option [value]="g">{{ titleCase(g) }}</option>
             }
-          </div>
-        </fieldset>
-      }
-      <div>
-        <button type="button" class="btn btn-ghost" (click)="addGuardian()">Add another guardian</button>
+          </select>
+        </label>
+        <label class="field">
+          Date of birth
+          <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
+          @if (form.controls.date_of_birth.touched && form.controls.date_of_birth.invalid) {
+            <span class="field-error">
+              {{
+                form.controls.date_of_birth.hasError('future')
+                  ? 'Date of birth cannot be in the future.'
+                  : fieldError(form.controls.date_of_birth, 'Date of birth is required.')
+              }}
+            </span>
+          }
+        </label>
+        <label class="field">
+          Admission date
+          <input class="input" type="date" formControlName="admission_date" />
+          @if (form.controls.admission_date.touched && form.controls.admission_date.invalid) {
+            <span class="field-error">{{
+              fieldError(form.controls.admission_date, 'Admission date is required.')
+            }}</span>
+          }
+        </label>
+        <label class="field">
+          Admission number (optional)
+          <input class="input" formControlName="admission_no" autocomplete="off" />
+          <span class="hint">Generated automatically when left blank.</span>
+        </label>
+        <label class="field">
+          Previous school (optional)
+          <input class="input" formControlName="previous_school" autocomplete="off" />
+        </label>
+        <label class="field wide">
+          Address (optional)
+          <input class="input" formControlName="address" autocomplete="off" />
+        </label>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="card" aria-labelledby="enrol-title">
-    <h2 class="card-title" id="enrol-title">Enrolment (optional)</h2>
-    <div class="form-grid">
-      <label class="field">
-        Academic year
-        <select class="input" formControlName="academic_year_id">
-          <option [value]="0" disabled>Select year</option>
-          @for (y of years(); track y.id) {
-            <option [value]="y.id">{{ y.name }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        Class
-        <select class="input" formControlName="class_id">
-          <option [value]="0">Not enrolled yet</option>
-          @for (c of classOptions(); track c.id) {
-            <option [value]="c.id">{{ c.name }}</option>
-          }
-        </select>
-        @if (needsBranch && +form.controls.branch_id.value < 1) {
-          <span class="hint">Choose a branch first to list its classes.</span>
+    <section class="card" aria-labelledby="guardians-title">
+      <h2 class="card-title" id="guardians-title">Guardians</h2>
+      <p class="hint">
+        Each guardian is a new parent or an existing parent. Siblings can share one parent login.
+      </p>
+      <div formArrayName="guardians" class="stack">
+        @for (g of guardians.controls; track g; let i = $index) {
+          <fieldset class="guardian" [formGroupName]="i">
+            <legend>
+              Guardian {{ i + 1 }}{{ g.controls.is_primary.value ? ' (primary contact)' : '' }}
+            </legend>
+
+            <div class="parent-choice">
+              <span class="choice-label" [id]="'parent-mode-title-' + i">Parent account</span>
+              <div class="seg" role="radiogroup" [attr.aria-labelledby]="'parent-mode-title-' + i">
+                <label>
+                  <input
+                    type="radio"
+                    formControlName="parent_mode"
+                    value="new"
+                    [attr.name]="'parent-mode-' + i"
+                    (change)="onModeChange(i, $event)"
+                  />
+                  <span>New parent</span>
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    formControlName="parent_mode"
+                    value="existing"
+                    [attr.name]="'parent-mode-' + i"
+                    (change)="onModeChange(i, $event)"
+                  />
+                  <span>Existing parent</span>
+                </label>
+              </div>
+            </div>
+
+            @if (g.controls.parent_mode.value === 'existing') {
+              <div class="existing-parent">
+                <sms-parent-picker
+                  [selectedId]="g.controls.existing_parent_user_id.value || null"
+                  (selected)="pickParent(i, $event)"
+                />
+                @if (g.controls.existing_parent_user_id.value > 0) {
+                  <p class="notice" role="status">
+                    Selected {{ g.controls.full_name.value }}. Name and mobile are filled from this
+                    parent's login.
+                  </p>
+                } @else {
+                  <p class="hint">Choose a parent from the results to continue.</p>
+                }
+              </div>
+            }
+
+            <div class="form-grid">
+              <label class="field">
+                Full name
+                <input
+                  class="input"
+                  formControlName="full_name"
+                  autocomplete="off"
+                  [readOnly]="g.controls.parent_mode.value === 'existing'"
+                />
+                @if (g.controls.full_name.touched && g.controls.full_name.invalid) {
+                  <span class="field-error">{{
+                    fieldError(g.controls.full_name, 'Name is required.')
+                  }}</span>
+                }
+              </label>
+              <label class="field">
+                Relation
+                <select class="input" formControlName="relation">
+                  @for (r of relations; track r) {
+                    <option [value]="r">{{ titleCase(r) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                Mobile number
+                <input
+                  class="input"
+                  type="tel"
+                  formControlName="phone"
+                  autocomplete="off"
+                  [readOnly]="g.controls.parent_mode.value === 'existing'"
+                />
+                @if (g.controls.phone.touched && g.controls.phone.invalid) {
+                  <span class="field-error">{{
+                    fieldError(g.controls.phone, 'Use 7 to 20 digits, spaces, + or -.')
+                  }}</span>
+                }
+              </label>
+              @if (g.controls.parent_mode.value === 'new') {
+                <label class="field">
+                  Email (optional)
+                  <input class="input" type="email" formControlName="email" autocomplete="off" />
+                  @if (g.controls.email.touched && g.controls.email.invalid) {
+                    <span class="field-error">{{
+                      fieldError(g.controls.email, 'Enter a valid email address.')
+                    }}</span>
+                  }
+                </label>
+              }
+            </div>
+
+            @if (g.controls.parent_mode.value === 'new') {
+              <div class="login-choice">
+                <label class="check">
+                  <input type="checkbox" formControlName="create_login" />
+                  Create a login for this parent
+                </label>
+                <span class="hint"
+                  >A username and a temporary password are created automatically.</span
+                >
+              </div>
+            }
+
+            <div class="form-actions">
+              <label class="check">
+                <input
+                  type="radio"
+                  name="primary-guardian"
+                  [checked]="g.controls.is_primary.value"
+                  (change)="setPrimary(i)"
+                />
+                Primary contact
+              </label>
+              @if (guardians.length > 1) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="removeGuardian(i)">
+                  Remove
+                </button>
+              }
+            </div>
+          </fieldset>
         }
-      </label>
-      <label class="field">
-        Section
-        <select class="input" formControlName="section_id">
-          <option [value]="0">No section</option>
-          @for (s of sectionOptions(); track s.id) {
-            <option [value]="s.id">{{ s.name }}</option>
-          }
-        </select>
-      </label>
-      <label class="field">
-        Roll number (optional)
-        <input class="input" type="number" min="1" formControlName="roll_no" />
-        <span class="hint">Assigned automatically when a section is chosen and this is blank.</span>
-      </label>
-    </div>
-  </section>
+        <div>
+          <button type="button" class="btn btn-ghost" (click)="addGuardian()">
+            Add another guardian
+          </button>
+        </div>
+      </div>
+    </section>
 
-  @if (error(); as message) {
-    <p class="form-error" role="alert">{{ message }}</p>
-  }
-  <div class="form-actions">
-    <button type="submit" class="btn btn-primary" [disabled]="submitting()">
-      {{ submitting() ? 'Saving…' : 'Admit student' }}
-    </button>
-    <a class="btn btn-ghost" routerLink="/students">Cancel</a>
-  </div>
-</form>
+    <section class="card" aria-labelledby="enrol-title">
+      <h2 class="card-title" id="enrol-title">Enrolment (optional)</h2>
+      <div class="form-grid">
+        <label class="field">
+          Academic year
+          <select class="input" formControlName="academic_year_id">
+            <option [value]="0" disabled>Select year</option>
+            @for (y of years(); track y.id) {
+              <option [value]="y.id">{{ y.name }}</option>
+            }
+            @if (canCreateYear) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Class
+          <select class="input" formControlName="class_id">
+            <option [value]="0">Not enrolled yet</option>
+            @for (c of classOptions(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+            @if (canCreateClass) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
+          </select>
+          @if (needsBranch && +form.controls.branch_id.value < 1) {
+            <span class="hint">Choose a branch first to list its classes.</span>
+          }
+        </label>
+        <label class="field">
+          Section
+          <select class="input" formControlName="section_id">
+            <option [value]="0">No section</option>
+            @for (s of sectionOptions(); track s.id) {
+              <option [value]="s.id">{{ s.name }}</option>
+            }
+            @if (canCreateSection && +form.controls.class_id.value > 0) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Roll number (optional)
+          <input class="input" type="number" min="1" formControlName="roll_no" />
+          <span class="hint"
+            >Assigned automatically when a section is chosen and this is blank.</span
+          >
+        </label>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="login-title">
+      <h2 class="card-title" id="login-title">Student login</h2>
+      <label class="check">
+        <input type="checkbox" formControlName="create_student_login" />
+        Create a login for the student
+      </label>
+      <span class="hint">A username and a temporary password are created automatically.</span>
+    </section>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+        {{ submitting() ? 'Saving…' : 'Admit student' }}
+      </button>
+      <a class="btn btn-ghost" routerLink="/students">Cancel</a>
+    </div>
+  </form>
+}

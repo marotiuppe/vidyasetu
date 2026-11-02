@@ -13,7 +13,9 @@ from app.modules.students.schemas import (
     ImportRequest,
     ImportResult,
     LoginCreate,
+    ParentOut,
     StudentCreate,
+    StudentCreated,
     StudentDetail,
     StudentPage,
     StudentUpdate,
@@ -21,6 +23,7 @@ from app.modules.students.schemas import (
 from app.modules.users.models import Role
 
 router = APIRouter(tags=["students"])
+parents_router = APIRouter(tags=["parents"])
 
 _writers = Depends(
     require_roles(
@@ -91,12 +94,22 @@ async def import_students(data: ImportRequest, db: DbSession, actor: CurrentUser
 
 @router.post(
     "/students",
-    response_model=StudentDetail,
+    response_model=StudentCreated,
     status_code=status.HTTP_201_CREATED,
     dependencies=[_writers],
 )
-async def create_student(data: StudentCreate, db: DbSession, actor: CurrentUser) -> StudentDetail:
+async def create_student(data: StudentCreate, db: DbSession, actor: CurrentUser) -> StudentCreated:
     return await service.create_student(db, actor, data)
+
+
+@parents_router.get("/parents", response_model=list[ParentOut], dependencies=[_writers])
+async def search_parents(
+    db: DbSession,
+    actor: CurrentUser,
+    q: Annotated[str, Query(min_length=2, max_length=100)],
+    limit: Annotated[int, Query(ge=1, le=20)] = 10,
+) -> list[ParentOut]:
+    return await service.search_parents(db, actor, q, limit)
 
 
 @router.get("/students/{student_id}", response_model=StudentDetail)

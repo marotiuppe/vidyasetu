@@ -302,6 +302,9 @@
                 @for (y of years(); track y.id) {
                   <option [value]="y.id">{{ y.name }}</option>
                 }
+                @if (canCreateYear) {
+                  <option [value]="createNew">{{ createNewLabel }}</option>
+                }
               </select>
             </label>
             <label class="field">
@@ -311,6 +314,9 @@
                 @for (c of classOptions(); track c.id) {
                   <option [value]="c.id">{{ c.name }}</option>
                 }
+                @if (canCreateClass) {
+                  <option [value]="createNew">{{ createNewLabel }}</option>
+                }
               </select>
             </label>
             <label class="field">
@@ -319,6 +325,9 @@
                 <option [value]="0">No section</option>
                 @for (sec of sectionOptions(); track sec.id) {
                   <option [value]="sec.id">{{ sec.name }}</option>
+                }
+                @if (canCreateSection && +enrolForm.controls.class_id.value > 0) {
+                  <option [value]="createNew">{{ createNewLabel }}</option>
                 }
               </select>
             </label>

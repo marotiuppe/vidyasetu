@@ -13,6 +13,9 @@
           @for (b of branches(); track b.id) {
             <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
           }
+          @if (canCreate.branch) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
     }
@@ -38,8 +41,8 @@
             <div class="row-main">
               <strong>Class {{ s.class_name }}, section {{ s.section_name }}</strong>
               <span class="row-sub">
-                {{ s.total }} students · Present {{ s.present }} · Absent {{ s.absent }} · Leave {{ s.leave }} ·
-                Unmarked {{ s.unmarked }}
+                {{ s.total }} students · Present {{ s.present }} · Absent {{ s.absent }} · Leave
+                {{ s.leave }} · Unmarked {{ s.unmarked }}
               </span>
             </div>
             <div class="meter">
@@ -68,7 +71,9 @@
                 class="btn btn-ghost btn-sm"
                 routerLink="/attendance"
                 [queryParams]="{ tab: 'mark', section: s.section_id, date: date() }"
-                [attr.aria-label]="'Mark attendance for class ' + s.class_name + ' section ' + s.section_name"
+                [attr.aria-label]="
+                  'Mark attendance for class ' + s.class_name + ' section ' + s.section_name
+                "
               >
                 Mark
               </a>

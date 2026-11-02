@@ -1,7 +1,12 @@
 <section class="card" aria-labelledby="dues-title">
   <div class="card-head">
     <h2 class="card-title" id="dues-title">Outstanding dues</h2>
-    <button type="button" class="btn btn-ghost" [disabled]="exporting() || minBalanceInvalid()" (click)="exportCsv()">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      [disabled]="exporting() || minBalanceInvalid()"
+      (click)="exportCsv()"
+    >
       <sms-icon name="download" [size]="16" />
       {{ exporting() ? 'Exporting…' : 'Export CSV' }}
     </button>
@@ -16,6 +21,9 @@
           @for (b of lookups.branches(); track b.id) {
             <option [value]="b.id" [selected]="filters().branchId === b.id">{{ b.name }}</option>
           }
+          @if (canCreate.branch) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
     }
@@ -26,6 +34,9 @@
         @for (y of lookups.years(); track y.id) {
           <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
         }
+        @if (canCreate.academic_year) {
+          <option [value]="createNew">{{ createNewLabel }}</option>
+        }
       </select>
     </label>
     <label class="field">
@@ -35,14 +46,24 @@
         @for (c of classOptions(); track c.id) {
           <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
         }
+        @if (canCreate.class) {
+          <option [value]="createNew">{{ createNewLabel }}</option>
+        }
       </select>
     </label>
     <label class="field">
       Section
-      <select class="input" [disabled]="!filters().classId" (change)="onSelect('sectionId', $event)">
+      <select
+        class="input"
+        [disabled]="!filters().classId"
+        (change)="onSelect('sectionId', $event)"
+      >
         <option value="0" [selected]="filters().sectionId === 0">All sections</option>
         @for (s of sectionOptions(); track s.id) {
           <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
+        }
+        @if (canCreate.section && filters().classId) {
+          <option [value]="createNew">{{ createNewLabel }}</option>
         }
       </select>
     </label>
@@ -58,7 +79,9 @@
         (input)="patch({ minBalance: onValue($event) })"
       />
       @if (minBalanceInvalid()) {
-        <span class="field-error" role="alert">Enter a valid amount, for example 500 or 500.50.</span>
+        <span class="field-error" role="alert"
+          >Enter a valid amount, for example 500 or 500.50.</span
+        >
       }
     </label>
   </div>

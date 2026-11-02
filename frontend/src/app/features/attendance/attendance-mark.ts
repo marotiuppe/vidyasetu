@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, concatMap, filter, forkJoin, from, last, of, switchMap, tap } from 'rxjs';
+import { Params, Router } from '@angular/router';
 
 import { AcademicsApi, Branch, SchoolClass, Section } from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -13,6 +14,14 @@ import {
 } from '../../core/api/attendance.api';
 import { StudentsApi } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  createPermissions,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
 import { Icon } from '../../core/ui/icon';
 import { MARK_CLASS, STUDENT_MARKS, isoDate, monthStartIso } from './attendance-labels';
 
@@ -36,6 +45,11 @@ export class AttendanceMark {
   private readonly academics = inject(AcademicsApi);
   private readonly students = inject(StudentsApi);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate = createPermissions(this.auth);
 
   /** Optional preselection (from the daily summary link). Read once on load. */
   readonly initialSection = input(0);
@@ -69,7 +83,11 @@ export class AttendanceMark {
 
   protected readonly classOptions = computed(() => {
     const b = this.branchId();
-    return this.canPickBranch ? (b ? this.classes().filter((c) => c.branch_id === b) : []) : this.classes();
+    return this.canPickBranch
+      ? b
+        ? this.classes().filter((c) => c.branch_id === b)
+        : []
+      : this.classes();
   });
   protected readonly sectionOptions = computed(() => {
     const c = this.classId();
@@ -90,7 +108,13 @@ export class AttendanceMark {
     const present = count('present');
     const absent = count('absent');
     const leave = count('leave');
-    return { total: rows.length, present, absent, leave, unmarked: rows.length - present - absent - leave };
+    return {
+      total: rows.length,
+      present,
+      absent,
+      leave,
+      unmarked: rows.length - present - absent - leave,
+    };
   });
 
   private readonly changed = computed<SheetEntry[]>(() => {
@@ -109,10 +133,33 @@ export class AttendanceMark {
 
   protected readonly dirty = computed(() => this.changed().length > 0);
   protected readonly canExport = computed(
-    () => this.sectionId() > 0 && !!this.exportFrom() && !!this.exportTo() && this.exportFrom() <= this.exportTo(),
+    () =>
+      this.sectionId() > 0 &&
+      !!this.exportFrom() &&
+      !!this.exportTo() &&
+      this.exportFrom() <= this.exportTo(),
   );
 
   constructor() {
+    // Back from a create screen: the date and the chosen branch, class and section come back.
+    const back = this.returnState.take(this.router.url);
+    if (back) {
+      const d = back.draft as {
+        date: string;
+        branchId: number;
+        classId: number;
+        sectionId: number;
+      };
+      this.date.set(d.date);
+      const ids = restoreIds(back, d, {
+        branch: 'branchId',
+        class: 'classId',
+        section: 'sectionId',
+      });
+      this.branchId.set(ids.branchId);
+      this.classId.set(ids.classId);
+      this.sectionId.set(ids.sectionId);
+    }
     forkJoin({
       classes: this.academics.classes(),
       sections: this.academics.sections(),
@@ -124,7 +171,7 @@ export class AttendanceMark {
           this.classes.set(r.classes);
           this.sections.set(r.sections);
           this.branches.set(r.branches);
-          this.preselect();
+          if (!back) this.preselect();
         },
         error: (err: unknown) => this.error.set(apiErrorMessage(err)),
       });
@@ -173,10 +220,31 @@ export class AttendanceMark {
     return !this.dirty() || window.confirm(DISCARD);
   }
 
+  /** Open a create screen for a missing branch, class or section; this page comes back with its state kept. */
+  private openCreate(kind: CreateKind): void {
+    const branchId = this.branchId();
+    const extra: Params =
+      kind === 'section'
+        ? { classId: this.classId() }
+        : kind === 'class' && branchId
+          ? { branchId }
+          : {};
+    this.returnState.openCreate(
+      kind,
+      { date: this.date(), branchId, classId: this.classId(), sectionId: this.sectionId() },
+      'Attendance',
+      extra,
+    );
+  }
+
   protected pickBranch(event: Event): void {
     const el = event.target as HTMLSelectElement;
     if (!this.confirmLeave()) {
       el.value = String(this.branchId());
+      return;
+    }
+    if (isCreateNewChange(event)) {
+      this.openCreate('branch');
       return;
     }
     this.branchId.set(Number(el.value));
@@ -191,6 +259,10 @@ export class AttendanceMark {
       el.value = String(this.classId());
       return;
     }
+    if (isCreateNewChange(event)) {
+      this.openCreate('class');
+      return;
+    }
     this.classId.set(Number(el.value));
     this.sectionId.set(0);
     this.applySheet(null);
@@ -200,6 +272,10 @@ export class AttendanceMark {
     const el = event.target as HTMLSelectElement;
     if (!this.confirmLeave()) {
       el.value = String(this.sectionId());
+      return;
+    }
+    if (isCreateNewChange(event)) {
+      this.openCreate('section');
       return;
     }
     this.sectionId.set(Number(el.value));
@@ -249,7 +325,8 @@ export class AttendanceMark {
     if (!sheet || !this.dirty() || this.saving() || !sheet.is_working_day) return;
     const chunks: SheetEntry[][] = [];
     const entries = this.changed();
-    for (let i = 0; i < entries.length; i += MAX_ENTRIES) chunks.push(entries.slice(i, i + MAX_ENTRIES));
+    for (let i = 0; i < entries.length; i += MAX_ENTRIES)
+      chunks.push(entries.slice(i, i + MAX_ENTRIES));
     this.saving.set(true);
     this.error.set(null);
     this.notice.set(null);
@@ -278,7 +355,10 @@ export class AttendanceMark {
     this.api.exportCsv(this.sectionId(), this.exportFrom(), this.exportTo()).subscribe({
       next: (blob) => {
         const name = sheet ? `${sheet.class_name}-${sheet.section_name}` : 'section';
-        this.students.saveBlob(blob, `attendance-${name}-${this.exportFrom()}-to-${this.exportTo()}.csv`);
+        this.students.saveBlob(
+          blob,
+          `attendance-${name}-${this.exportFrom()}-to-${this.exportTo()}.csv`,
+        );
         this.exporting.set(false);
       },
       error: (err: unknown) => {

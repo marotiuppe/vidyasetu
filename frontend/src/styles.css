@@ -745,3 +745,49 @@ svg {
       transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 }
+
+/* Banner shown when a form asked the user to create a record elsewhere and will resume after. */
+.return-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  color: var(--text);
+  background: var(--accent);
+  border-radius: var(--radius-md);
+}
+
+.return-banner p {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Print: only the element marked print-area is printed; .no-print hides buttons inside it. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    box-shadow: none;
+    border: 0;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

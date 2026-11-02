@@ -13,6 +13,9 @@
           @for (b of branches(); track b.id) {
             <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
           }
+          @if (canCreate.branch) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
     }
@@ -30,7 +33,8 @@
   } @else if (sheet(); as s) {
     @if (!s.is_working_day) {
       <p class="panel" role="status">
-        Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance cannot be saved.
+        Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance
+        cannot be saved.
       </p>
     }
 
@@ -60,7 +64,8 @@
             <div class="row-main">
               <strong>{{ r.full_name }}</strong>
               <span class="row-sub">
-                {{ r.roleLabel }}@if (r.branchName) {
+                {{ r.roleLabel }}
+                @if (r.branchName) {
                   · {{ r.branchName }}
                 }
               </span>

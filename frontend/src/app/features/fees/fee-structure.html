@@ -1,6 +1,8 @@
 <section class="card" aria-labelledby="structure-title">
   <h2 class="card-title" id="structure-title">Fee structure</h2>
-  <p class="hint">Saving replaces the fee structure of the chosen class for the chosen academic year.</p>
+  <p class="hint">
+    Saving replaces the fee structure of the chosen class for the chosen academic year.
+  </p>
 
   <form class="stack" (ngSubmit)="save()" [formGroup]="picker">
     <div class="toolbar">
@@ -12,6 +14,9 @@
             @for (b of lookups.branches(); track b.id) {
               <option [ngValue]="b.id">{{ b.name }}</option>
             }
+            @if (canCreate.branch) {
+              <option [ngValue]="createNew">{{ createNewLabel }}</option>
+            }
           </select>
         </label>
       }
@@ -22,6 +27,9 @@
           @for (y of lookups.years(); track y.id) {
             <option [ngValue]="y.id">{{ y.name }}</option>
           }
+          @if (canCreate.academic_year) {
+            <option [ngValue]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
       <label class="field">
@@ -30,6 +38,9 @@
           <option [ngValue]="0">Choose a class</option>
           @for (c of classOptions(); track c.id) {
             <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+          @if (canCreate.class) {
+            <option [ngValue]="createNew">{{ createNewLabel }}</option>
           }
         </select>
       </label>
@@ -49,13 +60,21 @@
               <select class="input" formControlName="headId">
                 <option [ngValue]="0">Choose a fee head</option>
                 @for (h of optionsFor(i); track h.id) {
-                  <option [ngValue]="h.id">{{ h.name }}{{ h.is_active ? '' : ' (inactive)' }}</option>
+                  <option [ngValue]="h.id">
+                    {{ h.name }}{{ h.is_active ? '' : ' (inactive)' }}
+                  </option>
                 }
               </select>
             </label>
             <label class="field">
               Amount (rupees)
-              <input class="input" type="text" inputmode="decimal" autocomplete="off" formControlName="amount" />
+              <input
+                class="input"
+                type="text"
+                inputmode="decimal"
+                autocomplete="off"
+                formControlName="amount"
+              />
             </label>
             <div class="form-actions">
               <button

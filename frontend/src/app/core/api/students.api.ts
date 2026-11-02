@@ -95,6 +95,35 @@ export interface GuardianInput {
   phone: string;
   email?: string | null;
   is_primary?: boolean;
+  /** Link the guardian to an existing parent login (siblings share one login). */
+  existing_parent_user_id?: number | null;
+  /** Create a parent login for a new parent. Defaults to true for the primary guardian only. */
+  create_login?: boolean;
+}
+
+/** A parent login found by search, with the children already linked to it. */
+export interface ParentSummary {
+  id: number;
+  full_name: string;
+  username: string;
+  phone: string | null;
+  email: string | null;
+  children: { student_id: number; full_name: string; class_name: string | null }[];
+}
+
+/** One login created together with a student. Returned once, right after creation. */
+export interface StudentCredential {
+  role: 'student' | 'parent';
+  full_name: string;
+  username: string;
+  temporary_password: string | null;
+  linked_existing: boolean;
+  note: string | null;
+}
+
+/** Response of POST /students: the student plus the logins created for it (only on creation). */
+export interface CreatedStudent extends StudentDetail {
+  credentials?: StudentCredential[] | null;
 }
 
 export interface EnrollmentInput {
@@ -116,6 +145,7 @@ export interface NewStudent {
   previous_school?: string | null;
   guardians: GuardianInput[];
   enrollment?: EnrollmentInput | null;
+  create_student_login: boolean;
 }
 
 export interface StudentUpdate {
@@ -176,8 +206,14 @@ export class StudentsApi {
     return this.http.get<StudentDetail>(`${API}/students/${id}`);
   }
 
-  create(body: NewStudent): Observable<StudentDetail> {
-    return this.http.post<StudentDetail>(`${API}/students`, body);
+  create(body: NewStudent): Observable<CreatedStudent> {
+    return this.http.post<CreatedStudent>(`${API}/students`, body);
+  }
+
+  /** Parents of this school matching the text (name, mobile or username). Server enforces the scope. */
+  searchParents(q: string, limit = 10): Observable<ParentSummary[]> {
+    const params = new HttpParams().set('q', q.trim()).set('limit', limit);
+    return this.http.get<ParentSummary[]>(`${API}/parents`, { params });
   }
 
   update(id: number, body: StudentUpdate): Observable<StudentDetail> {
@@ -221,7 +257,10 @@ export class StudentsApi {
   }
 
   exportCsv(filters: StudentFilters): Observable<Blob> {
-    return this.http.get(`${API}/students/export`, { params: filterParams(filters), responseType: 'blob' });
+    return this.http.get(`${API}/students/export`, {
+      params: filterParams(filters),
+      responseType: 'blob',
+    });
   }
 
   /** Save a blob through a temporary object URL and anchor. */

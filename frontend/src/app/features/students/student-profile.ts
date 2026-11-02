@@ -7,10 +7,16 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Observable } from 'rxjs';
+import { ActivatedRoute, Params, Router, RouterLink } from '@angular/router';
+import { Observable, filter } from 'rxjs';
 
 import { AcademicYear, AcademicsApi, SchoolClass, Section } from '../../core/api/academics.api';
 import { apiErrorMessage, fieldErrorsFrom } from '../../core/api/api-error';
@@ -30,6 +36,13 @@ import { AuthService } from '../../core/auth/auth.service';
 import { USERNAME_HINT, suggestUsername, usernameFormat } from '../../core/auth/identity';
 import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
 import { canWriteStudents } from '../../core/auth/permissions';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  canCreateRecord,
+} from '../../core/create/create-new';
+import { PendingReturn, ReturnStateService } from '../../core/create/return-state.service';
 import { StudentAttendance } from '../attendance/student-attendance';
 import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
 
@@ -47,6 +60,8 @@ export class StudentProfile {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
 
   protected readonly genders = GENDERS;
   protected readonly relations = RELATIONS;
@@ -57,6 +72,13 @@ export class StudentProfile {
   protected readonly today = todayIso();
   protected readonly usernameHint = USERNAME_HINT;
   protected readonly canWrite = canWriteStudents(this.auth);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreateYear = canCreateRecord(this.auth, 'academic_year');
+  protected readonly canCreateClass = canCreateRecord(this.auth, 'class');
+  protected readonly canCreateSection = canCreateRecord(this.auth, 'section');
+  /** Set when this page is back from a create screen; applied once the student has loaded. */
+  private pendingBack: PendingReturn | null = null;
 
   protected readonly student = signal<StudentDetail | null>(null);
   protected readonly loading = signal(true);
@@ -119,6 +141,7 @@ export class StudentProfile {
   });
 
   constructor() {
+    this.pendingBack = this.returnState.take(this.router.url);
     if (this.canWrite) {
       this.academics.years().subscribe({ next: (y) => this.years.set(y), error: () => undefined });
       this.academics
@@ -133,6 +156,9 @@ export class StudentProfile {
           this.enrolClass.set(Number(v));
           this.enrolForm.controls.section_id.setValue(0);
         });
+      this.watchCreate(this.enrolForm.controls.academic_year_id, 'academic_year');
+      this.watchCreate(this.enrolForm.controls.class_id, 'class');
+      this.watchCreate(this.enrolForm.controls.section_id, 'section');
     }
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
       const id = Number(p.get('id'));
@@ -148,6 +174,9 @@ export class StudentProfile {
       next: (s) => {
         this.student.set(s);
         this.loading.set(false);
+        const back = this.pendingBack;
+        this.pendingBack = null;
+        if (back) this.restoreEnrol(back);
       },
       error: (err: unknown) => {
         this.student.set(null);
@@ -306,6 +335,43 @@ export class StudentProfile {
       }),
       'Enrolment saved.',
     );
+  }
+
+  /** "+ Create new..." in the enrolment panel: keep the panel values and open the create screen. */
+  private watchCreate(control: FormControl<number>, kind: CreateKind): void {
+    control.valueChanges
+      .pipe(
+        filter((v) => v === CREATE_NEW),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        const extra: Params = {};
+        const cls = Number(this.enrolForm.controls.class_id.value);
+        if (kind === 'section' && cls > 0) extra['classId'] = cls;
+        this.returnState.openCreate(kind, this.enrolForm.getRawValue(), 'Student profile', extra);
+      });
+  }
+
+  /** Re-open the enrolment panel with the values kept before the create screen, and the new record selected. */
+  private restoreEnrol(back: PendingReturn): void {
+    const draft = back.draft as {
+      academic_year_id: number;
+      class_id: number;
+      section_id: number;
+      roll_no: string;
+    } | null;
+    const keep = (v: number | undefined): number => (v && v > 0 ? v : 0);
+    const picked = back.createdId ?? 0;
+    const year = back.kind === 'academic_year' ? picked : keep(draft?.academic_year_id);
+    const cls = back.kind === 'class' ? picked : keep(draft?.class_id);
+    const section =
+      back.kind === 'section' ? picked : back.kind === 'class' ? 0 : keep(draft?.section_id);
+    this.enrolForm.controls.academic_year_id.setValue(year);
+    this.enrolForm.controls.class_id.setValue(cls);
+    this.enrolForm.controls.section_id.setValue(section);
+    this.enrolForm.controls.roll_no.setValue(draft?.roll_no ?? '');
+    this.enrolClass.set(cls);
+    this.open('enrol');
   }
 
   // ---- student login ---------------------------------------------------

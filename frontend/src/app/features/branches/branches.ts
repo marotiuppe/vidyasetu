@@ -1,9 +1,17 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { AdminApi, Branch, School } from '../../core/api/admin.api';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
+import { safeReturnUrl } from '../../core/create/create-new';
+import { ReturnStateService } from '../../core/create/return-state.service';
 
 @Component({
   selector: 'sms-branches',
@@ -16,6 +24,12 @@ export class Branches {
   private readonly api = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly auth = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly returnState = inject(ReturnStateService);
+
+  /** Set when a form elsewhere sent the user here to create a branch; the page returns there after saving. */
+  protected readonly returnTo: string | null;
+  protected readonly from: string;
 
   protected readonly branches = signal<Branch[]>([]);
   protected readonly schools = signal<School[]>([]);
@@ -40,6 +54,12 @@ export class Branches {
   });
 
   constructor() {
+    const params = this.route.snapshot.queryParamMap;
+    this.returnTo =
+      params.get('create') === 'branch' ? safeReturnUrl(params.get('returnTo')) : null;
+    this.from = params.get('from')?.trim() || 'your previous page';
+    if (this.returnTo) this.showForm.set(true);
+
     if (this.isSuperAdmin()) {
       this.api.schools().subscribe({
         next: (s) => this.schools.set(s),
@@ -47,6 +67,11 @@ export class Branches {
       });
     }
     this.load();
+  }
+
+  /** Leave without saving: the form that asked for the branch comes back with nothing selected. */
+  protected cancelCreate(): void {
+    if (this.returnTo) this.returnState.cancel(this.returnTo, 'branch');
   }
 
   protected schoolName(id: number): string {
@@ -69,9 +94,13 @@ export class Branches {
     this.submitting.set(true);
     this.formError.set(null);
     this.api.createBranch({ name, code, school_id: needsSchool ? school_id : null }).subscribe({
-      next: () => {
+      next: (created) => {
         this.submitting.set(false);
         this.form.reset();
+        if (this.returnTo) {
+          this.returnState.finish(this.returnTo, 'branch', created.id);
+          return;
+        }
         this.showForm.set(false);
         this.load();
       },

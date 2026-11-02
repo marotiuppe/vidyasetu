@@ -1,6 +1,6 @@
 import re
 from datetime import date, timedelta
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     BaseModel,
@@ -118,6 +118,36 @@ class StudentPage(BaseModel):
     page_size: int
 
 
+class CredentialOut(BaseModel):
+    """A login created or linked together with a student. Returned once, never stored in clear."""
+
+    role: Literal["student", "parent"]
+    full_name: str
+    username: str
+    temporary_password: str | None
+    linked_existing: bool
+    note: str | None
+
+
+class StudentCreated(StudentDetail):
+    credentials: list[CredentialOut] = []
+
+
+class ParentChild(BaseModel):
+    student_id: int
+    full_name: str
+    class_name: str | None
+
+
+class ParentOut(BaseModel):
+    id: int
+    full_name: str
+    username: str
+    phone: str | None
+    email: str | None
+    children: list[ParentChild]
+
+
 # ---- input ----
 
 
@@ -129,6 +159,14 @@ class GuardianCreate(BaseModel):
     is_primary: bool | None = None
 
     _phone = field_validator("phone")(_check_phone)
+
+
+class NewGuardian(GuardianCreate):
+    """A guardian sent with a new student: may link an existing parent login or get a new one."""
+
+    existing_parent_user_id: int | None = Field(default=None, ge=1)
+    # None means: true for the primary guardian when the request asks for logins, else false.
+    create_login: bool | None = None
 
 
 class GuardianUpdate(BaseModel):
@@ -164,8 +202,9 @@ class StudentCreate(BaseModel):
     )
     address: OptText = None
     previous_school: OptText = Field(default=None, max_length=200)
-    guardians: list[GuardianCreate] = Field(min_length=1, max_length=10)
+    guardians: list[NewGuardian] = Field(min_length=1, max_length=10)
     enrollment: EnrollmentIn | None = None
+    create_student_login: bool = False
 
     _dob = field_validator("date_of_birth")(_check_dob)
 

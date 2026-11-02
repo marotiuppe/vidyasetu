@@ -1,8 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Params, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, filter, of, switchMap, take, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
+import { AuthService } from '../../core/auth/auth.service';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  FILTER_KINDS,
+  createPermissions,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
 import {
   FeesApi,
   INVOICE_STATUSES,
@@ -42,6 +53,12 @@ type Mode = 'none' | 'generate' | 'new';
 export class FeeInvoices {
   private readonly api = inject(FeesApi);
   protected readonly lookups = inject(FeeLookups);
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate = createPermissions(this.auth);
 
   readonly canManage = input(false);
   readonly canPay = input(false);
@@ -71,22 +88,39 @@ export class FeeInvoices {
   protected readonly selectedId = signal(0);
   protected readonly mode = signal<Mode>('none');
 
-  protected readonly sectionOptions = computed(() => this.lookups.sectionsOf(this.filters().classId));
+  protected readonly sectionOptions = computed(() =>
+    this.lookups.sectionsOf(this.filters().classId),
+  );
   protected readonly total = computed(() => this.data()?.total ?? 0);
   protected readonly from = computed(() => (this.total() ? (this.page() - 1) * PAGE_SIZE + 1 : 0));
   protected readonly to = computed(() => Math.min(this.page() * PAGE_SIZE, this.total()));
 
   constructor() {
-    this.lookups.load();
+    const back = this.returnState.take(this.router.url);
+    if (back)
+      this.filters.set(
+        restoreIds(back, this.filters(), {
+          academic_year: 'yearId',
+          class: 'classId',
+          section: 'sectionId',
+        }),
+      );
+    if (back) this.lookups.refresh();
+    else this.lookups.load();
     toObservable(this.lookups.loaded)
       .pipe(filter(Boolean), take(1), takeUntilDestroyed())
       .subscribe(() => {
-        this.filters.update((f) => ({ ...f, yearId: this.lookups.currentYearId() }));
+        if (!back) this.filters.update((f) => ({ ...f, yearId: this.lookups.currentYearId() }));
         this.ready.set(true);
       });
 
     toObservable(
-      computed(() => ({ ready: this.ready(), f: this.filters(), page: this.page(), tick: this.reloadTick() })),
+      computed(() => ({
+        ready: this.ready(),
+        f: this.filters(),
+        page: this.page(),
+        tick: this.reloadTick(),
+      })),
     )
       .pipe(
         filter((s) => s.ready),
@@ -112,8 +146,19 @@ export class FeeInvoices {
   }
 
   protected onSelect(key: 'yearId' | 'classId' | 'sectionId', event: Event): void {
+    if (isCreateNewChange(event)) {
+      this.createRecord(FILTER_KINDS[key]);
+      return;
+    }
     const v = Number(value(event));
     this.patch(key === 'classId' ? { classId: v, sectionId: 0 } : { [key]: v });
+  }
+
+  /** Open the create screen for a missing record; the filters come back with it selected. */
+  protected createRecord(kind: CreateKind): void {
+    const f = this.filters();
+    const extra: Params = kind === 'section' ? { classId: f.classId } : {};
+    this.returnState.openCreate(kind, f, 'Fees', extra);
   }
 
   protected onStatus(event: Event): void {
@@ -135,7 +180,9 @@ export class FeeInvoices {
   protected open(inv: Invoice): void {
     this.mode.set('none');
     this.selectedId.set(inv.id);
-    queueMicrotask(() => document.getElementById('invoice-detail')?.scrollIntoView({ block: 'nearest' }));
+    queueMicrotask(() =>
+      document.getElementById('invoice-detail')?.scrollIntoView({ block: 'nearest' }),
+    );
   }
 
   protected setMode(mode: Mode): void {

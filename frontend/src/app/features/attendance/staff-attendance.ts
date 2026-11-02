@@ -1,11 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, concatMap, from, last, of, switchMap, tap } from 'rxjs';
+import { Params, Router } from '@angular/router';
 
 import { AcademicsApi, Branch } from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { AttendanceApi, StaffEntry, StaffMark, StaffSheet } from '../../core/api/attendance.api';
 import { AuthService } from '../../core/auth/auth.service';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  createPermissions,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
 import { ROLE_LABELS } from '../../core/layout/nav';
 import { Role } from '../../core/auth/auth.models';
 import { MARK_CLASS, STAFF_MARKS, isoDate } from './attendance-labels';
@@ -28,6 +37,11 @@ export class StaffAttendance {
   private readonly api = inject(AttendanceApi);
   private readonly academics = inject(AcademicsApi);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate = createPermissions(this.auth);
 
   protected readonly marks = STAFF_MARKS;
   protected readonly markClass = MARK_CLASS;
@@ -92,8 +106,15 @@ export class StaffAttendance {
   protected readonly dirty = computed(() => this.changed().length > 0);
 
   constructor() {
+    const back = this.returnState.take(this.router.url);
+    if (back) {
+      this.date.set((back.draft as { date: string }).date);
+      this.branchId.set(back.createdId ?? 0);
+    }
     if (this.canPickBranch) {
-      this.academics.branches().subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
+      this.academics
+        .branches()
+        .subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
     }
     toObservable(computed(() => ({ date: this.date(), branch: this.branchId() })))
       .pipe(
@@ -124,10 +145,19 @@ export class StaffAttendance {
     this.openRemarks.set({});
   }
 
+  /** Open the Branches screen; this page comes back with the date kept and the new branch selected. */
+  private openCreateBranch(): void {
+    this.returnState.openCreate('branch', { date: this.date() }, 'Attendance');
+  }
+
   protected pickBranch(event: Event): void {
     const el = event.target as HTMLSelectElement;
     if (this.dirty() && !window.confirm(DISCARD)) {
       el.value = String(this.branchId());
+      return;
+    }
+    if (isCreateNewChange(event)) {
+      this.openCreateBranch();
       return;
     }
     this.branchId.set(Number(el.value));
@@ -135,7 +165,12 @@ export class StaffAttendance {
 
   protected pickDate(event: Event): void {
     const el = event.target as HTMLInputElement;
-    if (!el.value || el.value > this.today || el.value === this.date() || (this.dirty() && !window.confirm(DISCARD))) {
+    if (
+      !el.value ||
+      el.value > this.today ||
+      el.value === this.date() ||
+      (this.dirty() && !window.confirm(DISCARD))
+    ) {
       el.value = this.date();
       return;
     }
@@ -176,7 +211,8 @@ export class StaffAttendance {
     if (!sheet || !this.dirty() || this.saving() || !sheet.is_working_day) return;
     const entries = this.changed();
     const chunks: StaffEntry[][] = [];
-    for (let i = 0; i < entries.length; i += MAX_ENTRIES) chunks.push(entries.slice(i, i + MAX_ENTRIES));
+    for (let i = 0; i < entries.length; i += MAX_ENTRIES)
+      chunks.push(entries.slice(i, i + MAX_ENTRIES));
     this.saving.set(true);
     this.error.set(null);
     this.notice.set(null);

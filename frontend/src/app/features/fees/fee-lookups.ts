@@ -1,6 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
-import { AcademicYear, AcademicsApi, Branch, SchoolClass, Section } from '../../core/api/academics.api';
+import {
+  AcademicYear,
+  AcademicsApi,
+  Branch,
+  SchoolClass,
+  Section,
+} from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
 
 /** Academic years, classes, sections and branches shared by the fee tabs (loaded once). */
@@ -34,14 +40,30 @@ export class FeeLookups {
         this.loaded.set(true);
       },
     });
-    this.academics.classes().subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
-    this.academics.sections().subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
+    this.academics
+      .classes()
+      .subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
+    this.academics
+      .sections()
+      .subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
+  }
+
+  /** Fetch the lists again, for a page back from a create screen (a new record is not in the cache). */
+  refresh(): void {
+    this.started = false;
+    this.load();
+    if (this.branchesStarted) {
+      this.branchesStarted = false;
+      this.loadBranches();
+    }
   }
 
   loadBranches(): void {
     if (this.branchesStarted) return;
     this.branchesStarted = true;
-    this.academics.branches().subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
+    this.academics
+      .branches()
+      .subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
   }
 
   classesOf(branchId: number): SchoolClass[] {

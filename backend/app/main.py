@@ -28,6 +28,7 @@ from app.modules.branches.router import router as branches_router
 from app.modules.fees.router import router as fees_router
 from app.modules.notices.router import router as notices_router
 from app.modules.schools.router import router as schools_router
+from app.modules.students.router import parents_router
 from app.modules.students.router import router as students_router
 from app.modules.users.identity import suggest_username
 from app.modules.users.models import Role, User
@@ -145,6 +146,7 @@ api.include_router(branches_router)
 api.include_router(users_router)
 api.include_router(academics_router)
 api.include_router(students_router)
+api.include_router(parents_router)
 api.include_router(attendance_router)
 api.include_router(notices_router)
 api.include_router(fees_router)

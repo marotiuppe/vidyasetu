@@ -1,10 +1,20 @@
 @if (canManage()) {
   <div class="header-actions actions">
-    <button type="button" class="btn btn-ghost" [attr.aria-expanded]="mode() === 'generate'" (click)="setMode('generate')">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      [attr.aria-expanded]="mode() === 'generate'"
+      (click)="setMode('generate')"
+    >
       <sms-icon name="sparkle" [size]="16" />
       Generate invoices
     </button>
-    <button type="button" class="btn btn-primary" [attr.aria-expanded]="mode() === 'new'" (click)="setMode('new')">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [attr.aria-expanded]="mode() === 'new'"
+      (click)="setMode('new')"
+    >
       <sms-icon name="plus" [size]="16" />
       New invoice
     </button>
@@ -54,6 +64,9 @@
           @for (y of lookups.years(); track y.id) {
             <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
           }
+          @if (canCreate.academic_year) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
       <label class="field">
@@ -63,14 +76,24 @@
           @for (c of lookups.classes(); track c.id) {
             <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
           }
+          @if (canCreate.class) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
       <label class="field">
         Section
-        <select class="input" [disabled]="!filters().classId" (change)="onSelect('sectionId', $event)">
+        <select
+          class="input"
+          [disabled]="!filters().classId"
+          (change)="onSelect('sectionId', $event)"
+        >
           <option value="0" [selected]="filters().sectionId === 0">All sections</option>
           @for (s of sectionOptions(); track s.id) {
             <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
+          }
+          @if (canCreate.section && filters().classId) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
           }
         </select>
       </label>
@@ -111,7 +134,9 @@
             </span>
             <span class="row-main cell">
               <span>{{ i.student_name }}</span>
-              <span class="row-sub">{{ classSection(i.class_name, i.section_name) }} · {{ i.admission_no }}</span>
+              <span class="row-sub"
+                >{{ classSection(i.class_name, i.section_name) }} · {{ i.admission_no }}</span
+              >
             </span>
             <span class="row-main cell">
               <span>Due {{ i.due_date }}</span>
@@ -135,10 +160,20 @@
         <nav class="pager" aria-label="Pagination">
           <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
           <span class="row-actions">
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="page() <= 1"
+              (click)="prev()"
+            >
               Previous
             </button>
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="to() >= total()"
+              (click)="next()"
+            >
               Next
             </button>
           </span>

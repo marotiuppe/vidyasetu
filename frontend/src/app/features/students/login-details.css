@@ -1,0 +1,60 @@
+.once {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border-radius: var(--radius-sm);
+}
+
+.creds {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.cred {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.cred-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.cred-facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.cred-facts div {
+  display: grid;
+  gap: 2px;
+}
+
+.cred-facts dt {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.cred-facts dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  word-break: break-all;
+}

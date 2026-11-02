@@ -1,10 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, filter, of, switchMap, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { Collection, FeesApi } from '../../core/api/fees.api';
 import { AuthService } from '../../core/auth/auth.service';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  createPermissions,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService } from '../../core/create/return-state.service';
 import { formatPaise, percentOf } from '../../core/ui/money';
 import { methodLabel, monthStartIso, todayIso, value } from './fee-labels';
 import { FeeLookups } from './fee-lookups';
@@ -19,6 +27,11 @@ export class FeeCollection {
   private readonly api = inject(FeesApi);
   private readonly auth = inject(AuthService);
   protected readonly lookups = inject(FeeLookups);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate = createPermissions(this.auth);
 
   protected readonly money = formatPaise;
   protected readonly methodLabel = methodLabel;
@@ -33,10 +46,31 @@ export class FeeCollection {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
-  protected readonly rangeInvalid = computed(() => !this.from() || !this.to() || this.from() > this.to());
-  protected readonly maxDay = computed(() => Math.max(0, ...(this.data()?.by_day.map((d) => d.total_paise) ?? [])));
+  /** Branch picked: "Create new..." opens the Branches screen and brings the page back. */
+  protected onBranch(event: Event): void {
+    if (isCreateNewChange(event)) {
+      this.returnState.openCreate('branch', { from: this.from(), to: this.to() }, 'Fees');
+      return;
+    }
+    this.branchId.set(+this.onValue(event));
+  }
+
+  protected readonly rangeInvalid = computed(
+    () => !this.from() || !this.to() || this.from() > this.to(),
+  );
+  protected readonly maxDay = computed(() =>
+    Math.max(0, ...(this.data()?.by_day.map((d) => d.total_paise) ?? [])),
+  );
 
   constructor() {
+    const back = this.returnState.take(this.router.url);
+    if (back) {
+      const draft = back.draft as { from: string; to: string };
+      this.from.set(draft.from);
+      this.to.set(draft.to);
+      this.branchId.set(back.createdId ?? 0);
+      this.lookups.refresh();
+    }
     if (this.canPickBranch) this.lookups.loadBranches();
     toObservable(computed(() => ({ from: this.from(), to: this.to(), branch: this.branchId() })))
       .pipe(

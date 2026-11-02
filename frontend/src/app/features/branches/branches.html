@@ -3,12 +3,25 @@
     <h1 class="page-title">Branches</h1>
     <p class="page-subtitle">Each branch has its own classes, staff and records.</p>
   </div>
-  <button type="button" class="btn btn-primary" [attr.aria-expanded]="showForm()" (click)="toggleForm()">
+  <button
+    type="button"
+    class="btn btn-primary"
+    [attr.aria-expanded]="showForm()"
+    (click)="toggleForm()"
+  >
     {{ showForm() ? 'Close' : 'New branch' }}
   </button>
 </div>
 
 <div class="stack">
+  @if (returnTo) {
+    <div class="return-banner" role="status">
+      <p>Creating a new branch for {{ from }}. You will return automatically after saving.</p>
+      <button type="button" class="btn btn-ghost" (click)="cancelCreate()">
+        Cancel and go back
+      </button>
+    </div>
+  }
   @if (showForm()) {
     <section class="card" aria-labelledby="new-branch">
       <h2 class="card-title" id="new-branch">Create a branch</h2>
@@ -34,7 +47,12 @@
           </label>
           <label class="field">
             Code
-            <input class="input" formControlName="code" autocomplete="off" placeholder="short-code" />
+            <input
+              class="input"
+              formControlName="code"
+              autocomplete="off"
+              placeholder="short-code"
+            />
             @if (form.controls.code.touched && form.controls.code.invalid) {
               <span class="field-error">Use lowercase letters, digits, hyphen or underscore.</span>
             }
@@ -80,7 +98,9 @@
                 >
                   Save
                 </button>
-                <button type="button" class="btn btn-ghost btn-sm" (click)="cancelRename()">Cancel</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="cancelRename()">
+                  Cancel
+                </button>
               </form>
             } @else {
               <span class="row-main">
@@ -92,11 +112,17 @@
                   }
                 </span>
               </span>
-              <span class="badge" [class.badge-success]="branch.is_active" [class.badge-muted]="!branch.is_active">
+              <span
+                class="badge"
+                [class.badge-success]="branch.is_active"
+                [class.badge-muted]="!branch.is_active"
+              >
                 {{ branch.is_active ? 'Active' : 'Inactive' }}
               </span>
               <span class="row-actions">
-                <button type="button" class="btn btn-ghost btn-sm" (click)="startRename(branch)">Rename</button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="startRename(branch)">
+                  Rename
+                </button>
                 <button
                   type="button"
                   class="btn btn-ghost btn-sm"

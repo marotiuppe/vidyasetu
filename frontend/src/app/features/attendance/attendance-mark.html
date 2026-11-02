@@ -10,6 +10,9 @@
             @for (b of branches(); track b.id) {
               <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
             }
+            @if (canCreate.branch) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
           </select>
         </label>
       }
@@ -20,6 +23,9 @@
           @for (c of classOptions(); track c.id) {
             <option [value]="c.id" [selected]="c.id === classId()">{{ c.name }}</option>
           }
+          @if (canCreate.class) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
       <label class="field">
@@ -29,11 +35,20 @@
           @for (s of sectionOptions(); track s.id) {
             <option [value]="s.id" [selected]="s.id === sectionId()">{{ s.name }}</option>
           }
+          @if (canCreate.section && classId()) {
+            <option [value]="createNew">{{ createNewLabel }}</option>
+          }
         </select>
       </label>
       <label class="field">
         Date
-        <input class="input" type="date" [value]="date()" [max]="today" (change)="pickDate($event)" />
+        <input
+          class="input"
+          type="date"
+          [value]="date()"
+          [max]="today"
+          (change)="pickDate($event)"
+        />
       </label>
     </div>
 
@@ -51,7 +66,8 @@
     } @else if (sheet(); as s) {
       @if (!s.is_working_day) {
         <p class="panel" role="status">
-          Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance cannot be saved.
+          Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance
+          cannot be saved.
         </p>
       }
 
@@ -87,7 +103,11 @@
                   Adm. {{ r.admission_no }}
                 </span>
               </div>
-              <div class="seg" role="radiogroup" [attr.aria-label]="'Attendance for ' + r.full_name">
+              <div
+                class="seg"
+                role="radiogroup"
+                [attr.aria-label]="'Attendance for ' + r.full_name"
+              >
                 @for (m of marks; track m.value) {
                   <label [class]="markClass[m.value]">
                     <input
@@ -156,14 +176,24 @@
     <div class="toolbar">
       <label class="field">
         From
-        <input class="input" type="date" [value]="exportFrom()" (change)="setExport('from', $event)" />
+        <input
+          class="input"
+          type="date"
+          [value]="exportFrom()"
+          (change)="setExport('from', $event)"
+        />
       </label>
       <label class="field">
         To
         <input class="input" type="date" [value]="exportTo()" (change)="setExport('to', $event)" />
       </label>
     </div>
-    <button type="button" class="btn btn-ghost" [disabled]="!canExport() || exporting()" (click)="exportCsv()">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      [disabled]="!canExport() || exporting()"
+      (click)="exportCsv()"
+    >
       <sms-icon name="download" [size]="16" />
       {{ exporting() ? 'Exporting…' : 'Export CSV' }}
     </button>

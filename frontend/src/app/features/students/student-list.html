@@ -72,7 +72,12 @@
             <select class="input" (change)="onSelect('branchId', $event)">
               <option value="0" [selected]="filters().branchId === 0">All branches</option>
               @for (b of branches(); track b.id) {
-                <option [value]="b.id" [selected]="filters().branchId === b.id">{{ b.name }}</option>
+                <option [value]="b.id" [selected]="filters().branchId === b.id">
+                  {{ b.name }}
+                </option>
+              }
+              @if (canCreate.branch) {
+                <option [value]="createNew">{{ createNewLabel }}</option>
               }
             </select>
           </label>
@@ -84,6 +89,9 @@
             @for (y of years(); track y.id) {
               <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
             }
+            @if (canCreate.academic_year) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
           </select>
         </label>
         <label class="field">
@@ -93,14 +101,24 @@
             @for (c of classOptions(); track c.id) {
               <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
             }
+            @if (canCreate.class) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
+            }
           </select>
         </label>
         <label class="field">
           Section
-          <select class="input" [disabled]="!filters().classId" (change)="onSelect('sectionId', $event)">
+          <select
+            class="input"
+            [disabled]="!filters().classId"
+            (change)="onSelect('sectionId', $event)"
+          >
             <option value="0" [selected]="filters().sectionId === 0">All sections</option>
             @for (s of sectionOptions(); track s.id) {
               <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
+            }
+            @if (canCreate.section && filters().classId) {
+              <option [value]="createNew">{{ createNewLabel }}</option>
             }
           </select>
         </label>
@@ -130,10 +148,16 @@
             <span class="row-main cell">
               @if (s.current_enrollment; as e) {
                 <span>
-                  {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
+                  {{ e.class_name }}
+                  @if (e.section_name) {
+                    - {{ e.section_name }}
+                  }
                 </span>
                 <span class="row-sub">
-                  @if (e.roll_no !== null) { Roll {{ e.roll_no }} · }{{ e.academic_year_name }}
+                  @if (e.roll_no !== null) {
+                    Roll {{ e.roll_no }} ·
+                  }
+                  {{ e.academic_year_name }}
                 </span>
               } @else {
                 <span class="row-sub">Not enrolled</span>
@@ -157,7 +181,9 @@
           </li>
         } @empty {
           <li class="empty">
-            {{ selfService ? 'No student records are linked to your account.' : 'No students match.' }}
+            {{
+              selfService ? 'No student records are linked to your account.' : 'No students match.'
+            }}
           </li>
         }
       </ul>
@@ -166,10 +192,20 @@
         <nav class="pager" aria-label="Pagination">
           <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
           <span class="row-actions">
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="page() <= 1"
+              (click)="prev()"
+            >
               Previous
             </button>
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="to() >= total()"
+              (click)="next()"
+            >
               Next
             </button>
           </span>

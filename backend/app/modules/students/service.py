@@ -1,6 +1,8 @@
 import csv
 import io
 import re
+import secrets
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
@@ -13,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.core.errors import IdentityInUse
-from app.core.password_policy import enforce_password
+from app.core.password_policy import enforce_password, password_problem
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
@@ -26,6 +28,7 @@ from app.modules.students.models import (
     StudentStatus,
 )
 from app.modules.students.schemas import (
+    CredentialOut,
     EnrollmentIn,
     EnrollmentOut,
     GuardianCreate,
@@ -36,8 +39,12 @@ from app.modules.students.schemas import (
     ImportRow,
     ImportRowError,
     LoginCreate,
+    NewGuardian,
+    ParentChild,
+    ParentOut,
     PrimaryGuardianOut,
     StudentCreate,
+    StudentCreated,
     StudentDetail,
     StudentOut,
     StudentPage,
@@ -494,10 +501,13 @@ async def _insert_student(
     db: AsyncSession,
     branch: Branch,
     fields: dict[str, Any],
-    guardians: list[GuardianCreate],
+    guardians: Sequence[GuardianCreate],
     enrollment: EnrollmentIn | None,
-) -> Student:
-    """Insert a student, guardians and optional enrolment atomically (one savepoint)."""
+) -> tuple[Student, list[Guardian]]:
+    """Insert a student, guardians and optional enrolment atomically (one savepoint).
+
+    Returns the student and its guardian rows in the order they were given.
+    """
     admission_date: date = fields["admission_date"] or date.today()
     supplied: str | None = fields["admission_no"]
     if supplied is not None and await db.scalar(
@@ -521,22 +531,23 @@ async def _insert_student(
                 )
                 db.add(student)
                 await db.flush()
+                rows: list[Guardian] = []
                 for i, g in enumerate(guardians):
-                    db.add(
-                        Guardian(
-                            school_id=branch.school_id,
-                            student_id=student.id,
-                            full_name=g.full_name,
-                            relation=g.relation,
-                            phone=g.phone,
-                            email=g.email,
-                            is_primary=i == primary_idx,
-                        )
+                    row = Guardian(
+                        school_id=branch.school_id,
+                        student_id=student.id,
+                        full_name=g.full_name,
+                        relation=g.relation,
+                        phone=g.phone,
+                        email=g.email,
+                        is_primary=i == primary_idx,
                     )
+                    db.add(row)
+                    rows.append(row)
                 await db.flush()
                 if enrollment is not None:
                     await _apply_enrollment(db, student, enrollment)
-            return student
+            return student, rows
         except IntegrityError:
             if attempt == 0 and supplied is None:
                 continue  # lost a race for the generated number; regenerate once
@@ -544,12 +555,331 @@ async def _insert_student(
     raise AssertionError("unreachable")
 
 
-async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> StudentDetail:
+_PATTERN_NOTE = (
+    "Password follows the pattern name+initial@DOB; the student must change it at first sign-in"
+)
+_LINKED_NOTE = "Existing parent login linked; its password is unchanged"
+_PW_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # no I or O
+_PW_LOWER = "abcdefghijkmnopqrstuvwxyz"  # no l
+_PW_DIGIT = "23456789"  # no 0 or 1
+_PW_SYMBOL = "@#$%&*"
+_PW_ALL = _PW_UPPER + _PW_LOWER + _PW_DIGIT + _PW_SYMBOL
+_PW_LENGTH = 12
+
+
+def _random_password(username: str, full_name: str) -> str:
+    """A 12-character random password that passes the password policy."""
+    rng = secrets.SystemRandom()
+    while True:
+        chars = [
+            secrets.choice(_PW_UPPER),
+            secrets.choice(_PW_LOWER),
+            secrets.choice(_PW_DIGIT),
+            secrets.choice(_PW_SYMBOL),
+        ]
+        chars += [secrets.choice(_PW_ALL) for _ in range(_PW_LENGTH - len(chars))]
+        rng.shuffle(chars)
+        password = "".join(chars)
+        if password_problem(password, username=username, full_name=full_name) is None:
+            return password
+
+
+def _first_word_stem(text: str, fallback: str) -> str:
+    """Lower-case letters and digits of the first word; the fallback when no letter is left."""
+    words = text.split()
+    stem = re.sub(r"[^a-z0-9]", "", (words[0] if words else "").lower())
+    return stem if re.search(r"[a-z]", stem) else fallback
+
+
+def _first_letter(text: str) -> str:
+    match = re.search(r"[a-z]", text.lower())
+    return match.group(0) if match else ""
+
+
+async def _free_username(db: AsyncSession, base: str) -> str:
+    """`base`, or `base` plus 2, 3, ... when the username is taken."""
+    candidate, n = base, 2
+    while await db.scalar(select(User.id).where(User.username == candidate)) is not None:
+        candidate = f"{base}{n}"
+        n += 1
+    return candidate
+
+
+async def _free_email(db: AsyncSession, email: str | None) -> str | None:
+    """The email if no account uses it, else None (the parent is created without one)."""
+    if email is None:
+        return None
+    try:
+        await ensure_identity_available(db, email=email)
+    except IdentityInUse:
+        return None
+    return email
+
+
+async def _school_parent_match(
+    db: AsyncSession, school_id: int, email: str | None, raw_phone: str
+) -> User | None:
+    """A parent login of this school for a new guardian: matched by email, then by mobile.
+
+    Unlike `_existing_parent`, a match in another school or of another role is ignored rather
+    than refused, so a new student can still be created; the parent then gets no email or
+    mobile number of its own (both are unique).
+    """
+    if email is not None:
+        user = await db.scalar(
+            select(User).where(
+                User.email == email, User.school_id == school_id, User.role == Role.PARENT
+            )
+        )
+        if user is not None:
+            return user
+    try:
+        phone = normalize_phone(raw_phone)
+    except ValueError:
+        return None
+    return await db.scalar(
+        select(User).where(
+            User.phone == phone, User.school_id == school_id, User.role == Role.PARENT
+        )
+    )
+
+
+async def _parent_username(db: AsyncSession, full_name: str, raw_phone: str) -> str:
+    """First name, last-name initial and last 4 mobile digits (a number is added on a clash)."""
+    words = full_name.split()
+    stem = _first_word_stem(full_name, "parent")[:40]
+    initial = _first_letter(words[-1]) if len(words) > 1 else ""
+    digits = re.sub(r"\D", "", raw_phone)
+    base = f"{stem}{initial}{digits[-4:]}".ljust(3, "0")
+    return await _free_username(db, base)
+
+
+def _linked_credential(parent: User) -> CredentialOut:
+    return CredentialOut(
+        role="parent",
+        full_name=parent.full_name,
+        username=parent.username,
+        temporary_password=None,
+        linked_existing=True,
+        note=_LINKED_NOTE,
+    )
+
+
+async def _guardian_login(
+    db: AsyncSession, student: Student, guardian: Guardian, spec: NewGuardian
+) -> CredentialOut:
+    """Link the guardian to an existing parent login, or create a parent login for it."""
+    if spec.existing_parent_user_id is not None:
+        parent = await db.scalar(
+            select(User).where(
+                User.id == spec.existing_parent_user_id,
+                User.school_id == student.school_id,
+                User.role == Role.PARENT,
+            )
+        )
+        if parent is None:
+            raise _not_found("Parent")
+        guardian.user_id = parent.id
+        return _linked_credential(parent)
+    email = str(guardian.email).lower() if guardian.email is not None else None
+    parent = await _school_parent_match(db, student.school_id, email, guardian.phone)
+    if parent is not None:
+        guardian.user_id = parent.id
+        return _linked_credential(parent)
+    username = await _parent_username(db, guardian.full_name, guardian.phone)
+    password = _random_password(username, guardian.full_name)
+    user = User(
+        school_id=student.school_id,
+        branch_id=None,
+        username=username,
+        email=await _free_email(db, email),
+        full_name=guardian.full_name,
+        phone=await _parent_phone(db, guardian.phone, student.school_id),
+        password_hash=hash_password(password),
+        role=Role.PARENT,
+        must_change_password=True,
+    )
+    db.add(user)
+    await db.flush()
+    guardian.user_id = user.id
+    return CredentialOut(
+        role="parent",
+        full_name=user.full_name,
+        username=username,
+        temporary_password=password,
+        linked_existing=False,
+        note=None,
+    )
+
+
+async def _student_login(db: AsyncSession, student: Student) -> CredentialOut:
+    """The student's own login: username and password follow the name and date-of-birth pattern."""
+    stem = _first_word_stem(student.first_name, "student")[:30]
+    initial = _first_letter(student.last_name)
+    dob = student.date_of_birth.strftime("%d%m%Y")
+    full_name = f"{student.first_name} {student.last_name}".strip()
+    username = await _free_username(db, f"{stem}{initial}{dob}")
+    pattern = f"{stem}{initial}@{dob}"
+    if password_problem(pattern, username=username, full_name=full_name) is None:
+        password, note = pattern, _PATTERN_NOTE
+    else:
+        password, note = _random_password(username, full_name), None
+    user = User(
+        school_id=student.school_id,
+        branch_id=student.branch_id,
+        username=username,
+        email=None,
+        full_name=full_name,
+        password_hash=hash_password(password),
+        role=Role.STUDENT,
+        must_change_password=True,
+    )
+    db.add(user)
+    await db.flush()
+    student.user_id = user.id
+    return CredentialOut(
+        role="student",
+        full_name=full_name,
+        username=username,
+        temporary_password=password,
+        linked_existing=False,
+        note=note,
+    )
+
+
+def _logins_requested(data: StudentCreate) -> bool:
+    """True when the request uses the login fields. Without them no login is created at all."""
+    if "create_student_login" in data.model_fields_set:
+        return True
+    return any(
+        bool({"create_login", "existing_parent_user_id"} & g.model_fields_set)
+        for g in data.guardians
+    )
+
+
+async def _create_logins(
+    db: AsyncSession,
+    student: Student,
+    guardians: list[Guardian],
+    data: StudentCreate,
+    requested: bool,
+) -> list[CredentialOut]:
+    credentials: list[CredentialOut] = []
+    if data.create_student_login:
+        credentials.append(await _student_login(db, student))
+    primary_idx = next((i for i, g in enumerate(data.guardians) if g.is_primary), 0)
+    for i, (guardian, spec) in enumerate(zip(guardians, data.guardians, strict=True)):
+        if spec.existing_parent_user_id is None:
+            wanted = (
+                spec.create_login
+                if spec.create_login is not None
+                else (requested and i == primary_idx)
+            )
+            if not wanted:
+                continue
+        credentials.append(await _guardian_login(db, student, guardian, spec))
+    return credentials
+
+
+async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> StudentCreated:
+    """Create the student, guardians, enrolment and any requested logins in one transaction."""
     branch = await _resolve_branch(db, actor, data.branch_id)
-    fields = data.model_dump(exclude={"branch_id", "guardians", "enrollment"})
-    student = await _insert_student(db, branch, fields, data.guardians, data.enrollment)
-    await db.commit()
-    return await _build_detail(db, student)
+    fields = data.model_dump(
+        exclude={"branch_id", "guardians", "enrollment", "create_student_login"}
+    )
+    requested = _logins_requested(data)
+    try:
+        student, guardians = await _insert_student(
+            db, branch, fields, data.guardians, data.enrollment
+        )
+        credentials = await _create_logins(db, student, guardians, data, requested)
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise IdentityInUse(
+            "Username, email or mobile number already in use", IDENTITY_TAKEN_CODE
+        ) from None
+    except Exception:
+        await db.rollback()
+        raise
+    detail = await _build_detail(db, student)
+    return StudentCreated(**detail.model_dump(), credentials=credentials)
+
+
+async def _parent_children(
+    db: AsyncSession, actor: User, parent_ids: list[int]
+) -> dict[int, list[ParentChild]]:
+    """Children of each parent that the actor may see (the actor's school and branch scope)."""
+    if not parent_ids:
+        return {}
+    enr = aliased(Enrollment)
+    cls = aliased(SchoolClass)
+    year_cond = enr.academic_year_id.in_(select(AcademicYear.id).where(AcademicYear.is_current))
+    stmt = (
+        select(Guardian.user_id, Student.id, Student.first_name, Student.last_name, cls.name)
+        .select_from(Guardian)
+        .join(Student, Student.id == Guardian.student_id)
+        .outerjoin(enr, and_(enr.student_id == Student.id, year_cond))
+        .outerjoin(cls, cls.id == enr.class_id)
+        .where(
+            Guardian.user_id.in_(parent_ids),
+            Student.id.in_(scope_students(select(Student.id), actor)),
+        )
+        .order_by(Student.first_name, Student.last_name, Student.id)
+    )
+    out: dict[int, list[ParentChild]] = {}
+    seen: set[tuple[int, int]] = set()
+    for user_id, student_id, first, last, class_name in await db.execute(stmt):
+        if user_id is None or (user_id, student_id) in seen:
+            continue
+        seen.add((user_id, student_id))
+        out.setdefault(user_id, []).append(
+            ParentChild(
+                student_id=student_id,
+                full_name=f"{first} {last}".strip(),
+                class_name=class_name,
+            )
+        )
+    return out
+
+
+async def search_parents(db: AsyncSession, actor: User, q: str, limit: int) -> list[ParentOut]:
+    """Parent logins of the actor's school matching the text (name, username, email or mobile)."""
+    term = q.strip().lower()
+    if actor.role == Role.SUPER_ADMIN or actor.school_id is None or len(term) < 2:
+        return []
+    conditions = [
+        func.lower(User.full_name).contains(term, autoescape=True),
+        func.lower(User.username).contains(term, autoescape=True),
+        func.lower(User.email).contains(term, autoescape=True),
+    ]
+    digits = re.sub(r"\D", "", term)
+    if len(digits) >= 3:
+        conditions.append(User.phone.contains(digits, autoescape=True))
+    parents = list(
+        await db.scalars(
+            select(User)
+            .where(
+                User.school_id == actor.school_id,
+                User.role == Role.PARENT,
+                or_(*conditions),
+            )
+            .order_by(User.full_name, User.id)
+            .limit(limit)
+        )
+    )
+    children = await _parent_children(db, actor, [p.id for p in parents])
+    return [
+        ParentOut(
+            id=p.id,
+            full_name=p.full_name,
+            username=p.username,
+            phone=p.phone,
+            email=p.email,
+            children=children.get(p.id, []),
+        )
+        for p in parents
+    ]
 
 
 async def update_student(

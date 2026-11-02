@@ -1,10 +1,21 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Params, Router } from '@angular/router';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, filter, of, switchMap, take, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
 import { DuesFilters, Dues, FeesApi } from '../../core/api/fees.api';
 import { AuthService } from '../../core/auth/auth.service';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  FILTER_FIELDS,
+  FILTER_KINDS,
+  createPermissions,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise, parseRupeesToPaise } from '../../core/ui/money';
 import { classSection, value } from './fee-labels';
@@ -29,13 +40,24 @@ export class FeeDues {
   private readonly api = inject(FeesApi);
   private readonly auth = inject(AuthService);
   protected readonly lookups = inject(FeeLookups);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate = createPermissions(this.auth);
 
   protected readonly money = formatPaise;
   protected readonly classSection = classSection;
   protected readonly onValue = value;
   protected readonly canPickBranch = this.auth.user()?.branch_id == null;
 
-  protected readonly filters = signal<Filters>({ yearId: 0, branchId: 0, classId: 0, sectionId: 0, minBalance: '' });
+  protected readonly filters = signal<Filters>({
+    yearId: 0,
+    branchId: 0,
+    classId: 0,
+    sectionId: 0,
+    minBalance: '',
+  });
   private readonly ready = signal(false);
   protected readonly data = signal<Dues | null>(null);
   protected readonly loading = signal(true);
@@ -43,19 +65,24 @@ export class FeeDues {
   protected readonly error = signal<string | null>(null);
 
   protected readonly classOptions = computed(() => this.lookups.classesOf(this.filters().branchId));
-  protected readonly sectionOptions = computed(() => this.lookups.sectionsOf(this.filters().classId));
+  protected readonly sectionOptions = computed(() =>
+    this.lookups.sectionsOf(this.filters().classId),
+  );
   protected readonly minBalanceInvalid = computed(() => {
     const text = this.filters().minBalance.trim();
     return text !== '' && parseRupeesToPaise(text) === null;
   });
 
   constructor() {
-    this.lookups.load();
+    const back = this.returnState.take(this.router.url);
+    if (back) this.filters.set(restoreIds(back, this.filters(), FILTER_FIELDS));
+    if (back) this.lookups.refresh();
+    else this.lookups.load();
     if (this.canPickBranch) this.lookups.loadBranches();
     toObservable(this.lookups.loaded)
       .pipe(filter(Boolean), take(1), takeUntilDestroyed())
       .subscribe(() => {
-        this.filters.update((f) => ({ ...f, yearId: this.lookups.currentYearId() }));
+        if (!back) this.filters.update((f) => ({ ...f, yearId: this.lookups.currentYearId() }));
         this.ready.set(true);
       });
 
@@ -89,10 +116,26 @@ export class FeeDues {
   }
 
   protected onSelect(key: 'yearId' | 'branchId' | 'classId' | 'sectionId', event: Event): void {
+    if (isCreateNewChange(event)) {
+      this.createRecord(FILTER_KINDS[key]);
+      return;
+    }
     const v = Number(value(event));
     if (key === 'branchId') this.patch({ branchId: v, classId: 0, sectionId: 0 });
     else if (key === 'classId') this.patch({ classId: v, sectionId: 0 });
     else this.patch({ [key]: v });
+  }
+
+  /** Open the create screen for a missing record; the filters come back with it selected. */
+  protected createRecord(kind: CreateKind): void {
+    const f = this.filters();
+    const extra: Params =
+      kind === 'section'
+        ? { classId: f.classId }
+        : kind === 'class' && f.branchId
+          ? { branchId: f.branchId }
+          : {};
+    this.returnState.openCreate(kind, f, 'Fees', extra);
   }
 
   protected exportCsv(): void {

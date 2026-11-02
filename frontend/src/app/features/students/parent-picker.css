@@ -1,0 +1,50 @@
+.picker {
+  display: grid;
+  gap: 8px;
+}
+
+.parent-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.parent-card {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.parent-card:hover {
+  background: var(--bg);
+}
+
+.parent-card:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.parent-card.is-selected {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.parent-name {
+  font-weight: 650;
+}
+
+.parent-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}

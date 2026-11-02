@@ -1,9 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Params, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, filter, of, switchMap, tap } from 'rxjs';
 
-import { AcademicYear, AcademicsApi, Branch, SchoolClass, Section } from '../../core/api/academics.api';
+import {
+  AcademicYear,
+  AcademicsApi,
+  Branch,
+  SchoolClass,
+  Section,
+} from '../../core/api/academics.api';
 import { apiErrorMessage } from '../../core/api/api-error';
 import {
   STATUSES,
@@ -14,6 +20,15 @@ import {
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { canWriteStudents, isStudentSelfService } from '../../core/auth/permissions';
+import {
+  CREATE_NEW,
+  CREATE_NEW_LABEL,
+  CreateKind,
+  FILTER_KINDS,
+  canCreateRecord,
+  isCreateNewChange,
+} from '../../core/create/create-new';
+import { ReturnStateService, restoreIds } from '../../core/create/return-state.service';
 import { Icon } from '../../core/ui/icon';
 import { StudentImport } from './student-import';
 import { initials, statusLabel } from './student-labels';
@@ -40,6 +55,16 @@ export class StudentList {
   private readonly api = inject(StudentsApi);
   private readonly academics = inject(AcademicsApi);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly returnState = inject(ReturnStateService);
+  protected readonly createNew = CREATE_NEW;
+  protected readonly createNewLabel = CREATE_NEW_LABEL;
+  protected readonly canCreate: Record<CreateKind, boolean> = {
+    academic_year: canCreateRecord(this.auth, 'academic_year'),
+    class: canCreateRecord(this.auth, 'class'),
+    section: canCreateRecord(this.auth, 'section'),
+    branch: canCreateRecord(this.auth, 'branch'),
+  };
 
   protected readonly statuses = STATUSES;
   protected readonly statusLabel = statusLabel;
@@ -91,13 +116,26 @@ export class StudentList {
   protected readonly to = computed(() => Math.min(this.page() * PAGE_SIZE, this.total()));
 
   constructor() {
+    // Back from a create screen: the filters are restored with the new record selected.
+    const back = this.returnState.take(this.router.url);
+    if (back) {
+      this.filters.set(
+        restoreIds(back, this.filters(), {
+          branch: 'branchId',
+          academic_year: 'yearId',
+          class: 'classId',
+          section: 'sectionId',
+        }),
+      );
+    }
     if (this.selfService) {
       this.ready.set(true);
     } else {
       this.academics.years().subscribe({
         next: (y) => {
           this.years.set(y);
-          this.filters.update((f) => ({ ...f, yearId: y.find((v) => v.is_current)?.id ?? 0 }));
+          if (!back)
+            this.filters.update((f) => ({ ...f, yearId: y.find((v) => v.is_current)?.id ?? 0 }));
           this.ready.set(true);
         },
         error: (err: unknown) => {
@@ -105,10 +143,16 @@ export class StudentList {
           this.ready.set(true);
         },
       });
-      this.academics.classes().subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
-      this.academics.sections().subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
+      this.academics
+        .classes()
+        .subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
+      this.academics
+        .sections()
+        .subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
       if (this.canPickBranch) {
-        this.academics.branches().subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
+        this.academics
+          .branches()
+          .subscribe({ next: (b) => this.branches.set(b), error: () => undefined });
       }
     }
 
@@ -154,10 +198,26 @@ export class StudentList {
   }
 
   protected onSelect(key: 'branchId' | 'classId' | 'sectionId' | 'yearId', e: Event): void {
+    if (isCreateNewChange(e)) {
+      this.createRecord(FILTER_KINDS[key]);
+      return;
+    }
     const value = Number((e.target as HTMLSelectElement).value);
     if (key === 'branchId') this.patch({ branchId: value, classId: 0, sectionId: 0 });
     else if (key === 'classId') this.patch({ classId: value, sectionId: 0 });
     else this.patch({ [key]: value });
+  }
+
+  /** Open the create screen for a missing branch, year, class or section; the filters come back with it selected. */
+  private createRecord(kind: CreateKind): void {
+    const f = this.filters();
+    const extra: Params =
+      kind === 'section'
+        ? { classId: f.classId }
+        : kind === 'class' && f.branchId
+          ? { branchId: f.branchId }
+          : {};
+    this.returnState.openCreate(kind, f, 'Student records', extra);
   }
 
   protected onStatus(e: Event): void {

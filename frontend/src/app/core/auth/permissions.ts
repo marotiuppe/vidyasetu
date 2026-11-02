@@ -25,3 +25,8 @@ export const FEE_PAY_ROLES: Role[] = [...FEE_MANAGER_ROLES, 'clerk'];
 export function isStudentSelfService(auth: AuthService): boolean {
   return auth.hasRole('parent', 'student');
 }
+
+/** Roles that may open School setup (classes and sections; academic years need school_owner). */
+export const SETUP_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
+/** Roles that may create a branch (the Branches screen). */
+export const BRANCH_CREATOR_ROLES: Role[] = ['super_admin', 'school_owner'];

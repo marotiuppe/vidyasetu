@@ -1,0 +1,50 @@
+<section class="card print-area" aria-labelledby="login-details-title">
+  <h2 class="card-title" id="login-details-title">Login details</h2>
+  <p class="once">
+    Shown only once. Give these to the family; they must choose a new password at first sign-in.
+  </p>
+
+  <ul class="creds">
+    @for (c of credentials(); track $index) {
+      <li class="cred">
+        <p class="cred-head">
+          <span class="badge">{{ roleLabel(c.role) }}</span>
+          <strong>{{ c.full_name }}</strong>
+        </p>
+        <dl class="cred-facts">
+          <div>
+            <dt>Username</dt>
+            <dd>
+              <code>{{ c.username }}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ c.linked_existing ? 'Password' : 'Temporary password' }}</dt>
+            <dd>
+              @if (c.linked_existing) {
+                Uses the existing parent login
+              } @else if (c.temporary_password) {
+                <code>{{ c.temporary_password }}</code>
+              } @else {
+                Not available
+              }
+            </dd>
+          </div>
+        </dl>
+        @if (c.note) {
+          <p class="hint">{{ c.note }}</p>
+        }
+        <button type="button" class="btn btn-ghost btn-sm no-print" (click)="copy(c)">
+          Copy details for {{ c.full_name }}
+        </button>
+      </li>
+    }
+  </ul>
+
+  <p class="hint" role="status" aria-live="polite">{{ status() }}</p>
+
+  <div class="form-actions no-print">
+    <button type="button" class="btn btn-ghost" (click)="print()">Print</button>
+    <button type="button" class="btn btn-primary" (click)="done.emit()">Done</button>
+  </div>
+</section>
