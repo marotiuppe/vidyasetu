@@ -9,10 +9,13 @@ export interface NavItem {
   roles?: Role[];
   /** Module not built yet: shown greyed out, not clickable. */
   soon?: boolean;
+  /** Show the unread-notices count next to the label. */
+  unreadBadge?: boolean;
 }
 
 const STAFF: Role[] = ['school_owner', 'management', 'headmaster', 'teacher', 'accountant', 'clerk'];
 const MANAGERS: Role[] = ['school_owner', 'management', 'headmaster'];
+const SCHOOL_USERS: Role[] = [...STAFF, 'parent', 'student'];
 const USER_ADMINS: Role[] = ['super_admin', ...MANAGERS];
 
 /** Sidebar navigation. When a module ships, remove its `soon` flag. */
@@ -21,7 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Student records', path: '/students', icon: 'users' },
   { label: 'Attendance', path: '/attendance', icon: 'calendar', roles: [...STAFF, 'parent', 'student'] },
   { label: 'Academic progress', path: '/progress', icon: 'chart', roles: STAFF, soon: true },
-  { label: 'Noticeboard', path: '/notices', icon: 'megaphone', soon: true },
+  { label: 'Noticeboard', path: '/notices', icon: 'megaphone', roles: SCHOOL_USERS, unreadBadge: true },
   { label: 'Schools', path: '/schools', icon: 'building', roles: ['super_admin'] },
   { label: 'Branches', path: '/branches', icon: 'building', roles: ['super_admin', 'school_owner'] },
   { label: 'Users', path: '/users', icon: 'user', roles: USER_ADMINS },

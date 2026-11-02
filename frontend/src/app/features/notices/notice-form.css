@@ -1,0 +1,19 @@
+.wide {
+  grid-column: 1 / -1;
+}
+
+.body {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.fixed {
+  align-self: flex-start;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 767px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

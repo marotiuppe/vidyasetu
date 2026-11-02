@@ -1,12 +1,15 @@
 """Central tenant isolation. All tenant-owned queries must be filtered through here."""
 
+from datetime import date
 from typing import Any
 
-from sqlalchemy import Select, or_, select
+from sqlalchemy import Select, and_, or_, select
 
+from app.modules.academics.models import AcademicYear
 from app.modules.attendance.models import Holiday
 from app.modules.branches.models import Branch
-from app.modules.students.models import Guardian, Student
+from app.modules.notices.models import Notice, TargetType
+from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import Role, User
 
 
@@ -84,3 +87,68 @@ def scope_holidays(stmt: Select[tuple[Holiday]], user: User) -> Select[tuple[Hol
     if user.branch_id is None:
         return stmt.where(Holiday.branch_id.is_(None))
     return stmt.where(or_(Holiday.branch_id.is_(None), Holiday.branch_id == user.branch_id))
+
+
+def notice_manager_clause(user: User) -> Any:
+    """SQL condition: `user` administers the notice (owner, or branch management/headmaster)."""
+    if user.role == Role.SCHOOL_OWNER:
+        return Notice.school_id == user.school_id
+    if user.role in (Role.MANAGEMENT, Role.HEADMASTER) and user.branch_id is not None:
+        return Notice.branch_id == user.branch_id
+    return Notice.id.is_(None)  # never true
+
+
+def scope_notices(
+    stmt: Select[Any], user: User, today: date, *, only_active: bool = False
+) -> Select[Any]:
+    """Restrict a notice query to what `user` may see.
+
+    Expired notices are hidden unless the user wrote them or administers them
+    (`only_active=True` hides them for everyone, e.g. for unread counts).
+    """
+    if user.role == Role.SUPER_ADMIN or user.school_id is None:
+        return stmt.where(False)
+    stmt = stmt.where(Notice.school_id == user.school_id)
+    live = or_(Notice.expires_on.is_(None), Notice.expires_on >= today)
+    if only_active:
+        stmt = stmt.where(live)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    school_wide = Notice.target_type == TargetType.SCHOOL
+    if user.role in (Role.PARENT, Role.STUDENT):
+        active = Student.status == StudentStatus.ACTIVE
+        children = scope_students(select(Student.id), user).where(active)
+        child_branches = scope_students(select(Student.branch_id), user).where(active)
+        placements = (
+            select(Enrollment.class_id, Enrollment.section_id)
+            .join(AcademicYear, AcademicYear.id == Enrollment.academic_year_id)
+            .where(
+                AcademicYear.school_id == user.school_id,
+                AcademicYear.is_current.is_(True),
+                Enrollment.student_id.in_(children),
+            )
+            .subquery()
+        )
+        visible = or_(
+            school_wide,
+            and_(Notice.target_type == TargetType.BRANCH, Notice.branch_id.in_(child_branches)),
+            and_(
+                Notice.target_type == TargetType.CLASS,
+                Notice.class_id.in_(select(placements.c.class_id)),
+            ),
+            and_(
+                Notice.target_type == TargetType.SECTION,
+                Notice.section_id.in_(
+                    select(placements.c.section_id).where(placements.c.section_id.is_not(None))
+                ),
+            ),
+        )
+        return stmt.where(visible, live)  # parents and students never see expired notices
+    if user.branch_id is None:
+        visible = school_wide
+    else:
+        visible = or_(school_wide, Notice.branch_id == user.branch_id)
+    stmt = stmt.where(visible)
+    if not only_active:
+        stmt = stmt.where(or_(live, Notice.created_by == user.id, notice_manager_clause(user)))
+    return stmt

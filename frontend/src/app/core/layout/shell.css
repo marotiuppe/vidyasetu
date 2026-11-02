@@ -112,6 +112,37 @@
   border-radius: 5px;
 }
 
+.count,
+.bell-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  color: #fff;
+  background: var(--danger);
+  border-radius: 10px;
+}
+
+.nav-item.active .count {
+  background: var(--forest);
+}
+
+.bell {
+  position: relative;
+  text-decoration: none;
+}
+
+.bell-count {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  min-width: 16px;
+  padding: 0 4px;
+  font-size: 0.6rem;
+}
+
 .sidebar-foot {
   margin-top: auto;
 }
@@ -337,6 +368,11 @@
 
 /* ---------- Tablet / phone: sidebar becomes a drawer ---------- */
 @media (max-width: 1023px) {
+  .bell {
+    width: 44px;
+    height: 44px;
+  }
+
   .app {
     display: block;
   }

@@ -38,3 +38,33 @@
     </article>
   }
 </section>
+
+@if (showNotices) {
+  <section class="card latest" aria-labelledby="latest-notices-title">
+    <div class="card-head">
+      <h2 class="card-title" id="latest-notices-title">Latest notices</h2>
+      <a class="btn btn-ghost btn-sm" routerLink="/notices">View all</a>
+    </div>
+    @if (latest(); as list) {
+      @if (list.length) {
+        <ul class="rows">
+          @for (n of list; track n.id) {
+            <li class="row">
+              <div class="row-main">
+                <strong>{{ n.title }}</strong>
+                <span class="row-sub">{{ n.target_label }} · {{ relativeDate(n.created_at) }}</span>
+              </div>
+              @if (!n.is_read) {
+                <span class="badge badge-success">New</span>
+              }
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="empty">No notices yet.</p>
+      }
+    } @else {
+      <p class="empty" role="status">Loading notices…</p>
+    }
+  </section>
+}

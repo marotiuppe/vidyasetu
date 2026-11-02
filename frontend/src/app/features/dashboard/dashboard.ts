@@ -1,9 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
+
 import { AcademicsApi } from '../../core/api/academics.api';
+import { Notice, NoticesApi } from '../../core/api/notices.api';
 import { SchoolService } from '../../core/api/school.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Icon, IconName } from '../../core/ui/icon';
+import { relativeDate } from '../notices/notice-labels';
 
 interface Stat {
   label: string;
@@ -15,7 +19,7 @@ interface Stat {
 
 @Component({
   selector: 'sms-dashboard',
-  imports: [Icon],
+  imports: [Icon, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
@@ -31,6 +35,11 @@ export class Dashboard {
     month: 'long',
     year: 'numeric',
   });
+
+  private readonly noticesApi = inject(NoticesApi);
+  protected readonly showNotices = !this.auth.hasRole('super_admin');
+  protected readonly latest = signal<Notice[] | null>(null);
+  protected readonly relativeDate = relativeDate;
 
   private readonly branches = signal<number | null>(null);
   private readonly classes = signal<number | null>(null);

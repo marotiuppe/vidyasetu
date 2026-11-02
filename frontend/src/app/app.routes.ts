@@ -55,6 +55,23 @@ export const routes: Routes = [
         loadComponent: () => import('./features/attendance/attendance').then((m) => m.Attendance),
       },
       {
+        path: 'notices',
+        data: { title: 'Noticeboard' },
+        canActivate: [
+          roleGuard(
+            'school_owner',
+            'management',
+            'headmaster',
+            'teacher',
+            'accountant',
+            'clerk',
+            'parent',
+            'student',
+          ),
+        ],
+        loadComponent: () => import('./features/notices/notices').then((m) => m.Notices),
+      },
+      {
         path: 'setup',
         data: { title: 'School setup' },
         canActivate: [roleGuard('school_owner', 'management', 'headmaster')],

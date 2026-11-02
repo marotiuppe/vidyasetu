@@ -1,14 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
+import { NoticesService } from '../api/notices.service';
 import { SchoolService } from '../api/school.service';
 import { AuthService } from '../auth/auth.service';
 import { Icon } from '../ui/icon';
 import { NAV_ITEMS, ROLE_LABELS } from './nav';
 
 const PRODUCT_NAME = 'Vidyasetu';
+const NOTICE_POLL_MS = 120_000;
 
 @Component({
   selector: 'sms-shell',
@@ -25,10 +27,13 @@ export class Shell {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly school = inject(SchoolService);
+  private readonly notices = inject(NoticesService);
 
   protected readonly menuOpen = signal(false);
   protected readonly userMenuOpen = signal(false);
   protected readonly year = this.school.year;
+  protected readonly unread = this.notices.unread;
+  protected readonly noticesEnabled = computed(() => this.auth.user()?.school_id != null && !this.auth.hasRole('super_admin'));
 
   protected readonly schoolName = computed(() => this.school.name() ?? PRODUCT_NAME);
   protected readonly roleLabel = computed(() => {
@@ -62,6 +67,9 @@ export class Shell {
 
   constructor() {
     this.school.load();
+    this.notices.refresh();
+    const timer = setInterval(() => this.notices.refresh(), NOTICE_POLL_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => this.closeOverlays());

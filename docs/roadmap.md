@@ -10,7 +10,7 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 | 1 | Admin console | Generic branding (school name from data), screens to create schools (platform admin), branches (owner) and users (managers), user edit / deactivate / password reset, change password | Done | 2026-11-02 11:11 | 2026-11-02 11:24 |
 | 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | Done | 2026-11-02 11:26 | 2026-11-02 11:38 |
 | 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view, holidays | Done | 2026-11-02 11:39 | 2026-11-02 11:53 |
-| 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Not started | | |
+| 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Done | 2026-11-02 11:54 | 2026-11-02 12:01 |
 | 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Not started | | |
 | 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | Not started | | |
 | 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | Not started | | |

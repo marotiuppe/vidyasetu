@@ -1,0 +1,151 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Noticeboard</h1>
+    <p class="page-subtitle">
+      @if (unread() > 0) {
+        {{ unread() }} unread {{ unread() === 1 ? 'notice' : 'notices' }}
+      } @else {
+        You are all caught up.
+      }
+    </p>
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn btn-ghost" [disabled]="busy() || unread() === 0" (click)="markAll()">
+      <sms-icon name="check" [size]="16" /> Mark all as read
+    </button>
+    @if (canPost) {
+      <button type="button" class="btn btn-primary" [disabled]="formOpen()" (click)="openNew()">
+        <sms-icon name="plus" [size]="16" /> New notice
+      </button>
+    }
+  </div>
+</div>
+
+<div class="stack">
+  @if (formOpen()) {
+    <sms-notice-form [notice]="editing()" (saved)="onSaved($event)" (cancelled)="closeForm()" />
+  }
+
+  <section class="card" aria-label="Notices">
+    <div class="toolbar">
+      <label class="field">
+        Search
+        <input
+          class="input"
+          type="search"
+          placeholder="Title or text"
+          autocomplete="off"
+          [value]="q()"
+          (input)="setQuery($any($event.target).value)"
+        />
+      </label>
+      <label class="field">
+        Category
+        <select class="input" [value]="category()" (change)="setCategory($any($event.target).value)">
+          <option value="">All categories</option>
+          @for (c of categories; track c.value) {
+            <option [value]="c.value">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="check">
+        <input type="checkbox" [checked]="unreadOnly()" (change)="setUnreadOnly($any($event.target).checked)" />
+        Unread only
+      </label>
+    </div>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading notices…</p>
+    } @else if (!items().length) {
+      <p class="empty">
+        {{ q() || category() || unreadOnly() ? 'No notices match these filters.' : 'There are no notices yet.' }}
+      </p>
+    } @else {
+      <ul class="list">
+        @for (n of items(); track n.id) {
+          <li class="item" [class.unread]="!n.is_read">
+            <article [attr.aria-labelledby]="'notice-' + n.id">
+              <div class="meta">
+                @if (!n.is_read) {
+                  <span class="dot" role="img" aria-label="Unread"></span>
+                }
+                @if (n.is_pinned) {
+                  <span class="badge pin"><sms-icon name="pin" [size]="12" /> Pinned</span>
+                }
+                <span class="badge" [class]="'badge cat-' + n.category">{{ categoryLabels[n.category] }}</span>
+                <span class="badge badge-muted">{{ n.target_label }}</span>
+                @if (n.is_expired) {
+                  <span class="badge badge-muted">Expired</span>
+                }
+              </div>
+              <h2 class="title" [id]="'notice-' + n.id">{{ n.title }}</h2>
+              <p class="byline">
+                {{ n.author.full_name }} · {{ roleLabel(n.author.role) }} · {{ relativeDate(n.created_at) }}
+                @if (n.expires_on) {
+                  · Until {{ shortDate(n.expires_on) }}
+                }
+              </p>
+              <p class="body" [class.clamp]="isLong(n) && !isOpen(n)">{{ n.body }}</p>
+              <div class="foot">
+                @if (isLong(n)) {
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [attr.aria-expanded]="isOpen(n)"
+                    (click)="toggle(n)"
+                  >
+                    {{ isOpen(n) ? 'Show less' : 'Read more' }}
+                  </button>
+                } @else if (!n.is_read) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="markRead(n)">Mark as read</button>
+                }
+                @if (n.read_count !== null) {
+                  <span class="hint">Read by {{ n.read_count }}</span>
+                }
+                @if (n.can_edit) {
+                  <span class="row-actions end">
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      [attr.aria-label]="'Edit notice ' + n.title"
+                      (click)="openEdit(n)"
+                    >
+                      <sms-icon name="edit" [size]="14" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-ghost btn-sm"
+                      [attr.aria-label]="'Delete notice ' + n.title"
+                      (click)="remove(n)"
+                    >
+                      <sms-icon name="trash" [size]="14" /> Delete
+                    </button>
+                  </span>
+                }
+              </div>
+            </article>
+          </li>
+        }
+      </ul>
+
+      <nav class="pager" aria-label="Pagination">
+        <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+        <span class="row-actions">
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
+            Previous
+          </button>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
+            Next
+          </button>
+        </span>
+      </nav>
+    }
+  </section>
+</div>

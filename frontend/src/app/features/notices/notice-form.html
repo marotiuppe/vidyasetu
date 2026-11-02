@@ -1,0 +1,112 @@
+<section class="card" aria-labelledby="notice-form-title">
+  <h2 class="card-title" id="notice-form-title">{{ notice() ? 'Edit notice' : 'New notice' }}</h2>
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-grid">
+      <label class="field wide">
+        Title
+        <input class="input" formControlName="title" [maxlength]="titleMax" autocomplete="off" />
+        <span class="hint">{{ titleLength() }} / {{ titleMax }}</span>
+        @if (form.controls.title.touched && form.controls.title.invalid) {
+          <span class="field-error">Enter a title (up to {{ titleMax }} characters).</span>
+        }
+      </label>
+
+      <label class="field wide">
+        Message
+        <textarea class="input body" rows="6" formControlName="body" [maxlength]="bodyMax"></textarea>
+        <span class="hint">{{ bodyLength() }} / {{ bodyMax }}</span>
+        @if (form.controls.body.touched && form.controls.body.invalid) {
+          <span class="field-error">Enter the message (up to {{ bodyMax }} characters).</span>
+        }
+      </label>
+
+      <label class="field">
+        Category
+        <select class="input" formControlName="category">
+          @for (c of categories; track c.value) {
+            <option [value]="c.value">{{ c.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        Expires on (optional)
+        <input class="input" type="date" formControlName="expires_on" [min]="today" />
+        @if (form.controls.expires_on.invalid) {
+          <span class="field-error">Choose today or a later date.</span>
+        }
+      </label>
+
+      @if (notice(); as n) {
+        <div class="field">
+          Sent to
+          <span class="badge badge-muted fixed">{{ n.target_label }}</span>
+          <span class="hint">The audience cannot be changed after posting.</span>
+        </div>
+      } @else {
+        <label class="field">
+          Send to
+          <select class="input" formControlName="level" (change)="onLevelChange()">
+            @for (l of levels; track l.value) {
+              <option [value]="l.value">{{ l.label }}</option>
+            }
+          </select>
+        </label>
+        @if (isOwner && level() !== 'school') {
+          <label class="field">
+            Branch
+            <select class="input" formControlName="branchId" (change)="onBranchChange()">
+              <option [ngValue]="0">Choose a branch</option>
+              @for (b of branches(); track b.id) {
+                <option [ngValue]="b.id">{{ b.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (level() === 'class' || level() === 'section') {
+          <label class="field">
+            Class
+            <select class="input" formControlName="classId" (change)="onClassChange()">
+              <option [ngValue]="0">Choose a class</option>
+              @for (c of classOptions(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (level() === 'section') {
+          <label class="field">
+            Section
+            <select class="input" formControlName="sectionId">
+              <option [ngValue]="0">Choose a section</option>
+              @for (s of sectionOptions(); track s.id) {
+                <option [ngValue]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (submitted() && targetError(); as message) {
+          <p class="field-error wide" role="alert">{{ message }}</p>
+        }
+      }
+
+      @if (canPin) {
+        <label class="check wide">
+          <input type="checkbox" formControlName="is_pinned" />
+          Pin to the top of the noticeboard
+        </label>
+      }
+    </div>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="busy()">
+        {{ busy() ? 'Saving…' : notice() ? 'Save changes' : 'Post notice' }}
+      </button>
+      <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="cancelled.emit()">Cancel</button>
+    </div>
+  </form>
+</section>
