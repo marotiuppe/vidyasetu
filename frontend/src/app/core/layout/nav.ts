@@ -30,6 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Schools', path: '/schools', icon: 'building', roles: ['super_admin'] },
   { label: 'Branches', path: '/branches', icon: 'building', roles: ['super_admin', 'school_owner'] },
   { label: 'Users', path: '/users', icon: 'user', roles: USER_ADMINS },
+  { label: 'School profile', path: '/school', icon: 'building', roles: ['school_owner'] },
   { label: 'School setup', path: '/setup', icon: 'settings', roles: MANAGERS },
 ];
 

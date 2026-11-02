@@ -1,12 +1,19 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, roleGuard } from './core/auth/auth.guard';
+import { authGuard, publicOnlyMatch, roleGuard } from './core/auth/auth.guard';
 import { STUDENT_WRITER_ROLES } from './core/auth/permissions';
 
 export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
+  },
+  {
+    // Public landing page for visitors; signed-in users fall through to the shell (dashboard).
+    path: '',
+    pathMatch: 'full',
+    canMatch: [publicOnlyMatch],
+    loadComponent: () => import('./features/landing/landing').then((m) => m.Landing),
   },
   {
     // Every signed-in screen renders inside the shell (sidebar + top bar).
@@ -84,6 +91,13 @@ export const routes: Routes = [
         data: { title: 'School setup' },
         canActivate: [roleGuard('school_owner', 'management', 'headmaster')],
         loadComponent: () => import('./features/setup/setup').then((m) => m.Setup),
+      },
+      {
+        path: 'school',
+        data: { title: 'School profile' },
+        canActivate: [roleGuard('school_owner')],
+        loadComponent: () =>
+          import('./features/school-profile/school-profile').then((m) => m.SchoolProfile),
       },
       {
         path: 'schools',

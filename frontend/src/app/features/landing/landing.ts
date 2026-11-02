@@ -1,0 +1,40 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, viewChild } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
+
+import { LandingCta } from './landing-cta';
+import { LandingFeatures } from './landing-features';
+import { LandingHero } from './landing-hero';
+import { LandingSteps } from './landing-steps';
+import { scrollToId } from './scroll';
+
+const PAGE_TITLE = 'Vidyasetu: School Management';
+
+/** Public landing page shown at "/" to visitors who are not signed in. */
+@Component({
+  selector: 'sms-landing',
+  imports: [RouterLink, LandingHero, LandingFeatures, LandingSteps, LandingCta],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './landing.html',
+  styleUrl: './landing.css',
+})
+export class Landing {
+  protected readonly year = new Date().getFullYear();
+  private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
+
+  constructor() {
+    const title = inject(Title);
+    const previous = title.getTitle();
+    title.setTitle(PAGE_TITLE);
+    inject(DestroyRef).onDestroy(() => title.setTitle(previous));
+  }
+
+  protected goTo(event: Event, id: string): void {
+    scrollToId(event, id);
+  }
+
+  protected skip(event: Event): void {
+    event.preventDefault();
+    this.main().nativeElement.focus();
+  }
+}

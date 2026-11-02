@@ -1,0 +1,70 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">School profile</h1>
+    <p class="page-subtitle">Your school name, board and logo. The logo appears in the sidebar for everyone at your school.</p>
+  </div>
+</div>
+
+@if (loading()) {
+  <p class="empty" role="status">Loading school profile…</p>
+} @else if (loadError(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+} @else {
+  <div class="grid">
+    <section class="card" aria-labelledby="details-title">
+      <h2 class="card-title" id="details-title">Details</h2>
+      <form class="form" [formGroup]="form" (ngSubmit)="saveDetails()" novalidate>
+        <label class="field">
+          School name
+          <input class="input" formControlName="name" autocomplete="off" />
+          @if (form.controls.name.touched && form.controls.name.invalid) {
+            <span class="field-error">Name is required.</span>
+          }
+        </label>
+        <label class="field">
+          Board
+          <input class="input" formControlName="board" autocomplete="off" />
+          @if (form.controls.board.touched && form.controls.board.invalid) {
+            <span class="field-error">Board is required.</span>
+          }
+        </label>
+        @if (detailsError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        @if (detailsNotice(); as message) {
+          <p class="notice" role="status">{{ message }}</p>
+        }
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" [disabled]="saving()">
+            {{ saving() ? 'Saving…' : 'Save details' }}
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="logo-title">
+      <h2 class="card-title" id="logo-title">Logo</h2>
+      <div class="form">
+        <sms-logo-picker
+          #picker
+          [currentUrl]="school()?.logo_url ?? null"
+          [schoolName]="school()?.name ?? ''"
+          [disabled]="logoBusy()"
+          (picked)="logoFile.set($event)"
+          (removed)="removeLogo()"
+        />
+        @if (logoError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        @if (logoNotice(); as message) {
+          <p class="notice" role="status">{{ message }}</p>
+        }
+        <div class="actions">
+          <button type="button" class="btn btn-primary" [disabled]="logoBusy() || !logoFile()" (click)="uploadLogo()">
+            {{ logoBusy() ? 'Working…' : 'Upload logo' }}
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+}

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -35,6 +35,10 @@ export class Shell {
   protected readonly unread = this.notices.unread;
   protected readonly noticesEnabled = computed(() => this.auth.user()?.school_id != null && !this.auth.hasRole('super_admin'));
 
+  protected readonly logoUrl = this.school.logoUrl;
+  protected readonly logoFailed = signal(false);
+  protected readonly showSchoolLogo = computed(() => this.logoUrl() !== null && !this.logoFailed());
+
   protected readonly schoolName = computed(() => this.school.name() ?? PRODUCT_NAME);
   protected readonly roleLabel = computed(() => {
     const user = this.auth.user();
@@ -66,6 +70,10 @@ export class Shell {
   );
 
   constructor() {
+    effect(() => {
+      this.logoUrl();
+      this.logoFailed.set(false);
+    });
     this.school.load();
     this.notices.refresh();
     const timer = setInterval(() => this.notices.refresh(), NOTICE_POLL_MS);

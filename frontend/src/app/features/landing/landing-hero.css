@@ -1,0 +1,270 @@
+:host {
+  display: block;
+}
+
+.hero {
+  padding: 40px 0 56px;
+  overflow: clip;
+}
+
+.grid {
+  display: grid;
+  gap: 40px;
+  align-items: center;
+}
+
+.kicker {
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.4px;
+  color: var(--green);
+}
+
+h1 {
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  color: var(--forest);
+}
+
+.lead {
+  max-width: 34rem;
+  margin-top: 16px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.visual {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.b1 {
+  inset: 2% 10% 18% -2%;
+  background: radial-gradient(circle at 40% 40%, var(--lime), transparent 70%);
+}
+
+.b2 {
+  inset: 30% -4% -2% 24%;
+  background: radial-gradient(circle at 50% 50%, #8fc4ae, transparent 68%);
+}
+
+.b3 {
+  inset: -2% 4% 56% 40%;
+  background: radial-gradient(circle at 50% 50%, var(--surface-tint), transparent 70%);
+}
+
+.mark {
+  position: absolute;
+  inset: 14%;
+  display: grid;
+  place-items: center;
+  padding: 12%;
+  background: var(--forest);
+  border-radius: 24%;
+  box-shadow: 0 24px 60px #173c3533;
+}
+
+svg {
+  width: 100%;
+  height: auto;
+}
+
+.stroke {
+  fill: none;
+  stroke: var(--lime);
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.page {
+  fill: var(--lime);
+}
+
+.float {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+
+.f1 {
+  top: 4%;
+  left: 0;
+}
+
+.f2 {
+  top: 46%;
+  right: 0;
+}
+
+.f3 {
+  bottom: 4%;
+  left: 6%;
+}
+
+@media (min-width: 900px) {
+  .hero {
+    padding: 72px 0 88px;
+  }
+
+  .grid {
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise {
+    animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+
+  h1.rise {
+    animation-delay: 0.1s;
+  }
+
+  .lead.rise {
+    animation-delay: 0.25s;
+  }
+
+  .actions.rise {
+    animation-delay: 0.4s;
+  }
+
+  .draw {
+    animation: draw 1s ease-in-out backwards;
+  }
+
+  .arch {
+    animation-duration: 1.2s;
+    animation-delay: 0.2s;
+  }
+
+  .h1 {
+    animation-delay: 1s;
+    animation-duration: 0.6s;
+  }
+
+  .h2 {
+    animation-delay: 1.15s;
+    animation-duration: 0.6s;
+  }
+
+  .h3 {
+    animation-delay: 1.3s;
+    animation-duration: 0.6s;
+  }
+
+  .deck {
+    animation-delay: 1.2s;
+    animation-duration: 0.9s;
+  }
+
+  .page {
+    animation: page 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  }
+
+  .p1 {
+    animation-delay: 1.9s;
+  }
+
+  .p2 {
+    animation-delay: 2.1s;
+  }
+
+  .float {
+    animation:
+      rise 0.8s ease backwards,
+      bob 5s ease-in-out infinite;
+  }
+
+  .f1 {
+    animation-delay: 2.2s, 3s;
+  }
+
+  .f2 {
+    animation-delay: 2.4s, 4s;
+  }
+
+  .f3 {
+    animation-delay: 2.6s, 5s;
+  }
+
+  .blob {
+    animation: drift 16s ease-in-out infinite alternate;
+  }
+
+  .b2 {
+    animation-duration: 20s;
+    animation-delay: -6s;
+  }
+
+  .b3 {
+    animation-duration: 18s;
+    animation-delay: -3s;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+  }
+
+  @keyframes draw {
+    from {
+      opacity: 0;
+      stroke-dashoffset: 1;
+    }
+
+    10% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes page {
+    from {
+      opacity: 0;
+      transform: translateY(26px);
+    }
+  }
+
+  @keyframes bob {
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes drift {
+    to {
+      transform: translate3d(18px, -14px, 0) scale(1.06);
+    }
+  }
+}

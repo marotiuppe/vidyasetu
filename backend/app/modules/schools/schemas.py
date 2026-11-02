@@ -1,4 +1,9 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
+
+_Name = Annotated[str, StringConstraints(min_length=1, max_length=200)]
+_Board = Annotated[str, StringConstraints(max_length=50)]
 
 
 class SchoolOut(BaseModel):
@@ -9,6 +14,7 @@ class SchoolOut(BaseModel):
     code: str
     board: str
     is_active: bool
+    logo_url: str | None = None
 
 
 class SchoolCreate(BaseModel):
@@ -20,7 +26,26 @@ class SchoolCreate(BaseModel):
     owner_password: str = Field(min_length=8, max_length=128)
 
 
-class SchoolUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, max_length=200)
-    board: str | None = Field(default=None, max_length=50)
+def _not_null(v: object) -> object:
+    if v is None:
+        raise ValueError("must not be null")
+    return v
+
+
+class SchoolOwnerUpdate(BaseModel):
+    """What a school owner may change on their own school (never is_active)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: _Name | None = None
+    board: _Board | None = None
+
+    _no_null = field_validator("name", "board")(_not_null)
+
+
+class SchoolUpdate(SchoolOwnerUpdate):
+    model_config = ConfigDict(extra="ignore")
+
     is_active: bool | None = None
+
+    _no_null_active = field_validator("is_active")(_not_null)

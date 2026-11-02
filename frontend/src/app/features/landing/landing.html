@@ -1,0 +1,33 @@
+<a class="skip" href="#main" (click)="skip($event)">Skip to content</a>
+
+<header class="top">
+  <div class="lp-wrap top-row">
+    <a class="brand" routerLink="/" aria-label="Vidyasetu home">
+      <img src="brand/logo-mark.svg" alt="" width="36" height="36" />
+      <span>Vidyasetu</span>
+    </a>
+    <nav class="links" aria-label="Page sections">
+      <a href="#features" (click)="goTo($event, 'features')">Features</a>
+      <a href="#how" (click)="goTo($event, 'how')">How it works</a>
+    </nav>
+    <a class="btn btn-primary" routerLink="/login">Sign in</a>
+  </div>
+</header>
+
+<main id="main" #main tabindex="-1">
+  <sms-landing-hero />
+  <sms-landing-features />
+  <sms-landing-steps />
+  <sms-landing-cta />
+</main>
+
+<footer class="foot">
+  <div class="lp-wrap foot-in">
+    <span class="foot-brand">
+      <img src="brand/logo-mark.svg" alt="" width="28" height="28" />
+      <strong>Vidyasetu</strong>
+    </span>
+    <p>A bridge between schools and the families they serve.</p>
+    <small>&copy; {{ year }} Vidyasetu</small>
+  </div>
+</footer>

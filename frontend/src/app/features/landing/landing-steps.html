@@ -1,0 +1,17 @@
+<section id="how" class="section" aria-labelledby="how-title">
+  <div class="lp-wrap">
+    <h2 id="how-title" smsReveal>How it works</h2>
+    <div class="track">
+      <span class="line" aria-hidden="true" smsReveal></span>
+      <ol class="steps">
+        @for (s of steps; track s.title; let i = $index) {
+          <li class="step" [smsReveal]="200 + i * 150">
+            <span class="num" aria-hidden="true">{{ i + 1 }}</span>
+            <h3>{{ s.title }}</h3>
+            <p>{{ s.text }}</p>
+          </li>
+        }
+      </ol>
+    </div>
+  </div>
+</section>

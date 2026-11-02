@@ -1,0 +1,46 @@
+<section class="hero" aria-labelledby="hero-title">
+  <div class="lp-wrap grid">
+    <div class="copy">
+      <p class="kicker rise">School management for schools and their families</p>
+      <h1 id="hero-title" class="rise">Run your whole school from one calm place.</h1>
+      <p class="lead rise">
+        Admissions, attendance, fees and notices in one workspace, built for school staff and for the parents and
+        students they work with.
+      </p>
+      <div class="actions rise">
+        <a class="btn btn-primary btn-lg" routerLink="/login">Sign in</a>
+        <a class="btn btn-ghost btn-lg" href="#features" (click)="goTo($event, 'features')">See features</a>
+      </div>
+    </div>
+
+    <div class="visual" aria-hidden="true">
+      <span class="blob b1"></span>
+      <span class="blob b2"></span>
+      <span class="blob b3"></span>
+
+      <div class="mark">
+        <svg viewBox="80 110 352 340" focusable="false">
+          <g transform="translate(0 -22)">
+            <path class="stroke draw arch" pathLength="1" d="M132 292a124 124 0 0 1 248 0" stroke-width="28" />
+            <path class="stroke draw hang h1" pathLength="1" d="M194 196V292" stroke-width="12" />
+            <path class="stroke draw hang h2" pathLength="1" d="M256 180V292" stroke-width="12" />
+            <path class="stroke draw hang h3" pathLength="1" d="M318 196V292" stroke-width="12" />
+            <path class="stroke draw deck" pathLength="1" d="M92 292H420" stroke-width="28" />
+            <path class="page p1" d="M120 326l130 22v78l-130-22z" />
+            <path class="page p2" d="M392 326l-130 22v78l130-22z" />
+          </g>
+        </svg>
+      </div>
+
+      <div class="float f1">
+        <span class="chip"><sms-icon name="check" [size]="16" /></span>Attendance saved
+      </div>
+      <div class="float f2">
+        <span class="chip tone-peach"><sms-icon name="receipt" [size]="16" /></span>Receipt ready
+      </div>
+      <div class="float f3">
+        <span class="chip tone-lavender"><sms-icon name="megaphone" [size]="16" /></span>New notice
+      </div>
+    </div>
+  </div>
+</section>

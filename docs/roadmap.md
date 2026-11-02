@@ -12,13 +12,14 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 | 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view, holidays | Done | 2026-11-02 11:39 | 2026-11-02 11:53 |
 | 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Done | 2026-11-02 11:54 | 2026-11-02 12:01 |
 | 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Done | 2026-11-02 12:03 | 2026-11-02 12:17 |
+| 5.1 | Branding and landing page | App logo and icons (browser tab, installed app), school logo upload (when creating or updating a school, plus a school profile page for owners), logo in the sidebar and on receipts, public landing page with animation | Done | 2026-11-02 12:29 | 2026-11-02 12:50 |
 | 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | Not started | | |
 | 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | Not started | | |
 | 8 | Staff | Staff records, leave, payroll | Not started | | |
 | 9 | Extras | Certificates (bonafide, transfer, leaving), library, transport | Not started | | |
 | 10 | Dashboards and portals | Real dashboard numbers, parent and student portal views, reports | Not started | | |
 | 11 | Optional integrations | Razorpay payments, SMS and WhatsApp alerts, email, file storage (all off unless `.env` keys are set) | Not started | | |
-| 12 | Hardening and release | Audit log, PostgreSQL row-level security, revoke sessions on password change or reset (tokens are currently not revoked), custom app icons, formal tests, performance, Render deployment, backups | Not started | | |
+| 12 | Hardening and release | Audit log, PostgreSQL row-level security, revoke sessions on password change or reset (tokens are currently not revoked), formal tests, performance, Render deployment, backups | Not started | | |
 
 (1) Phase 0 began on the evening of 2026-11-01; the exact start time was not recorded. The first recorded build of the app is 2026-11-01 22:02. Finished = time of the first commit. For phases 1 and 2, *Started* is the time of the first commit or agent launch of that phase.
 

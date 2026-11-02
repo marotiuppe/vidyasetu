@@ -21,12 +21,9 @@
 }
 
 .brand-mark {
-  display: grid;
-  place-items: center;
   width: 48px;
   height: 48px;
-  color: var(--accent);
-  background: var(--sidebar-bg);
+  flex: none;
   border-radius: 14px;
 }
 

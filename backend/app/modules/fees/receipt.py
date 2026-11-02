@@ -6,6 +6,7 @@ from typing import Any
 
 from reportlab.lib.pagesizes import A5
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 
 
@@ -30,6 +31,22 @@ def _fmt_date(d: date) -> str:
     return d.strftime("%d-%m-%Y")
 
 
+def _draw_logo(c: Canvas, png: bytes | None, x: float, top: float) -> None:
+    """Draw the school logo top-left (max 18 mm high); a bad logo is skipped, never fatal."""
+    if not png:
+        return
+    try:
+        reader = ImageReader(io.BytesIO(png))
+        iw, ih = reader.getSize()
+        if iw <= 0 or ih <= 0:
+            return
+        scale = min(18 * mm / ih, 26 * mm / iw)
+        w, h = iw * scale, ih * scale
+        c.drawImage(reader, x, top - h, width=w, height=h, mask="auto")
+    except Exception:  # noqa: BLE001 - a bad logo must never break the receipt
+        return
+
+
 def build_receipt_pdf(d: dict[str, Any]) -> bytes:
     buf = io.BytesIO()
     width, height = A5
@@ -38,6 +55,8 @@ def build_receipt_pdf(d: dict[str, Any]) -> bytes:
     margin = 12 * mm
     c.setLineWidth(1)
     c.rect(margin / 2, margin / 2, width - margin, height - margin)
+
+    _draw_logo(c, d.get("logo_png"), margin, height - margin - 2 * mm)
 
     y = height - margin - 4 * mm
     c.setFont("Helvetica-Bold", 15)

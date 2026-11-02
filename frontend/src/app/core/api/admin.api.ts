@@ -15,6 +15,7 @@ export interface School {
   code: string;
   board: string;
   is_active: boolean;
+  logo_url: string | null;
 }
 
 export interface NewSchool {
@@ -56,6 +57,23 @@ export class AdminApi {
 
   updateSchool(id: number, body: { name?: string; board?: string; is_active?: boolean }): Observable<School> {
     return this.http.patch<School>(`${API}/schools/${id}`, body);
+  }
+
+  /** Send the image bytes as the raw body; the server re-encodes it. */
+  uploadLogo(id: number, file: File): Observable<School> {
+    return this.http.put<School>(`${API}/schools/${id}/logo`, file, { headers: { 'Content-Type': file.type } });
+  }
+
+  removeLogo(id: number): Observable<void> {
+    return this.http.delete<void>(`${API}/schools/${id}/logo`);
+  }
+
+  mySchool(): Observable<School> {
+    return this.http.get<School>(`${API}/schools/me`);
+  }
+
+  updateMySchool(body: { name?: string; board?: string }): Observable<School> {
+    return this.http.patch<School>(`${API}/schools/me`, body);
   }
 
   branches(): Observable<Branch[]> {

@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, CanMatchFn, Router } from '@angular/router';
 import { map } from 'rxjs';
 
 import { Role } from './auth.models';
@@ -14,6 +14,18 @@ export const authGuard: CanActivateFn = () => {
     return true;
   }
   return auth.restore().pipe(map((ok) => (ok ? true : router.createUrlTree(['/login']))));
+};
+
+/**
+ * Match the public landing route only for visitors without a session.
+ * A signed-in user (or one restorable from the refresh cookie) skips it and gets the dashboard.
+ */
+export const publicOnlyMatch: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  if (auth.isLoggedIn()) {
+    return false;
+  }
+  return auth.restore().pipe(map((ok) => !ok));
 };
 
 /** Allow only the given roles. UX only; the backend enforces access. */

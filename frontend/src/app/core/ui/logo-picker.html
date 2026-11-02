@@ -1,0 +1,50 @@
+<div class="picker">
+  <div class="tile">
+    @if (previewUrl(); as preview) {
+      <img [src]="preview" alt="Selected logo preview" />
+    } @else if (currentUrl() && !savedBroken()) {
+      <img [src]="currentUrl()" [alt]="schoolName() ? schoolName() + ' logo' : 'Current logo'" (error)="savedBroken.set(true)" />
+    } @else {
+      <sms-icon name="image" [size]="28" />
+    }
+  </div>
+
+  <div class="side">
+    <label
+      class="drop"
+      [class.dragging]="dragging()"
+      [class.disabled]="disabled()"
+      (dragover)="onDragOver($event)"
+      (dragleave)="dragging.set(false)"
+      (drop)="onDrop($event)"
+    >
+      <input
+        class="file"
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        [disabled]="disabled()"
+        (change)="onInput($event)"
+      />
+      <sms-icon name="upload" [size]="18" />
+      <span>{{ previewUrl() || currentUrl() ? 'Choose a different logo' : 'Choose a logo or drop it here' }}</span>
+    </label>
+    <p class="hint">PNG, JPEG or WebP, up to 1 MB. Square images work best.</p>
+
+    @if (fileName(); as name) {
+      <p class="chosen">
+        <span class="name">{{ name }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="disabled()" (click)="discard()">Undo</button>
+      </p>
+    }
+    @if (currentUrl() && !previewUrl()) {
+      <div>
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="disabled()" (click)="removed.emit()">
+          Remove logo
+        </button>
+      </div>
+    }
+    @if (error(); as message) {
+      <p class="field-error" role="alert">{{ message }}</p>
+    }
+  </div>
+</div>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 110 352 340" role="img" aria-label="Vidyasetu">
+  <g transform="translate(0 -22)" fill="none" stroke="#dcebad" stroke-linecap="round">
+    <path d="M132 292a124 124 0 0 1 248 0" stroke-width="28"/>
+    <path d="M194 196V292M256 180V292M318 196V292" stroke-width="12"/>
+    <path d="M92 292H420" stroke-width="28"/>
+    <path d="M120 326l130 22v78l-130-22z" fill="#dcebad" stroke="none"/>
+    <path d="M392 326l-130 22v78l130-22z" fill="#dcebad" stroke="none"/>
+  </g>
+</svg>

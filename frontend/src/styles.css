@@ -708,3 +708,35 @@ svg {
   background: var(--green);
   border-radius: 4px;
 }
+
+/* ============================================================
+   Public landing page: shared container, large buttons and the
+   scroll-reveal states used by the smsReveal directive
+   ============================================================ */
+.lp-wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn-lg {
+  min-height: 48px;
+  padding: 12px 22px;
+  font-size: 0.9rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal='pending'] {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  [data-reveal='shown'] {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.8s ease,
+      transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}

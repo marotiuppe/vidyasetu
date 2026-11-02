@@ -60,6 +60,13 @@
             }
           </label>
         </div>
+        <h3 class="card-title sub">Logo (optional)</h3>
+        <sms-logo-picker
+          #createPicker
+          [schoolName]="form.controls.name.value"
+          [disabled]="submitting()"
+          (picked)="newLogo.set($event)"
+        />
         @if (formError(); as message) {
           <p class="form-error" role="alert">{{ message }}</p>
         }
@@ -77,6 +84,10 @@
     <p class="form-error" role="alert">{{ message }}</p>
   }
 
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
   <section class="card" aria-labelledby="school-list">
     <h2 class="card-title" id="school-list">All schools</h2>
     @if (loading()) {
@@ -85,6 +96,13 @@
       <ul class="rows">
         @for (school of schools(); track school.id) {
           <li class="row">
+            <span class="logo-tile" aria-hidden="true">
+              @if (school.logo_url && !brokenLogos().has(school.id)) {
+                <img [src]="school.logo_url" alt="" (error)="logoFailed(school.id)" />
+              } @else {
+                <span class="initials">{{ initials(school.name) }}</span>
+              }
+            </span>
             <span class="row-main">
               <strong>{{ school.name }}</strong>
               <span class="row-sub">Code {{ school.code }} · Board {{ school.board }}</span>
@@ -113,10 +131,56 @@
               </span>
             } @else {
               <span class="row-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-expanded]="editId() === school.id"
+                  (click)="editId() === school.id ? cancelEdit() : startEdit(school)"
+                >
+                  {{ editId() === school.id ? 'Close' : 'Edit' }}
+                </button>
                 <button type="button" class="btn btn-ghost btn-sm" (click)="askToggle(school.id)">
                   {{ school.is_active ? 'Deactivate' : 'Activate' }}
                 </button>
               </span>
+            }
+            @if (editId() === school.id) {
+              <form class="panel" [formGroup]="editForm" (ngSubmit)="saveEdit(school)" novalidate>
+                <div class="form-grid">
+                  <label class="field">
+                    School name
+                    <input class="input" formControlName="name" autocomplete="off" />
+                    @if (editForm.controls.name.touched && editForm.controls.name.invalid) {
+                      <span class="field-error">Name is required.</span>
+                    }
+                  </label>
+                  <label class="field">
+                    Board
+                    <input class="input" formControlName="board" autocomplete="off" />
+                    @if (editForm.controls.board.touched && editForm.controls.board.invalid) {
+                      <span class="field-error">Board is required.</span>
+                    }
+                  </label>
+                </div>
+                <h3 class="card-title sub">Logo</h3>
+                <sms-logo-picker
+                  #editPicker
+                  [currentUrl]="school.logo_url"
+                  [schoolName]="school.name"
+                  [disabled]="editBusy()"
+                  (picked)="editLogo.set($event)"
+                  (removed)="removeLogo(school)"
+                />
+                @if (editError(); as message) {
+                  <p class="form-error" role="alert">{{ message }}</p>
+                }
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" [disabled]="editBusy()">
+                    {{ editBusy() ? 'Saving…' : 'Save changes' }}
+                  </button>
+                  <button type="button" class="btn btn-ghost" (click)="cancelEdit()">Cancel</button>
+                </div>
+              </form>
             }
           </li>
         } @empty {

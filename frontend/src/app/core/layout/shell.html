@@ -1,7 +1,13 @@
 <div class="app" [class.menu-open]="menuOpen()">
   <aside class="sidebar" id="sidebar" aria-label="Main navigation">
     <div class="brand">
-      <span class="brand-mark"><sms-icon name="book" [size]="22" /></span>
+      <span class="brand-mark" [class.has-logo]="showSchoolLogo()">
+        @if (showSchoolLogo()) {
+          <img class="school-logo" [src]="logoUrl()" [alt]="schoolName()" (error)="logoFailed.set(true)" />
+        } @else {
+          <img class="product-mark" src="brand/logo-mark.svg" alt="" />
+        }
+      </span>
       <div>
         <div class="brand-name">{{ schoolName() }}</div>
         <div class="brand-sub">{{ roleLabel() }}</div>

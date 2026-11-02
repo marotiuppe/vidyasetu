@@ -54,7 +54,7 @@ from app.modules.fees.schemas import (
     StudentFees,
     Totals,
 )
-from app.modules.schools.models import School
+from app.modules.schools.models import School, SchoolLogo
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import User
 
@@ -1253,8 +1253,12 @@ async def receipt_data(db: AsyncSession, actor: User, payment_id: int) -> dict[s
         class_name, section_name = enrol
     paid = await _received_total(db, inv.id)
     total = inv.gross_paise - inv.discount_paise
+    logo_png = await db.scalar(
+        select(SchoolLogo.data).where(SchoolLogo.school_id == payment.school_id)
+    )
     return {
         "school_name": school_name,
+        "logo_png": logo_png,
         "receipt_no": payment.receipt_no,
         "paid_on": payment.paid_on,
         "student_name": _full_name(stu.first_name, stu.last_name),

@@ -4,11 +4,10 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { Icon } from '../../core/ui/icon';
 
 @Component({
   selector: 'sms-login',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
   styleUrl: './login.css',
