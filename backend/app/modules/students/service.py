@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.core.errors import IdentityInUse
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
@@ -41,7 +42,13 @@ from app.modules.students.schemas import (
     StudentPage,
     StudentUpdate,
 )
+from app.modules.users.identity import normalize_phone
 from app.modules.users.models import Role, User
+from app.modules.users.service import (
+    IDENTITY_TAKEN_CODE,
+    derive_unique_username,
+    ensure_identity_available,
+)
 
 MAX_ROLL = 999
 _GENERATED = ("admission_no", "admission_date")
@@ -640,7 +647,31 @@ async def _commit_login(db: AsyncSession) -> None:
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise _conflict("Email already in use") from None
+        raise IdentityInUse(
+            "Username, email or mobile number already in use", IDENTITY_TAKEN_CODE
+        ) from None
+
+
+async def _login_username(db: AsyncSession, data: LoginCreate) -> str:
+    """The requested username, or one derived from the email (with a suffix if taken)."""
+    if data.username is not None:
+        await ensure_identity_available(db, username=data.username)
+        return data.username
+    if data.email is not None:
+        return await derive_unique_username(db, str(data.email))
+    raise _unprocessable("Give a username or an email")
+
+
+async def _parent_phone(db: AsyncSession, raw: str | None) -> str | None:
+    """The guardian's mobile for the new login, if it is a valid and unused number."""
+    if not raw:
+        return None
+    try:
+        phone = normalize_phone(raw)
+        await ensure_identity_available(db, phone=phone)
+    except (ValueError, IdentityInUse):
+        return None
+    return phone
 
 
 async def create_guardian_login(
@@ -649,20 +680,24 @@ async def create_guardian_login(
     guardian, student = await _get_guardian(db, actor, guardian_id)
     if guardian.user_id is not None:
         raise _conflict("Guardian already has a login")
-    email = str(data.email).lower()
-    user = await db.scalar(select(User).where(User.email == email))
+    email = str(data.email).lower() if data.email is not None else None
+    user = None
+    if email is not None:
+        user = await db.scalar(select(User).where(User.email == email))
     if user is not None:
         # An existing parent of this school may be linked (their password is left untouched).
         # Anything else gets the same generic answer so other schools' emails are not revealed.
         if user.role != Role.PARENT or user.school_id != student.school_id:
-            raise _conflict("Email already in use")
+            raise IdentityInUse("Email already in use", "email_taken")
     else:
+        username = await _login_username(db, data)
         user = User(
             school_id=student.school_id,
             branch_id=None,
+            username=username,
             email=email,
             full_name=guardian.full_name,
-            phone=guardian.phone,
+            phone=await _parent_phone(db, guardian.phone),
             password_hash=hash_password(data.password),
             role=Role.PARENT,
         )
@@ -685,12 +720,14 @@ async def create_student_login(
     student = await _get_student(db, actor, student_id)
     if student.user_id is not None:
         raise _conflict("Student already has a login")
-    email = str(data.email).lower()
-    if await db.scalar(select(User.id).where(User.email == email)) is not None:
-        raise _conflict("Email already in use")
+    email = str(data.email).lower() if data.email is not None else None
+    if email is not None:
+        await ensure_identity_available(db, email=email)
+    username = await _login_username(db, data)
     user = User(
         school_id=student.school_id,
         branch_id=student.branch_id,
+        username=username,
         email=email,
         full_name=f"{student.first_name} {student.last_name}",
         password_hash=hash_password(data.password),
@@ -701,7 +738,9 @@ async def create_student_login(
         await db.flush()
     except IntegrityError:
         await db.rollback()
-        raise _conflict("Email already in use") from None
+        raise IdentityInUse(
+            "Username, email or mobile number already in use", IDENTITY_TAKEN_CODE
+        ) from None
     student.user_id = user.id
     await _commit_login(db)
     return await _build_detail(db, student)

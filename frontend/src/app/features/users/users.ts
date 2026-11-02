@@ -1,15 +1,36 @@
-import { DestroyRef, ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { catchError, debounceTime, of, startWith, switchMap, tap } from 'rxjs';
 
 import { AdminApi, Branch, School } from '../../core/api/admin.api';
-import { apiErrorMessage } from '../../core/api/api-error';
+import { apiErrorMessage, fieldErrorsFrom } from '../../core/api/api-error';
 import { Role, User } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
+import { MOBILE_HINT, USERNAME_HINT, mobileFormat, usernameFormat } from '../../core/auth/identity';
 import { ROLE_LABELS } from '../../core/layout/nav';
 
-const BRANCH_BOUND: Role[] = ['management', 'headmaster', 'teacher', 'accountant', 'clerk', 'student'];
+const BRANCH_BOUND: Role[] = [
+  'management',
+  'headmaster',
+  'teacher',
+  'accountant',
+  'clerk',
+  'student',
+];
 const ALL_ROLES = Object.keys(ROLE_LABELS) as Role[];
 const BRANCH_LEVEL_CREATORS: Role[] = ['teacher', 'accountant', 'clerk', 'student', 'parent'];
 
@@ -28,6 +49,8 @@ export class Users {
 
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly allRoles = ALL_ROLES;
+  protected readonly usernameHint = USERNAME_HINT;
+  protected readonly mobileHint = MOBILE_HINT;
 
   protected readonly users = signal<User[]>([]);
   protected readonly branches = signal<Branch[]>([]);
@@ -37,6 +60,7 @@ export class Users {
   protected readonly showForm = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly formError = signal<string | null>(null);
+  protected readonly editError = signal<string | null>(null);
   protected readonly editingId = signal<number | null>(null);
   protected readonly resettingId = signal<number | null>(null);
   protected readonly busyId = signal<number | null>(null);
@@ -71,7 +95,9 @@ export class Users {
   );
   protected readonly branchOptions = computed(() => {
     const school = this.selectedSchool();
-    return this.isSuperAdmin() ? this.branches().filter((b) => b.school_id === school) : this.branches();
+    return this.isSuperAdmin()
+      ? this.branches().filter((b) => b.school_id === school)
+      : this.branches();
   });
 
   protected readonly filters = this.fb.group({ q: [''], role: ['' as Role | ''] });
@@ -80,13 +106,15 @@ export class Users {
     school_id: [0],
     branch_id: [0],
     full_name: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    phone: [''],
+    username: ['', [Validators.required, usernameFormat]],
+    email: ['', Validators.email],
+    phone: ['', mobileFormat],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
   protected readonly editForm = this.fb.group({
     full_name: ['', Validators.required],
-    phone: [''],
+    email: ['', Validators.email],
+    phone: ['', mobileFormat],
     is_active: [true],
   });
   protected readonly resetControl = new FormControl('', {
@@ -144,6 +172,11 @@ export class Users {
       });
   }
 
+  /** Show a field as invalid only after the user has touched or changed it. */
+  protected bad(control: AbstractControl): boolean {
+    return control.invalid && (control.dirty || control.touched);
+  }
+
   protected branchName(id: number | null): string {
     if (id == null) return 'All branches';
     return this.branches().find((b) => b.id === id)?.name ?? `Branch #${id}`;
@@ -172,8 +205,9 @@ export class Users {
     this.submitting.set(true);
     this.api
       .createUser({
-        email: v.email,
-        full_name: v.full_name,
+        username: v.username.trim().toLowerCase(),
+        email: v.email.trim() || null,
+        full_name: v.full_name.trim(),
         phone: v.phone.trim() || null,
         password: v.password,
         role: v.role,
@@ -183,22 +217,28 @@ export class Users {
       .subscribe({
         next: (user) => {
           this.submitting.set(false);
-          this.form.patchValue({ full_name: '', email: '', phone: '', password: '' });
+          this.form.patchValue({ full_name: '', username: '', email: '', phone: '', password: '' });
           this.form.markAsUntouched();
           this.showForm.set(false);
-          this.notice.set(`Created ${user.full_name}.`);
+          this.notice.set(`Created ${user.full_name} (${user.username}).`);
           this.reload();
         },
         error: (err: unknown) => {
           this.submitting.set(false);
-          this.formError.set(apiErrorMessage(err));
+          this.formError.set(this.placeErrors(this.form, err));
         },
       });
   }
 
   protected startEdit(user: User): void {
     this.resettingId.set(null);
-    this.editForm.setValue({ full_name: user.full_name, phone: user.phone ?? '', is_active: user.is_active });
+    this.editError.set(null);
+    this.editForm.setValue({
+      full_name: user.full_name,
+      email: user.email ?? '',
+      phone: user.phone ?? '',
+      is_active: user.is_active,
+    });
     this.editingId.set(user.id);
   }
 
@@ -208,10 +248,12 @@ export class Users {
       return;
     }
     const v = this.editForm.getRawValue();
+    this.editError.set(null);
     this.run(
       user.id,
       this.api.updateUser(user.id, {
         full_name: v.full_name.trim(),
+        email: v.email.trim() || null,
         phone: v.phone.trim() || null,
         is_active: v.is_active,
       }),
@@ -219,6 +261,7 @@ export class Users {
         this.editingId.set(null);
         this.notice.set('User updated.');
       },
+      (err) => this.editError.set(this.placeErrors(this.editForm, err)),
     );
   }
 
@@ -245,10 +288,28 @@ export class Users {
     this.resettingId.set(null);
   }
 
+  /**
+   * Put 422 messages on their fields. Returns the message to show next to the form
+   * (for example a 409 duplicate), or null when every problem sits on a field.
+   */
+  private placeErrors(form: { get(name: string): unknown }, err: unknown): string | null {
+    let placed = false;
+    for (const [name, message] of Object.entries(fieldErrorsFrom(err))) {
+      const control = form.get(name);
+      if (control instanceof FormControl) {
+        control.setErrors({ server: message });
+        control.markAsTouched();
+        placed = true;
+      }
+    }
+    return placed ? null : apiErrorMessage(err);
+  }
+
   private run(
     id: number,
     request: { subscribe: (o: { next: () => void; error: (e: unknown) => void }) => unknown },
     onDone: () => void,
+    onError: (err: unknown) => void = (err) => this.error.set(apiErrorMessage(err)),
   ): void {
     this.busyId.set(id);
     this.error.set(null);
@@ -261,7 +322,7 @@ export class Users {
       },
       error: (err: unknown) => {
         this.busyId.set(null);
-        this.error.set(apiErrorMessage(err));
+        onError(err);
       },
     });
   }

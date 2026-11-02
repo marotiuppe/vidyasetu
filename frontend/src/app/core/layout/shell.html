@@ -122,13 +122,16 @@
           <sms-icon name="chevronDown" [size]="14" />
         </button>
         @if (userMenuOpen()) {
-          <div class="menu" role="menu">
-            <a role="menuitem" routerLink="/account">
-              <sms-icon name="lock" [size]="16" /> Change password
-            </a>
-            <button type="button" role="menuitem" (click)="auth.logout()">
-              <sms-icon name="logout" [size]="16" /> Sign out
-            </button>
+          <div class="menu">
+            <p class="menu-id">Signed in as <strong>{{ auth.user()?.username }}</strong></p>
+            <div role="menu">
+              <a role="menuitem" routerLink="/account">
+                <sms-icon name="lock" [size]="16" /> Change password
+              </a>
+              <button type="button" role="menuitem" (click)="auth.logout()">
+                <sms-icon name="logout" [size]="16" /> Sign out
+              </button>
+            </div>
           </div>
         }
       </div>

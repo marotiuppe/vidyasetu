@@ -22,13 +22,15 @@ export interface NewSchool {
   name: string;
   code: string;
   board: string;
+  owner_username: string;
   owner_email: string;
   owner_full_name: string;
   owner_password: string;
 }
 
 export interface NewUser {
-  email: string;
+  username: string;
+  email?: string | null;
   full_name: string;
   phone?: string | null;
   password: string;
@@ -101,7 +103,7 @@ export class AdminApi {
 
   updateUser(
     id: number,
-    body: { full_name?: string; phone?: string | null; is_active?: boolean },
+    body: { full_name?: string; email?: string | null; phone?: string | null; is_active?: boolean },
   ): Observable<User> {
     return this.http.patch<User>(`${API}/users/${id}`, body);
   }

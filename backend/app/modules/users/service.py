@@ -2,12 +2,17 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.expression import ColumnElement
 
+from app.core.errors import IdentityInUse
 from app.core.security import hash_password
 from app.core.tenant import scope_users
 from app.modules.branches.models import Branch
+from app.modules.users.identity import suggest_username
 from app.modules.users.models import BRANCH_ROLES, Role, User
 from app.modules.users.schemas import UserCreate, UserUpdate
+
+IDENTITY_TAKEN_CODE = "identity_taken"
 
 # Which roles each role may create.
 CREATABLE: dict[Role, set[Role]] = {
@@ -37,7 +42,11 @@ async def list_users(
     if q and q.strip():
         like = f"%{q.strip().lower()}%"
         stmt = stmt.where(
-            or_(func.lower(User.full_name).like(like), func.lower(User.email).like(like))
+            or_(
+                func.lower(User.full_name).like(like),
+                func.lower(User.email).like(like),
+                User.username.like(like),
+            )
         )
     result = await db.scalars(stmt.order_by(User.id))
     return list(result)
@@ -48,6 +57,46 @@ async def get_user(db: AsyncSession, actor: User, user_id: int) -> User:
     if user is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+
+async def _other_user_has(
+    db: AsyncSession, condition: ColumnElement[bool], exclude_id: int | None
+) -> bool:
+    stmt = select(User.id).where(condition)
+    if exclude_id is not None:
+        stmt = stmt.where(User.id != exclude_id)
+    return await db.scalar(stmt) is not None
+
+
+async def ensure_identity_available(
+    db: AsyncSession,
+    *,
+    username: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    exclude_id: int | None = None,
+) -> None:
+    """Raise IdentityInUse (409) if another account already uses one of these identifiers.
+
+    Identifiers are the login handles, so they are unique across schools.
+    """
+    if username is not None and await _other_user_has(db, User.username == username, exclude_id):
+        raise IdentityInUse("Username already in use", "username_taken")
+    if email is not None and await _other_user_has(db, User.email == email, exclude_id):
+        raise IdentityInUse("Email already in use", "email_taken")
+    if phone is not None and await _other_user_has(db, User.phone == phone, exclude_id):
+        raise IdentityInUse("Mobile number already in use", "phone_taken")
+
+
+async def derive_unique_username(db: AsyncSession, email: str) -> str:
+    """Username from the email's local part, with a numeric suffix when it is taken."""
+    base = suggest_username(email)
+    candidate = base
+    n = 2
+    while await _other_user_has(db, User.username == candidate, None):
+        candidate = f"{base[:45]}{n}"
+        n += 1
+    return candidate
 
 
 async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
@@ -76,10 +125,12 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
             if branch is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Branch not found")
 
+    await ensure_identity_available(db, username=data.username, email=data.email, phone=data.phone)
     user = User(
         school_id=school_id,
         branch_id=branch_id,
-        email=data.email.lower(),
+        username=data.username,
+        email=data.email,
         full_name=data.full_name,
         phone=data.phone,
         password_hash=hash_password(data.password),
@@ -90,7 +141,9 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
         await db.commit()
     except IntegrityError:
         await db.rollback()
-        raise HTTPException(status.HTTP_409_CONFLICT, detail="Email already in use") from None
+        raise IdentityInUse(
+            "Username, email or mobile number already in use", IDENTITY_TAKEN_CODE
+        ) from None
     return user
 
 
@@ -111,9 +164,16 @@ async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpd
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="is_active cannot be null")
     if changes.get("is_active") is False and target.id == actor.id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate yourself")
+    await ensure_identity_available(
+        db, email=changes.get("email"), phone=changes.get("phone"), exclude_id=target.id
+    )
     for field, value in changes.items():
         setattr(target, field, value)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise IdentityInUse("Email or mobile number already in use", IDENTITY_TAKEN_CODE) from None
     return target
 
 

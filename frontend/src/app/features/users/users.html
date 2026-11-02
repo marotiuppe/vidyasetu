@@ -4,7 +4,12 @@
     <p class="page-subtitle">Staff, parent and student accounts you can manage.</p>
   </div>
   @if (creatableRoles().length) {
-    <button type="button" class="btn btn-primary" [attr.aria-expanded]="showForm()" (click)="toggleForm()">
+    <button
+      type="button"
+      class="btn btn-primary"
+      [attr.aria-expanded]="showForm()"
+      (click)="toggleForm()"
+    >
       {{ showForm() ? 'Close' : 'New user' }}
     </button>
   }
@@ -15,6 +20,9 @@
     <section class="card" aria-labelledby="new-user">
       <h2 class="card-title" id="new-user">Create a user</h2>
       <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <p class="hint">
+          Fields marked <span class="req" aria-hidden="true">*</span> are required.
+        </p>
         <div class="form-grid">
           <label class="field">
             Role
@@ -47,28 +55,83 @@
             </label>
           }
           <label class="field">
-            Full name
-            <input class="input" formControlName="full_name" autocomplete="off" />
+            <span>Full name <span class="req" aria-hidden="true">*</span></span>
+            <input class="input" formControlName="full_name" autocomplete="off" required />
             @if (form.controls.full_name.touched && form.controls.full_name.invalid) {
-              <span class="field-error">Name is required.</span>
+              <span class="field-error" role="alert">Name is required.</span>
             }
           </label>
           <label class="field">
-            Email
-            <input class="input" type="email" formControlName="email" autocomplete="off" />
+            <span>Username <span class="req" aria-hidden="true">*</span></span>
+            <input
+              class="input"
+              formControlName="username"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              aria-describedby="new-username-hint"
+              [attr.aria-invalid]="bad(form.controls.username) ? 'true' : null"
+            />
+            <span class="hint" id="new-username-hint">{{ usernameHint }}</span>
+            @if (form.controls.username.touched && form.controls.username.hasError('required')) {
+              <span class="field-error" role="alert">Username is required.</span>
+            } @else if (
+              form.controls.username.dirty && form.controls.username.hasError('username')
+            ) {
+              <span class="field-error" role="alert"
+                >Use 3 to 50 allowed characters, with at least one letter.</span
+              >
+            }
+            @if (form.controls.username.getError('server'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
+            }
+          </label>
+          <label class="field">
+            Mobile number (optional)
+            <input
+              class="input"
+              type="tel"
+              formControlName="phone"
+              autocomplete="off"
+              aria-describedby="new-phone-hint"
+              [attr.aria-invalid]="bad(form.controls.phone) ? 'true' : null"
+            />
+            <span class="hint" id="new-phone-hint">{{ mobileHint }}</span>
+            @if (form.controls.phone.dirty && form.controls.phone.hasError('mobile')) {
+              <span class="field-error" role="alert">Enter a valid mobile number.</span>
+            }
+            @if (form.controls.phone.getError('server'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
+            }
+          </label>
+          <label class="field">
+            Email (optional)
+            <input
+              class="input"
+              type="email"
+              formControlName="email"
+              autocomplete="off"
+              [attr.aria-invalid]="bad(form.controls.email) ? 'true' : null"
+            />
             @if (form.controls.email.touched && form.controls.email.invalid) {
-              <span class="field-error">Enter a valid email address.</span>
+              <span class="field-error" role="alert">Enter a valid email address.</span>
+            }
+            @if (form.controls.email.getError('server'); as message) {
+              <span class="field-error" role="alert">{{ message }}</span>
             }
           </label>
           <label class="field">
-            Phone (optional)
-            <input class="input" type="tel" formControlName="phone" autocomplete="off" />
-          </label>
-          <label class="field">
-            Temporary password
-            <input class="input" type="password" formControlName="password" autocomplete="new-password" />
+            <span>Temporary password <span class="req" aria-hidden="true">*</span></span>
+            <input
+              class="input"
+              type="password"
+              formControlName="password"
+              autocomplete="new-password"
+              required
+            />
             @if (form.controls.password.touched && form.controls.password.invalid) {
-              <span class="field-error">Use at least 8 characters.</span>
+              <span class="field-error" role="alert">Use at least 8 characters.</span>
             }
           </label>
         </div>
@@ -101,7 +164,7 @@
           class="input"
           type="search"
           formControlName="q"
-          placeholder="Name or email"
+          placeholder="Name, username, mobile or email"
           autocomplete="off"
         />
       </label>
@@ -124,39 +187,108 @@
           <li class="row">
             <span class="row-main">
               <strong>{{ user.full_name }}</strong>
-              <span class="row-sub">{{ user.email }}@if (user.phone) { · {{ user.phone }} }</span>
+              <span class="row-sub">
+                {{ user.username }}
+                @if (user.phone) {
+                  · {{ user.phone }}
+                }
+                @if (user.email) {
+                  · {{ user.email }}
+                }
+              </span>
             </span>
             <span class="row-main">
               <span>{{ roleLabels[user.role] }}</span>
               <span class="row-sub">{{ branchName(user.branch_id) }}</span>
             </span>
-            <span class="badge" [class.badge-success]="user.is_active" [class.badge-muted]="!user.is_active">
+            <span
+              class="badge"
+              [class.badge-success]="user.is_active"
+              [class.badge-muted]="!user.is_active"
+            >
               {{ user.is_active ? 'Active' : 'Inactive' }}
             </span>
             <span class="row-actions">
-              <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">Edit</button>
-              <button type="button" class="btn btn-ghost btn-sm" (click)="startReset(user)">Reset password</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">
+                Edit
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="startReset(user)">
+                Reset password
+              </button>
             </span>
 
             @if (editingId() === user.id) {
               <form class="panel" [formGroup]="editForm" (ngSubmit)="saveEdit(user)" novalidate>
                 <div class="form-grid">
+                  <div class="field">
+                    <span id="username-{{ user.id }}-label">Username</span>
+                    <input
+                      class="input"
+                      [value]="user.username"
+                      readonly
+                      aria-labelledby="username-{{ user.id }}-label"
+                      aria-describedby="username-{{ user.id }}-help"
+                    />
+                    <span class="hint" id="username-{{ user.id }}-help"
+                      >Usernames cannot be changed.</span
+                    >
+                  </div>
                   <label class="field">
-                    Full name
-                    <input class="input" formControlName="full_name" autocomplete="off" />
-                    @if (editForm.controls.full_name.touched && editForm.controls.full_name.invalid) {
-                      <span class="field-error">Name is required.</span>
+                    <span>Full name <span class="req" aria-hidden="true">*</span></span>
+                    <input class="input" formControlName="full_name" autocomplete="off" required />
+                    @if (
+                      editForm.controls.full_name.touched && editForm.controls.full_name.invalid
+                    ) {
+                      <span class="field-error" role="alert">Name is required.</span>
                     }
                   </label>
                   <label class="field">
-                    Phone
-                    <input class="input" type="tel" formControlName="phone" autocomplete="off" />
+                    Mobile number (optional)
+                    <input
+                      class="input"
+                      type="tel"
+                      formControlName="phone"
+                      autocomplete="off"
+                      aria-describedby="edit-phone-hint"
+                    />
+                    <span class="hint" id="edit-phone-hint">{{ mobileHint }}</span>
+                    @if (
+                      editForm.controls.phone.dirty && editForm.controls.phone.hasError('mobile')
+                    ) {
+                      <span class="field-error" role="alert">Enter a valid mobile number.</span>
+                    }
+                    @if (editForm.controls.phone.getError('server'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
                   </label>
-                  <label class="check"><input type="checkbox" formControlName="is_active" /> Active</label>
+                  <label class="field">
+                    Email (optional)
+                    <input class="input" type="email" formControlName="email" autocomplete="off" />
+                    @if (editForm.controls.email.touched && editForm.controls.email.invalid) {
+                      <span class="field-error" role="alert">Enter a valid email address.</span>
+                    }
+                    @if (editForm.controls.email.getError('server'); as message) {
+                      <span class="field-error" role="alert">{{ message }}</span>
+                    }
+                  </label>
+                  <label class="check"
+                    ><input type="checkbox" formControlName="is_active" /> Active</label
+                  >
                 </div>
+                @if (editError(); as message) {
+                  <p class="form-error" role="alert">{{ message }}</p>
+                }
                 <div class="form-actions">
-                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busyId() === user.id">Save</button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">Cancel</button>
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="busyId() === user.id"
+                  >
+                    Save
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">
+                    Cancel
+                  </button>
                 </div>
               </form>
             }
@@ -175,10 +307,16 @@
                   }
                 </label>
                 <div class="form-actions">
-                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busyId() === user.id">
+                  <button
+                    type="submit"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="busyId() === user.id"
+                  >
                     Set password
                   </button>
-                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">Cancel</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">
+                    Cancel
+                  </button>
                 </div>
               </form>
             }

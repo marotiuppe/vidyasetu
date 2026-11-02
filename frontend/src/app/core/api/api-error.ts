@@ -17,3 +17,20 @@ export function apiErrorMessage(err: unknown): string {
   }
   return 'Something went wrong. Please try again.';
 }
+
+/** Field-level messages from a 422 response (`detail: [{ loc: ['body', 'field'], msg }]`), keyed by field name. */
+export function fieldErrorsFrom(err: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!(err instanceof HttpErrorResponse) || err.status !== 422) return out;
+  const detail: unknown = err.error?.detail;
+  if (!Array.isArray(detail)) return out;
+  for (const item of detail as unknown[]) {
+    const loc: unknown = (item as { loc?: unknown })?.loc;
+    const msg: unknown = (item as { msg?: unknown })?.msg;
+    if (Array.isArray(loc) && loc.length > 0 && typeof msg === 'string') {
+      const field = String(loc[loc.length - 1]);
+      out[field] ??= msg;
+    }
+  }
+  return out;
+}

@@ -11,7 +11,8 @@ export type Role =
 
 export interface User {
   id: number;
-  email: string;
+  username: string;
+  email: string | null;
   full_name: string;
   phone: string | null;
   role: Role;
@@ -24,4 +25,8 @@ export interface TokenResponse {
   access_token: string;
   token_type: string;
   user: User;
+}
+
+export interface AuthOptions {
+  password_reset_enabled: boolean;
 }

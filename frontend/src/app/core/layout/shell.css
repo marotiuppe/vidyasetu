@@ -351,6 +351,15 @@
   box-shadow: 0 15px 60px #183c3524;
 }
 
+.menu-id {
+  margin: 0 0 6px;
+  padding: 6px 11px 8px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+
 .menu button,
 .menu a {
   display: flex;

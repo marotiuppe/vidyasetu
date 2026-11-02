@@ -12,6 +12,7 @@ from app.modules.schools import service
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.schools.schemas import SchoolCreate, SchoolOut, SchoolOwnerUpdate, SchoolUpdate
 from app.modules.users.models import Role, User
+from app.modules.users.service import derive_unique_username, ensure_identity_available
 
 router = APIRouter(prefix="/schools", tags=["schools"])
 
@@ -61,6 +62,9 @@ async def get_school(school_id: int, db: DbSession) -> SchoolOut:
 )
 async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
     """Create a new school together with its owner account."""
+    email = data.owner_email.lower()
+    username = data.owner_username or await derive_unique_username(db, email)
+    await ensure_identity_available(db, username=username, email=email)
     school = School(name=data.name, code=data.code, board=data.board)
     db.add(school)
     try:
@@ -68,7 +72,8 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
         db.add(
             User(
                 school_id=school.id,
-                email=data.owner_email.lower(),
+                username=username,
+                email=email,
                 full_name=data.owner_full_name,
                 password_hash=hash_password(data.owner_password),
                 role=Role.SCHOOL_OWNER,
@@ -78,7 +83,7 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
     except IntegrityError:
         await db.rollback()
         raise HTTPException(
-            status.HTTP_409_CONFLICT, detail="School code or owner email already used"
+            status.HTTP_409_CONFLICT, detail="School code or owner login already used"
         ) from None
     return await service.school_out(db, school)
 

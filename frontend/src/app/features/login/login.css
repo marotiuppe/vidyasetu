@@ -37,3 +37,64 @@ h1 {
   font-size: 0.8rem;
   color: var(--muted);
 }
+
+.field > label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #7d8f6b;
+}
+
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap .input {
+  padding-right: 48px;
+}
+
+.eye-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+}
+
+.eye-btn:hover {
+  color: var(--text);
+}
+
+.row-between {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.remember {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.remember .hint {
+  margin: 0 0 0 26px;
+}
+
+.info-note {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}

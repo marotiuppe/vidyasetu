@@ -11,7 +11,9 @@
     @if (auth.user(); as user) {
       <dl>
         <div><dt>Name</dt><dd>{{ user.full_name }}</dd></div>
-        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>Username</dt><dd>{{ user.username }}</dd></div>
+        <div><dt>Mobile</dt><dd>{{ user.phone ?? 'Not set' }}</dd></div>
+        <div><dt>Email</dt><dd>{{ user.email ?? 'Not set' }}</dd></div>
         <div><dt>Role</dt><dd>{{ roleLabels[user.role] }}</dd></div>
       </dl>
     }

@@ -82,6 +82,13 @@ export interface StudentFilters {
   q?: string;
 }
 
+/** Sign-in account for a parent or student. The username is the sign-in id; email is optional. */
+export interface LoginInput {
+  username: string;
+  email?: string | null;
+  password: string;
+}
+
 export interface GuardianInput {
   full_name: string;
   relation: Relation;
@@ -193,16 +200,16 @@ export class StudentsApi {
     return this.http.delete<void>(`${API}/guardians/${id}`);
   }
 
-  createGuardianLogin(id: number, email: string, password: string): Observable<Guardian> {
-    return this.http.post<Guardian>(`${API}/guardians/${id}/login`, { email, password });
+  createGuardianLogin(id: number, body: LoginInput): Observable<Guardian> {
+    return this.http.post<Guardian>(`${API}/guardians/${id}/login`, body);
   }
 
   removeGuardianLogin(id: number): Observable<void> {
     return this.http.delete<void>(`${API}/guardians/${id}/login`);
   }
 
-  createStudentLogin(id: number, email: string, password: string): Observable<StudentDetail> {
-    return this.http.post<StudentDetail>(`${API}/students/${id}/login`, { email, password });
+  createStudentLogin(id: number, body: LoginInput): Observable<StudentDetail> {
+    return this.http.post<StudentDetail>(`${API}/students/${id}/login`, body);
   }
 
   importRows(body: {

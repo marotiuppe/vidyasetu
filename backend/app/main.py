@@ -1,15 +1,16 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import select
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 from starlette.types import Scope
 
 from app.core.config import get_settings
+from app.core.errors import IdentityInUse
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.academics.router import router as academics_router
@@ -20,6 +21,7 @@ from app.modules.fees.router import router as fees_router
 from app.modules.notices.router import router as notices_router
 from app.modules.schools.router import router as schools_router
 from app.modules.students.router import router as students_router
+from app.modules.users.identity import suggest_username
 from app.modules.users.models import Role, User
 from app.modules.users.router import router as users_router
 
@@ -33,9 +35,11 @@ async def _seed_super_admin() -> None:
     async with SessionLocal() as db:
         if await db.scalar(select(User.id).limit(1)) is not None:
             return
+        email = settings.first_superadmin_email.lower()
         db.add(
             User(
-                email=settings.first_superadmin_email.lower(),
+                username=suggest_username(email),
+                email=email,
                 full_name="Platform Admin",
                 password_hash=hash_password(settings.first_superadmin_password),
                 role=Role.SUPER_ADMIN,
@@ -57,6 +61,12 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None if settings.is_production else "/api/openapi.json",
 )
+
+
+@app.exception_handler(IdentityInUse)
+async def _identity_in_use(_: Request, exc: IdentityInUse) -> JSONResponse:
+    return JSONResponse(status_code=409, content={"detail": exc.detail, "code": exc.code})
+
 
 app.add_middleware(
     CORSMiddleware,

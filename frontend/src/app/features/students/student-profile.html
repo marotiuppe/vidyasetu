@@ -188,7 +188,7 @@
               <form class="panel" [formGroup]="loginForm" (ngSubmit)="saveGuardianLogin(g)" novalidate>
                 <ng-container [ngTemplateOutlet]="loginFields" />
                 <p class="hint">
-                  Creates a parent login, or links an existing parent account with this email.
+                  Creates a parent login. The username is what the parent signs in with.
                 </p>
                 <div class="form-actions">
                   <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Create login</button>
@@ -303,7 +303,7 @@
           </form>
         } @else {
           <p class="empty">This student has no login yet.</p>
-          <button type="button" class="btn btn-ghost btn-sm" (click)="startStudentLogin()">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="startStudentLogin(s)">
             Create student login
           </button>
         }
@@ -359,19 +359,45 @@
 <ng-template #loginFields>
   <div class="form-grid">
     <label class="field">
-      Email
+      <span>Username <span class="req" aria-hidden="true">*</span></span>
+      <input
+        class="input"
+        type="text"
+        [formControl]="loginForm.controls.username"
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+        required
+        aria-describedby="login-username-hint"
+      />
+      <span class="hint" id="login-username-hint">{{ usernameHint }}</span>
+      @if (loginForm.controls.username.touched && loginForm.controls.username.hasError('required')) {
+        <span class="field-error" role="alert">Username is required.</span>
+      } @else if (loginForm.controls.username.dirty && loginForm.controls.username.hasError('username')) {
+        <span class="field-error" role="alert">Use 3 to 50 allowed characters, with at least one letter.</span>
+      }
+      @if (loginForm.controls.username.getError('server'); as message) {
+        <span class="field-error" role="alert">{{ message }}</span>
+      }
+    </label>
+    <label class="field">
+      Email (optional)
       <input class="input" type="email" [formControl]="loginForm.controls.email" autocomplete="off" />
       @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
         <span class="field-error">Enter a valid email address.</span>
       }
+      @if (loginForm.controls.email.getError('server'); as message) {
+        <span class="field-error" role="alert">{{ message }}</span>
+      }
     </label>
     <label class="field">
-      Temporary password
+      <span>Temporary password <span class="req" aria-hidden="true">*</span></span>
       <input
         class="input"
         type="password"
         [formControl]="loginForm.controls.password"
         autocomplete="new-password"
+        required
       />
       @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
         <span class="field-error">Use at least 8 characters.</span>

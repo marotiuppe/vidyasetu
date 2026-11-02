@@ -359,6 +359,11 @@ svg {
   border-radius: 6px;
 }
 
+/* Required-field mark: put aria-hidden on it; the input carries `required`. */
+.req {
+  color: var(--danger);
+}
+
 .field-error {
   margin: 0;
   font-size: 0.75rem;

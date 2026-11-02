@@ -46,6 +46,24 @@
             }
           </label>
           <label class="field">
+            <span>Owner username <span class="req" aria-hidden="true">*</span></span>
+            <input
+              class="input"
+              formControlName="owner_username"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              required
+              aria-describedby="owner-username-hint"
+            />
+            <span class="hint" id="owner-username-hint">{{ usernameHint }}</span>
+            @if (form.controls.owner_username.touched && form.controls.owner_username.hasError('required')) {
+              <span class="field-error">Username is required.</span>
+            } @else if (form.controls.owner_username.touched && form.controls.owner_username.invalid) {
+              <span class="field-error">Use 3 to 50 allowed characters, with at least one letter.</span>
+            }
+          </label>
+          <label class="field">
             Owner email
             <input class="input" type="email" formControlName="owner_email" autocomplete="off" />
             @if (form.controls.owner_email.touched && form.controls.owner_email.invalid) {

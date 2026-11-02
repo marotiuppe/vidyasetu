@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay } from 'rxjs';
 
-import { Role, TokenResponse, User } from './auth.models';
+import { AuthOptions, Role, TokenResponse, User } from './auth.models';
 
 const API = '/api/v1/auth';
 
@@ -29,10 +29,16 @@ export class AuthService {
     return user !== null && roles.includes(user.role);
   }
 
-  login(email: string, password: string): Observable<User> {
+  /** `identifier` is a username, a mobile number or an email address. */
+  login(identifier: string, password: string, rememberMe: boolean): Observable<User> {
     return this.http
-      .post<TokenResponse>(`${API}/login`, { email, password })
+      .post<TokenResponse>(`${API}/login`, { identifier, password, remember_me: rememberMe })
       .pipe(map((res) => this.accept(res)));
+  }
+
+  /** Public sign-in options (for example whether self-service password reset is on). */
+  options(): Observable<AuthOptions> {
+    return this.http.get<AuthOptions>(`${API}/options`);
   }
 
   /** Try to restore a session from the refresh cookie (page reload). */

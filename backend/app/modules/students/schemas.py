@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from app.modules.students.models import Gender, GuardianRelation, StudentStatus
+from app.modules.users.identity import normalize_username
 
 Name100 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
 Name200 = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
@@ -201,9 +202,26 @@ class StudentUpdate(BaseModel):
         return None if v is None else _check_admission(v)
 
 
+_OptUsername = Annotated[str, StringConstraints(max_length=254)] | None
+
+
 class LoginCreate(BaseModel):
-    email: EmailStr
+    """Username is optional: when omitted it is derived from the email's local part."""
+
+    username: Annotated[_OptUsername, BeforeValidator(_blank_to_none)] = None
+    email: OptEmail = None
     password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("username")
+    @classmethod
+    def _username(cls, v: str | None) -> str | None:
+        return None if v is None else normalize_username(v)
+
+    @model_validator(mode="after")
+    def _need_handle(self) -> "LoginCreate":
+        if self.username is None and self.email is None:
+            raise ValueError("Give a username or an email")
+        return self
 
 
 class ImportRow(BaseModel):

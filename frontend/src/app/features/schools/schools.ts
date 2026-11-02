@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 
 import { AdminApi, School } from '../../core/api/admin.api';
 import { apiErrorMessage } from '../../core/api/api-error';
+import { USERNAME_HINT, usernameFormat } from '../../core/auth/identity';
 import { LogoPicker } from '../../core/ui/logo-picker';
 
 @Component({
@@ -16,6 +17,7 @@ export class Schools {
   private readonly api = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
 
+  protected readonly usernameHint = USERNAME_HINT;
   protected readonly schools = signal<School[]>([]);
   protected readonly loading = signal(true);
   protected readonly submitting = signal(false);
@@ -45,6 +47,7 @@ export class Schools {
     code: ['', [Validators.required, Validators.pattern(/^[a-z0-9_-]+$/)]],
     board: ['', Validators.required],
     owner_full_name: ['', Validators.required],
+    owner_username: ['', [Validators.required, usernameFormat]],
     owner_email: ['', [Validators.required, Validators.email]],
     owner_password: ['', [Validators.required, Validators.minLength(8)]],
   });

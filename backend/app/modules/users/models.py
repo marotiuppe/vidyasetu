@@ -42,9 +42,11 @@ class User(TimestampMixin, Base):
     school_id: Mapped[int | None] = mapped_column(ForeignKey("schools.id"), index=True)
     # NULL branch_id for super admin, school owner and parents.
     branch_id: Mapped[int | None] = mapped_column(index=True)
-    email: Mapped[str] = mapped_column(String(254), unique=True)
+    # Login handles. Stored lower-case; the username is immutable, email and phone are optional.
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(254), unique=True)
     full_name: Mapped[str] = mapped_column(String(200))
-    phone: Mapped[str | None] = mapped_column(String(20))
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(255))
     role: Mapped[Role] = mapped_column(Enum(
             Role,

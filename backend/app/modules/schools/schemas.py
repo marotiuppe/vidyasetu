@@ -2,6 +2,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
 
+from app.modules.users.identity import normalize_username
+
 _Name = Annotated[str, StringConstraints(min_length=1, max_length=200)]
 _Board = Annotated[str, StringConstraints(max_length=50)]
 
@@ -22,8 +24,17 @@ class SchoolCreate(BaseModel):
     code: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9_-]+$")
     board: str = Field(default="CBSE", max_length=50)
     owner_email: EmailStr
+    # Optional; derived from the owner's email when omitted. Immutable once created.
+    owner_username: Annotated[str, StringConstraints(max_length=254)] | None = None
     owner_full_name: str = Field(min_length=1, max_length=200)
     owner_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("owner_username")
+    @classmethod
+    def _owner_username(cls, v: str | None) -> str | None:
+        if v is None or not v.strip():
+            return None
+        return normalize_username(v)
 
 
 def _not_null(v: object) -> object:

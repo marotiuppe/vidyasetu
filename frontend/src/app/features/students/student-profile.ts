@@ -1,16 +1,24 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 
 import { AcademicYear, AcademicsApi, SchoolClass, Section } from '../../core/api/academics.api';
-import { apiErrorMessage } from '../../core/api/api-error';
+import { apiErrorMessage, fieldErrorsFrom } from '../../core/api/api-error';
 import {
   GENDERS,
   Gender,
   Guardian,
+  LoginInput,
   RELATIONS,
   Relation,
   STATUSES,
@@ -19,6 +27,7 @@ import {
   StudentsApi,
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
+import { USERNAME_HINT, suggestUsername, usernameFormat } from '../../core/auth/identity';
 import { canWriteStudents } from '../../core/auth/permissions';
 import { StudentAttendance } from '../attendance/student-attendance';
 import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
@@ -45,6 +54,7 @@ export class StudentProfile {
   protected readonly statusLabel = statusLabel;
   protected readonly initials = initials;
   protected readonly today = todayIso();
+  protected readonly usernameHint = USERNAME_HINT;
   protected readonly canWrite = canWriteStudents(this.auth);
 
   protected readonly student = signal<StudentDetail | null>(null);
@@ -87,7 +97,8 @@ export class StudentProfile {
     is_primary: [false],
   });
   protected readonly loginForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    username: ['', [Validators.required, usernameFormat]],
+    email: ['', Validators.email],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
   protected readonly enrolForm = this.fb.group({
@@ -100,8 +111,12 @@ export class StudentProfile {
   constructor() {
     if (this.canWrite) {
       this.academics.years().subscribe({ next: (y) => this.years.set(y), error: () => undefined });
-      this.academics.classes().subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
-      this.academics.sections().subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
+      this.academics
+        .classes()
+        .subscribe({ next: (c) => this.classes.set(c), error: () => undefined });
+      this.academics
+        .sections()
+        .subscribe({ next: (s) => this.sections.set(s), error: () => undefined });
       this.enrolForm.controls.class_id.valueChanges
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((v) => {
@@ -219,7 +234,11 @@ export class StudentProfile {
   }
 
   protected startGuardianLogin(g: Guardian): void {
-    this.loginForm.reset({ email: g.email ?? '', password: '' });
+    this.loginForm.reset({
+      username: suggestUsername(g.email || g.full_name),
+      email: g.email ?? '',
+      password: '',
+    });
     this.open(`guardian-login-${g.id}`);
   }
 
@@ -229,7 +248,11 @@ export class StudentProfile {
       return;
     }
     const v = this.loginForm.getRawValue();
-    this.mutate(this.api.createGuardianLogin(g.id, v.email.trim(), v.password), 'Parent login created.');
+    this.mutate(
+      this.api.createGuardianLogin(g.id, this.loginBody(v)),
+      'Parent login created.',
+      this.loginForm,
+    );
   }
 
   protected removeGuardianLogin(g: Guardian): void {
@@ -277,8 +300,12 @@ export class StudentProfile {
 
   // ---- student login ---------------------------------------------------
 
-  protected startStudentLogin(): void {
-    this.loginForm.reset({ email: '', password: '' });
+  protected startStudentLogin(s: StudentDetail): void {
+    this.loginForm.reset({
+      username: suggestUsername(`${s.first_name} ${s.last_name}`),
+      email: '',
+      password: '',
+    });
     this.open('login');
   }
 
@@ -288,10 +315,22 @@ export class StudentProfile {
       return;
     }
     const v = this.loginForm.getRawValue();
-    this.mutate(this.api.createStudentLogin(s.id, v.email.trim(), v.password), 'Student login created.');
+    this.mutate(
+      this.api.createStudentLogin(s.id, this.loginBody(v)),
+      'Student login created.',
+      this.loginForm,
+    );
   }
 
   // ---- helpers ---------------------------------------------------------
+
+  private loginBody(v: { username: string; email: string; password: string }): LoginInput {
+    return {
+      username: v.username.trim().toLowerCase(),
+      email: v.email.trim() || null,
+      password: v.password,
+    };
+  }
 
   private open(panel: string): void {
     this.panelError.set(null);
@@ -299,8 +338,11 @@ export class StudentProfile {
     this.panel.set(panel);
   }
 
-  /** Run a write call, then reload the profile so every card shows the saved state. */
-  private mutate(request: Observable<unknown>, message: string): void {
+  /**
+   * Run a write call, then reload the profile so every card shows the saved state.
+   * With `form`, 422 messages land on their fields instead of the panel.
+   */
+  private mutate(request: Observable<unknown>, message: string, form?: FormGroup): void {
     const id = this.student()?.id;
     if (id === undefined) return;
     this.busy.set(true);
@@ -310,7 +352,7 @@ export class StudentProfile {
       next: () => {
         this.busy.set(false);
         this.panel.set(null);
-        this.loginForm.reset({ email: '', password: '' });
+        this.loginForm.reset({ username: '', email: '', password: '' });
         this.notice.set(message);
         this.api.get(id).subscribe({
           next: (s) => this.student.set(s),
@@ -319,8 +361,17 @@ export class StudentProfile {
       },
       error: (err: unknown) => {
         this.busy.set(false);
-        this.panelError.set(apiErrorMessage(err));
         this.error.set(null);
+        let placed = false;
+        for (const [name, text] of Object.entries(form ? fieldErrorsFrom(err) : {})) {
+          const control = form?.get(name);
+          if (control) {
+            control.setErrors({ server: text });
+            control.markAsTouched();
+            placed = true;
+          }
+        }
+        this.panelError.set(placed ? null : apiErrorMessage(err));
       },
     });
   }
