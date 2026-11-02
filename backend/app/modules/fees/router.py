@@ -29,9 +29,10 @@ from app.modules.fees.schemas import (
     StructureReplace,
     StudentFees,
 )
+from app.modules.settings.deps import require_feature
 from app.modules.users.models import Role
 
-router = APIRouter(tags=["fees"])
+router = APIRouter(tags=["fees"], dependencies=[Depends(require_feature("fees"))])
 
 _MANAGERS = (Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.ACCOUNTANT)
 # Super admin may read (always empty: no school data) but never write.

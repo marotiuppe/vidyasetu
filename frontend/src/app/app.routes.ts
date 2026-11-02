@@ -8,6 +8,46 @@ import {
 } from './core/auth/auth.guard';
 import { STUDENT_WRITER_ROLES } from './core/auth/permissions';
 
+const LEGAL_CHILDREN: Routes = [
+  {
+    path: 'privacy',
+    data: { title: 'Privacy policy' },
+    loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.PrivacyPolicy),
+  },
+  {
+    path: 'terms',
+    data: { title: 'Terms of use' },
+    loadComponent: () => import('./features/legal/terms-of-use').then((m) => m.TermsOfUse),
+  },
+  {
+    path: 'children',
+    data: { title: "Children's privacy" },
+    loadComponent: () => import('./features/legal/children-privacy').then((m) => m.ChildrenPrivacy),
+  },
+  {
+    path: 'cookies',
+    data: { title: 'Cookies and storage' },
+    loadComponent: () => import('./features/legal/cookies-notice').then((m) => m.CookiesNotice),
+  },
+  {
+    path: 'accessibility',
+    data: { title: 'Accessibility statement' },
+    loadComponent: () =>
+      import('./features/legal/accessibility-statement').then((m) => m.AccessibilityStatement),
+  },
+  {
+    path: 'grievance',
+    data: { title: 'Grievances' },
+    loadComponent: () => import('./features/legal/grievances').then((m) => m.Grievances),
+  },
+  {
+    path: 'security',
+    data: { title: 'Security and disclosure' },
+    loadComponent: () =>
+      import('./features/legal/security-disclosure').then((m) => m.SecurityDisclosure),
+  },
+];
+
 export const routes: Routes = [
   {
     path: 'login',
@@ -24,46 +64,13 @@ export const routes: Routes = [
     // Public legal pages: outside the shell and without authGuard, so visitors and signed-in users can read them.
     path: '',
     loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
-    children: [
-      {
-        path: 'privacy',
-        data: { title: 'Privacy policy' },
-        loadComponent: () => import('./features/legal/privacy-policy').then((m) => m.PrivacyPolicy),
-      },
-      {
-        path: 'terms',
-        data: { title: 'Terms of use' },
-        loadComponent: () => import('./features/legal/terms-of-use').then((m) => m.TermsOfUse),
-      },
-      {
-        path: 'children',
-        data: { title: "Children's privacy" },
-        loadComponent: () =>
-          import('./features/legal/children-privacy').then((m) => m.ChildrenPrivacy),
-      },
-      {
-        path: 'cookies',
-        data: { title: 'Cookies and storage' },
-        loadComponent: () => import('./features/legal/cookies-notice').then((m) => m.CookiesNotice),
-      },
-      {
-        path: 'accessibility',
-        data: { title: 'Accessibility statement' },
-        loadComponent: () =>
-          import('./features/legal/accessibility-statement').then((m) => m.AccessibilityStatement),
-      },
-      {
-        path: 'grievance',
-        data: { title: 'Grievances' },
-        loadComponent: () => import('./features/legal/grievances').then((m) => m.Grievances),
-      },
-      {
-        path: 'security',
-        data: { title: 'Security and disclosure' },
-        loadComponent: () =>
-          import('./features/legal/security-disclosure').then((m) => m.SecurityDisclosure),
-      },
-    ],
+    children: LEGAL_CHILDREN,
+  },
+  {
+    // The same pages for one school, reached by its school code (public, no sign-in needed).
+    path: 's/:code',
+    loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
+    children: LEGAL_CHILDREN,
   },
   {
     // Public landing page for visitors; signed-in users fall through to the shell (dashboard).
@@ -184,6 +191,11 @@ export const routes: Routes = [
         data: { title: 'Users' },
         canActivate: [roleGuard('super_admin', 'school_owner', 'management', 'headmaster')],
         loadComponent: () => import('./features/users/users').then((m) => m.Users),
+      },
+      {
+        path: 'settings',
+        data: { title: 'Settings' },
+        loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
       },
       {
         path: 'account',

@@ -16,9 +16,10 @@ from app.modules.attendance.schemas import (
     StaffSheet,
     StudentAttendance,
 )
+from app.modules.settings.deps import require_feature
 from app.modules.users.models import Role
 
-router = APIRouter(tags=["attendance"])
+router = APIRouter(tags=["attendance"], dependencies=[Depends(require_feature("attendance"))])
 
 _writers = Depends(
     require_roles(Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.HEADMASTER, Role.TEACHER, Role.CLERK)

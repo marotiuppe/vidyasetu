@@ -38,7 +38,9 @@
                 [routerLinkActiveOptions]="{ exact: item.path === '/' }"
               >
                 <sms-icon [name]="item.icon" [size]="17" />
-                <span class="nav-text">{{ item.label }}</span>
+                <span class="nav-text">{{
+                  item.labelKey ? i18n.t(item.labelKey) : item.label
+                }}</span>
                 @if (item.unreadBadge && unread() > 0) {
                   <span class="count" [attr.aria-label]="unread() + ' unread'">{{
                     unread() > 99 ? '99+' : unread()
@@ -64,7 +66,7 @@
         <sms-icon name="lock" [size]="14" /> Private school workspace <i class="dot"></i>
       </div>
       <div class="legal-menu">
-        <sms-legal-links variant="disclosure" />
+        <sms-legal-links variant="disclosure" [schoolCode]="school.code()" />
       </div>
     </div>
   </aside>

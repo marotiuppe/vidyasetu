@@ -4,10 +4,13 @@ from pydantic import BaseModel
 class LegalInfo(BaseModel):
     """Operator, grievance and contact details shown on the public legal pages.
 
-    Every value comes from settings (.env); unset values are null. Nothing else is exposed.
+    Values come from the stored settings with .env as fallback; unset values are null.
+    Nothing else is exposed.
     """
 
     configured: bool
+    # Set when a valid `?school=<code>` was given.
+    school_name: str | None = None
     operator_name: str | None
     operator_address: str | None
     operator_email: str | None

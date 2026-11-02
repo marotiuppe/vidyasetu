@@ -1,0 +1,181 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('settings.title') }}</h1>
+    <p class="page-subtitle">
+      {{
+        levels().length === 1 && levels()[0].level === 'user'
+          ? i18n.t('settings.subtitle.personal')
+          : i18n.t('settings.subtitle')
+      }}
+    </p>
+  </div>
+</div>
+
+@if (levelsLoading()) {
+  <p class="empty" role="status">{{ i18n.t('settings.loading') }}</p>
+} @else if (levels().length === 0) {
+  @if (loadError(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  } @else {
+    <p class="empty">{{ i18n.t('settings.none') }}</p>
+  }
+} @else {
+  @if (levels().length > 1) {
+    <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('settings.tabs')">
+      @for (l of levels(); track l.level; let i = $index) {
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          [id]="'settings-tab-' + l.level"
+          aria-controls="settings-panel"
+          [attr.aria-selected]="tab() === l.level"
+          [attr.tabindex]="tab() === l.level ? 0 : -1"
+          (click)="selectTab(l.level)"
+          (keydown)="onTabKey($event, i)"
+        >
+          {{ i18n.t('settings.level.' + l.level) }}
+        </button>
+      }
+    </div>
+  }
+
+  <div
+    id="settings-panel"
+    role="tabpanel"
+    [attr.aria-labelledby]="levels().length > 1 ? 'settings-tab-' + tab() : null"
+  >
+    @if (needsSchoolPick() || needsBranchPick()) {
+      <div class="pickers">
+        @if (needsSchoolPick()) {
+          <label class="field">
+            {{ i18n.t('settings.pickSchool') }}
+            <select class="input" (change)="pickSchool($event)">
+              <option value="" [selected]="schoolId() === null">
+                {{ i18n.t('settings.choose') }}
+              </option>
+              @for (s of schools(); track s.id) {
+                <option [value]="s.id" [selected]="schoolId() === s.id">{{ s.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        @if (needsBranchPick() && (!needsSchoolPick() || schoolId() !== null)) {
+          <label class="field">
+            {{ i18n.t('settings.pickBranch') }}
+            <select class="input" (change)="pickBranch($event)">
+              <option value="" [selected]="branchId() === null">
+                {{ i18n.t('settings.choose') }}
+              </option>
+              @for (b of visibleBranches(); track b.id) {
+                <option [value]="b.id" [selected]="branchId() === b.id">{{ b.name }}</option>
+              }
+            </select>
+          </label>
+        }
+      </div>
+    }
+
+    @if (scope() === null) {
+      <p class="empty">
+        {{
+          tab() === 'branch' && (!needsSchoolPick() || schoolId() !== null)
+            ? i18n.t('settings.pickBranch.prompt')
+            : i18n.t('settings.pickSchool.prompt')
+        }}
+      </p>
+    } @else {
+      <label class="field search">
+        {{ i18n.t('settings.search') }}
+        <input
+          class="input"
+          type="search"
+          autocomplete="off"
+          [value]="query()"
+          [placeholder]="i18n.t('settings.search.placeholder')"
+          (input)="onSearch($event)"
+        />
+      </label>
+
+      @if (loading()) {
+        <p class="empty" role="status">{{ i18n.t('settings.loading') }}</p>
+      } @else if (loadError(); as message) {
+        <p class="form-error" role="alert">{{ i18n.t('settings.error.load') }} {{ message }}</p>
+      } @else if (groups().length === 0) {
+        <p class="empty" role="status">
+          {{ query() ? i18n.t('settings.empty') : i18n.t('settings.none') }}
+        </p>
+      } @else {
+        <div class="groups">
+          @for (g of groups(); track g.name) {
+            <section class="card" [attr.aria-labelledby]="groupId(g.name)">
+              <div class="group-head">
+                <h2 class="card-title group-title" [id]="groupId(g.name)">
+                  <button
+                    type="button"
+                    class="group-toggle"
+                    [attr.aria-expanded]="!collapsed().has(g.name)"
+                    [attr.aria-controls]="groupId(g.name) + '-body'"
+                    [attr.aria-label]="groupTitle(g.name) + ': ' + i18n.t('settings.group.toggle')"
+                    (click)="toggleGroup(g.name)"
+                  >
+                    <span class="chev" aria-hidden="true">{{
+                      collapsed().has(g.name) ? '+' : '−'
+                    }}</span>
+                    {{ groupTitle(g.name) }}
+                  </button>
+                </h2>
+                @if (g.integration && canEditLevel() && tab() === 'school') {
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="testBusy(g)"
+                    (click)="sendTest(g)"
+                  >
+                    {{ testBusy(g) ? i18n.t('settings.testing') : i18n.t('settings.test') }}
+                  </button>
+                }
+              </div>
+              @if (g.integration) {
+                <div aria-live="polite">
+                  @if (testResult(g); as r) {
+                    <p [class]="r.ok ? 'notice' : 'form-error'" role="status">
+                      <strong
+                        >{{
+                          r.ok ? i18n.t('settings.test.ok') : i18n.t('settings.test.fail')
+                        }}.</strong
+                      >
+                      {{ r.detail }}
+                    </p>
+                  }
+                </div>
+              }
+              @if (!collapsed().has(g.name)) {
+                <div [id]="groupId(g.name) + '-body'">
+                  @for (item of g.items; track item.key) {
+                    <sms-setting-item
+                      [item]="item"
+                      [level]="tab()!"
+                      [scope]="scope()!"
+                      (updated)="replace($event)"
+                    />
+                  }
+                </div>
+              }
+            </section>
+          }
+        </div>
+      }
+    }
+
+    @if (tab() === 'user') {
+      <section class="card extra" aria-labelledby="pw-title">
+        <h2 class="card-title" id="pw-title">{{ i18n.t('settings.my.password') }}</h2>
+        <p class="hint">{{ i18n.t('settings.my.passwordHelp') }}</p>
+        <a class="btn btn-ghost btn-sm" routerLink="/account">{{
+          i18n.t('settings.my.password')
+        }}</a>
+      </section>
+    }
+  </div>
+}

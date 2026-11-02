@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.core.deps import CurrentUser, DbSession, require_roles
+from app.modules.settings.deps import require_feature
 from app.modules.students import service
 from app.modules.students.models import StudentStatus
 from app.modules.students.schemas import (
@@ -22,8 +23,9 @@ from app.modules.students.schemas import (
 )
 from app.modules.users.models import Role
 
-router = APIRouter(tags=["students"])
-parents_router = APIRouter(tags=["parents"])
+_feature = [Depends(require_feature("students"))]
+router = APIRouter(tags=["students"], dependencies=_feature)
+parents_router = APIRouter(tags=["parents"], dependencies=_feature)
 
 _writers = Depends(
     require_roles(

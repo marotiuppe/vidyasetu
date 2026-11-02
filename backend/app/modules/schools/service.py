@@ -4,6 +4,7 @@ import io
 import warnings
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import HTTPException, Request, status
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -13,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import utcnow
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.schools.schemas import SchoolOut
+from app.modules.settings import service as settings_service
 from app.modules.users.models import Role, User
 
 MAX_UPLOAD_BYTES = 1_000_000
@@ -100,13 +102,34 @@ async def logo_versions(db: AsyncSession, ids: Iterable[int]) -> dict[int, datet
 async def schools_out(db: AsyncSession, schools: Iterable[School]) -> list[SchoolOut]:
     items = list(schools)
     versions = await logo_versions(db, (s.id for s in items))
+    lockouts = await settings_service.school_lockouts(db, (s.id for s in items))
     result = []
     for s in items:
         out = SchoolOut.model_validate(s)
+        # The legacy school columns are no longer read; the settings table is the source.
+        out.login_max_attempts, out.login_lockout_minutes = lockouts[s.id]
         if s.id in versions:
             out.logo_url = logo_url(s.id, versions[s.id])
         result.append(out)
     return result
+
+
+_LOCKOUT_FIELDS = {
+    "login_max_attempts": "security.login_max_attempts",
+    "login_lockout_minutes": "security.login_lockout_minutes",
+}
+
+
+async def apply_school_update(
+    db: AsyncSession, actor: User, school: School, changes: dict[str, Any]
+) -> None:
+    """Apply a school update; lockout values are stored as settings (validated against limits)."""
+    for field, key in _LOCKOUT_FIELDS.items():
+        if field in changes:
+            await settings_service.set_school_value(db, actor, school.id, key, changes.pop(field))
+    for field, value in changes.items():
+        setattr(school, field, value)
+    await db.commit()
 
 
 async def school_out(db: AsyncSession, school: School) -> SchoolOut:

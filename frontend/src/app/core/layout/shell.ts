@@ -13,7 +13,9 @@ import { filter, map, startWith } from 'rxjs';
 
 import { NoticesService } from '../api/notices.service';
 import { SchoolService } from '../api/school.service';
+import { SettingsService } from '../api/settings.service';
 import { AuthService } from '../auth/auth.service';
+import { I18n } from '../i18n/i18n';
 import { LegalLinks } from '../legal/legal-links';
 import { Icon } from '../ui/icon';
 import { NAV_ITEMS, ROLE_LABELS } from './nav';
@@ -35,8 +37,10 @@ const NOTICE_POLL_MS = 120_000;
 export class Shell {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly school = inject(SchoolService);
+  protected readonly school = inject(SchoolService);
   private readonly notices = inject(NoticesService);
+  private readonly settings = inject(SettingsService);
+  protected readonly i18n = inject(I18n);
 
   protected readonly menuOpen = signal(false);
   protected readonly userMenuOpen = signal(false);
@@ -69,7 +73,9 @@ export class Shell {
   protected readonly navItems = computed(() => {
     const role = this.auth.user()?.role;
     return NAV_ITEMS.filter(
-      (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
+      (item) =>
+        (!item.roles || (role !== undefined && item.roles.includes(role))) &&
+        this.settings.isModuleOn(item.feature),
     );
   });
 
@@ -88,6 +94,7 @@ export class Shell {
       this.logoFailed.set(false);
     });
     this.school.load();
+    this.settings.load();
     this.notices.refresh();
     const timer = setInterval(() => this.notices.refresh(), NOTICE_POLL_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));

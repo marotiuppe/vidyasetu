@@ -19,6 +19,7 @@ from app.core.security import (
 from app.db.base import as_utc, utcnow
 from app.modules.auth.models import RefreshToken
 from app.modules.schools.models import School
+from app.modules.settings import service as settings_service
 from app.modules.users.identity import detect_kind, normalize_email, normalize_phone
 from app.modules.users.models import User
 
@@ -57,12 +58,8 @@ async def _school_active(db: AsyncSession, user: User) -> bool:
 
 
 async def _lockout_limits(db: AsyncSession, user: User) -> tuple[int, int]:
-    """(max failed attempts, lockout minutes) from the account's school, else platform defaults."""
-    settings = get_settings()
-    school = await db.get(School, user.school_id) if user.school_id is not None else None
-    if school is None:
-        return settings.login_max_attempts_default, settings.login_lockout_minutes_default
-    return school.login_max_attempts, school.login_lockout_minutes
+    """(max failed attempts, lockout minutes): school setting bounded by the platform limits."""
+    return await settings_service.lockout_limits(db, user.school_id)
 
 
 async def _register_failure(db: AsyncSession, user: User) -> None:

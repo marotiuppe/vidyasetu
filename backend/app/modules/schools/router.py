@@ -6,13 +6,13 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.core.config import get_settings
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.core.password_policy import enforce_password
 from app.core.security import hash_password
 from app.modules.schools import service
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.schools.schemas import SchoolCreate, SchoolOut, SchoolOwnerUpdate, SchoolUpdate
+from app.modules.settings import service as settings_service
 from app.modules.users.models import Role, User
 from app.modules.users.service import derive_unique_username, ensure_identity_available
 
@@ -36,9 +36,7 @@ async def update_my_school(data: SchoolOwnerUpdate, db: DbSession, user: Current
     school = await db.get(School, user.school_id) if user.school_id else None
     if school is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No school")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(school, field, value)
-    await db.commit()
+    await service.apply_school_update(db, user, school, data.model_dump(exclude_unset=True))
     return await service.school_out(db, school)
 
 
@@ -71,15 +69,13 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
         username=username,
         email=email,
         full_name=data.owner_full_name,
+        min_length=await settings_service.password_min_length(db, None),
     )
     await ensure_identity_available(db, username=username, email=email)
-    settings = get_settings()
     school = School(
         name=data.name,
         code=data.code,
         board=data.board,
-        login_max_attempts=settings.login_max_attempts_default,
-        login_lockout_minutes=settings.login_lockout_minutes_default,
     )
     db.add(school)
     try:
@@ -105,13 +101,13 @@ async def create_school(data: SchoolCreate, db: DbSession) -> SchoolOut:
 
 
 @router.patch("/{school_id}", response_model=SchoolOut, dependencies=[Depends(_platform)])
-async def update_school(school_id: int, data: SchoolUpdate, db: DbSession) -> SchoolOut:
+async def update_school(
+    school_id: int, data: SchoolUpdate, db: DbSession, actor: CurrentUser
+) -> SchoolOut:
     school = await db.get(School, school_id)
     if school is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail="School not found")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(school, field, value)
-    await db.commit()
+    await service.apply_school_update(db, actor, school, data.model_dump(exclude_unset=True))
     return await service.school_out(db, school)
 
 

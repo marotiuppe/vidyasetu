@@ -30,6 +30,7 @@ from app.modules.notices.router import router as notices_router
 from app.modules.public.router import router as public_router
 from app.modules.public.router import site_router as public_site_router
 from app.modules.schools.router import router as schools_router
+from app.modules.settings.router import router as settings_router
 from app.modules.students.router import parents_router
 from app.modules.students.router import router as students_router
 from app.modules.users.identity import suggest_username
@@ -152,6 +153,7 @@ api.include_router(parents_router)
 api.include_router(attendance_router)
 api.include_router(notices_router)
 api.include_router(fees_router)
+api.include_router(settings_router)
 api.include_router(public_router)
 app.include_router(api)
 app.include_router(public_site_router)

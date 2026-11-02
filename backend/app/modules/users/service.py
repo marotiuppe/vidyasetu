@@ -10,6 +10,7 @@ from app.core.security import hash_password
 from app.core.tenant import scope_users
 from app.modules.auth.service import revoke_user_sessions
 from app.modules.branches.models import Branch
+from app.modules.settings import service as settings_service
 from app.modules.users.identity import suggest_username
 from app.modules.users.models import BRANCH_ROLES, Role, User
 from app.modules.users.schemas import UserCreate, UserUpdate
@@ -112,10 +113,6 @@ async def derive_unique_username(db: AsyncSession, email: str) -> str:
 async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
     if data.role not in CREATABLE.get(actor.role, set()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not allowed to create this role")
-    enforce_password(
-        data.password, username=data.username, email=data.email, full_name=data.full_name
-    )
-
     school_id: int | None
     branch_id: int | None = None
 
@@ -138,6 +135,13 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
             if branch is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Branch not found")
 
+    enforce_password(
+        data.password,
+        username=data.username,
+        email=data.email,
+        full_name=data.full_name,
+        min_length=await settings_service.password_min_length(db, school_id),
+    )
     await ensure_identity_available(
         db,
         username=data.username,
@@ -211,6 +215,7 @@ async def reset_password(db: AsyncSession, actor: User, user_id: int, new_passwo
         username=target.username,
         email=target.email,
         full_name=target.full_name,
+        min_length=await settings_service.password_min_length(db, target.school_id),
     )
     target.password_hash = hash_password(new_password)
     target.must_change_password = True

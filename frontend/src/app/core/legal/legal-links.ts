@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 export const LEGAL_LINKS: readonly { label: string; path: string }[] = [
@@ -24,5 +24,13 @@ export const LEGAL_LINKS: readonly { label: string; path: string }[] = [
 })
 export class LegalLinks {
   readonly variant = input<'list' | 'disclosure'>('list');
-  protected readonly links = LEGAL_LINKS;
+  /** School code: links then open that school's own legal pages (`/s/<code>/...`). */
+  readonly schoolCode = input<string | null>(null);
+  protected readonly links = computed(() => {
+    const code = this.schoolCode();
+    return LEGAL_LINKS.map((l) => ({
+      label: l.label,
+      path: code ? `/s/${encodeURIComponent(code)}${l.path}` : l.path,
+    }));
+  });
 }

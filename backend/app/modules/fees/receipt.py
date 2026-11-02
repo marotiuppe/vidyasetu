@@ -123,6 +123,8 @@ def build_receipt_pdf(d: dict[str, Any]) -> bytes:
 
     c.setFillColorRGB(0.4, 0.4, 0.4)
     c.setFont("Helvetica", 8)
+    if d.get("footer"):
+        c.drawCentredString(width / 2, margin + 5 * mm, str(d["footer"])[:150])
     c.drawCentredString(width / 2, margin, "This is a computer generated receipt.")
     c.showPage()
     c.save()

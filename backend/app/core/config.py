@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     trusted_hosts: list[str] = ["*"]
     # Largest accepted request body, in bytes.
     max_body_bytes: int = Field(default=12_000_000, ge=1024)
+    # Key that protects secret settings (SMS, SMTP, payment keys) stored in the database.
+    # Development falls back to SECRET_KEY; production refuses to store secrets without it.
+    settings_encryption_key: str | None = None
     # Take the client IP from the last X-Forwarded-For entry (only behind a trusted proxy).
     trust_proxy_headers: bool = False
 
@@ -72,6 +75,7 @@ class Settings(BaseSettings):
         "hosting_region",
         "policy_effective_date",
         "data_retention_note",
+        "settings_encryption_key",
         mode="before",
     )
     @classmethod

@@ -1,0 +1,68 @@
+:host {
+  display: block;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+:host:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.item {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+}
+
+.item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.item-label {
+  font-weight: 650;
+  font-size: 0.9rem;
+}
+
+.item-help {
+  margin: 0;
+}
+
+.edit {
+  display: grid;
+  gap: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.readonly,
+.secret-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.readonly-value {
+  overflow-wrap: anywhere;
+}
+
+.check input {
+  width: 22px;
+  height: 22px;
+}
+
+@media (pointer: coarse), (max-width: 1023px) {
+  .actions .btn {
+    min-height: 44px;
+  }
+}

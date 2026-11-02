@@ -11,6 +11,11 @@
 </header>
 
 <main id="legal-main" class="legal-wrap legal-main" tabindex="-1">
+  @if (code()) {
+    <p class="legal-school" role="note">
+      <strong>{{ i18n.t('legal.school') }}:</strong> {{ schoolName() ?? code() }}
+    </p>
+  }
   @if (notConfigured()) {
     <p class="legal-banner" role="note">
       The operator has not yet entered the legal contact details. This page is a template and must
@@ -33,7 +38,7 @@
 
 <footer class="legal-foot">
   <div class="legal-wrap">
-    <sms-legal-links />
+    <sms-legal-links [schoolCode]="code()" />
     <p class="legal-copy">&copy; {{ year }} Vidyasetu</p>
   </div>
 </footer>

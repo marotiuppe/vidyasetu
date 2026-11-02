@@ -1,0 +1,64 @@
+.pickers {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.search {
+  max-width: 420px;
+  margin-bottom: 16px;
+}
+
+.groups {
+  display: grid;
+  gap: 16px;
+}
+
+.group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.group-title {
+  margin: 0;
+}
+
+.group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.group-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.chev {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  font-weight: 700;
+  background: var(--surface-tint);
+  border-radius: 50%;
+}
+
+.extra {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  justify-items: start;
+}

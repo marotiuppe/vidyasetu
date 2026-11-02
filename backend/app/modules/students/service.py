@@ -20,6 +20,7 @@ from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
 from app.modules.branches.models import Branch
+from app.modules.settings import service as settings_service
 from app.modules.students.models import (
     Enrollment,
     Guardian,
@@ -1055,7 +1056,11 @@ async def create_guardian_login(
     if user is None:
         username = await _login_username(db, data)
         enforce_password(
-            data.password, username=username, email=email, full_name=guardian.full_name
+            data.password,
+            username=username,
+            email=email,
+            full_name=guardian.full_name,
+            min_length=await settings_service.password_min_length(db, student.school_id),
         )
         user = User(
             school_id=student.school_id,
@@ -1092,7 +1097,13 @@ async def create_student_login(
         await ensure_identity_available(db, email=email)
     username = await _login_username(db, data)
     full_name = f"{student.first_name} {student.last_name}"
-    enforce_password(data.password, username=username, email=email, full_name=full_name)
+    enforce_password(
+        data.password,
+        username=username,
+        email=email,
+        full_name=full_name,
+        min_length=await settings_service.password_min_length(db, student.school_id),
+    )
     user = User(
         school_id=student.school_id,
         branch_id=student.branch_id,

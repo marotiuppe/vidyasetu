@@ -8,6 +8,7 @@ from app.core.deps import CurrentUser, DbSession, require_cookie_request
 from app.core.password_policy import enforce_password
 from app.core.security import hash_password, verify_password
 from app.modules.auth import service
+from app.modules.settings import service as settings_service
 from app.modules.users.schemas import UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -156,6 +157,7 @@ async def change_password(
         username=user.username,
         email=user.email,
         full_name=user.full_name,
+        min_length=await settings_service.password_min_length(db, user.school_id),
     )
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = False

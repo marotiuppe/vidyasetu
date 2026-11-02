@@ -1,14 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 import { AdminApi, School } from '../../core/api/admin.api';
 import { apiErrorMessage, placeServerErrors } from '../../core/api/api-error';
 import { SchoolService } from '../../core/api/school.service';
+import { I18n } from '../../core/i18n/i18n';
 import { LogoPicker } from '../../core/ui/logo-picker';
 
 @Component({
   selector: 'sms-school-profile',
-  imports: [ReactiveFormsModule, LogoPicker],
+  imports: [ReactiveFormsModule, LogoPicker, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './school-profile.html',
   styleUrl: './school-profile.css',
@@ -17,6 +19,7 @@ export class SchoolProfile {
   private readonly api = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly schoolService = inject(SchoolService);
+  protected readonly i18n = inject(I18n);
   private readonly picker = viewChild<LogoPicker>('picker');
 
   protected readonly school = signal<School | null>(null);
@@ -35,8 +38,6 @@ export class SchoolProfile {
   protected readonly form = this.fb.group({
     name: ['', Validators.required],
     board: ['', Validators.required],
-    login_max_attempts: [5, [Validators.required, Validators.min(3), Validators.max(10)]],
-    login_lockout_minutes: [15, [Validators.required, Validators.min(5), Validators.max(1440)]],
   });
 
   constructor() {
@@ -57,7 +58,7 @@ export class SchoolProfile {
       this.form.markAllAsTouched();
       return;
     }
-    const { name, board, login_max_attempts, login_lockout_minutes } = this.form.getRawValue();
+    const { name, board } = this.form.getRawValue();
     this.saving.set(true);
     this.detailsError.set(null);
     this.detailsNotice.set(null);
@@ -65,8 +66,6 @@ export class SchoolProfile {
       .updateMySchool({
         name: name.trim(),
         board: board.trim(),
-        login_max_attempts: Number(login_max_attempts),
-        login_lockout_minutes: Number(login_lockout_minutes),
       })
       .subscribe({
         next: (s) => {
@@ -131,8 +130,6 @@ export class SchoolProfile {
     this.form.reset({
       name: s.name,
       board: s.board,
-      login_max_attempts: s.login_max_attempts,
-      login_lockout_minutes: s.login_lockout_minutes,
     });
   }
 }

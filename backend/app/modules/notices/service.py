@@ -17,6 +17,7 @@ from app.modules.notices.schemas import (
     NoticeUpdate,
     TargetIn,
 )
+from app.modules.settings import service as settings_service
 from app.modules.users.models import Role, User
 
 IST = timezone(timedelta(hours=5, minutes=30))  # no DST, so a fixed offset is exact
@@ -301,6 +302,13 @@ async def create_notice(db: AsyncSession, actor: User, data: NoticeCreate) -> No
         raise _unprocessable("expires_on cannot be in the past")
     branch_id, class_id, section_id = await _resolve_target(db, actor, data.target)
     assert actor.school_id is not None
+    expires_on = data.expires_on
+    if expires_on is None:
+        days = await settings_service.get_int(
+            db, "academic.notice_default_expiry_days", school_id=actor.school_id
+        )
+        if days > 0:
+            expires_on = day + timedelta(days=days)
     notice = Notice(
         school_id=actor.school_id,
         branch_id=branch_id,
@@ -311,7 +319,7 @@ async def create_notice(db: AsyncSession, actor: User, data: NoticeCreate) -> No
         body=data.body,
         category=data.category,
         is_pinned=bool(data.is_pinned),
-        expires_on=data.expires_on,
+        expires_on=expires_on,
         created_by=actor.id,
     )
     db.add(notice)

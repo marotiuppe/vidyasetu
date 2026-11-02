@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from app.core.deps import CurrentUser, DbSession
 from app.modules.notices import service
@@ -12,8 +12,11 @@ from app.modules.notices.schemas import (
     NoticeUpdate,
     UnreadCount,
 )
+from app.modules.settings.deps import require_feature
 
-router = APIRouter(prefix="/notices", tags=["notices"])
+router = APIRouter(
+    prefix="/notices", tags=["notices"], dependencies=[Depends(require_feature("notices"))]
+)
 
 
 @router.get("", response_model=NoticePage)

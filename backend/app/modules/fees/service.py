@@ -55,6 +55,7 @@ from app.modules.fees.schemas import (
     Totals,
 )
 from app.modules.schools.models import School, SchoolLogo
+from app.modules.settings import service as settings_service
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import User
 
@@ -853,10 +854,10 @@ async def record_payment(
         if data.amount_paise > balance:
             raise _conflict("Amount exceeds the invoice balance")
         number_year = day.year
+        prefix = await settings_service.get_str(db, "fees.receipt_prefix", school_id=school_id)
+        receipt_prefix = f"{prefix or 'RCT'}-{number_year}-"
         seq = (
-            await _max_seq(
-                db, Payment.receipt_no, Payment.school_id, school_id, f"RCT-{number_year}-"
-            )
+            await _max_seq(db, Payment.receipt_no, Payment.school_id, school_id, receipt_prefix)
             + 1
         )
         payment = Payment(
@@ -864,7 +865,7 @@ async def record_payment(
             branch_id=inv.branch_id,
             invoice_id=inv.id,
             student_id=inv.student_id,
-            receipt_no=f"RCT-{number_year}-{seq:05d}",
+            receipt_no=f"{receipt_prefix}{seq:05d}",
             amount_paise=data.amount_paise,
             method=data.method,
             reference=_blank_to_none(data.reference),
@@ -1277,4 +1278,7 @@ async def receipt_data(db: AsyncSession, actor: User, payment_id: int) -> dict[s
         "note": payment.note,
         "reversed": payment.status == PaymentStatus.REVERSED,
         "reversed_reason": payment.reversed_reason,
+        "footer": await settings_service.get_str(
+            db, "fees.receipt_footer", school_id=payment.school_id
+        ),
     }

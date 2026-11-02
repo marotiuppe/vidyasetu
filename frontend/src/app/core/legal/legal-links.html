@@ -3,7 +3,7 @@
     <summary>Legal</summary>
     <nav aria-label="Legal">
       <ul class="links">
-        @for (link of links; track link.path) {
+        @for (link of links(); track link.path) {
           <li>
             <a [routerLink]="link.path" routerLinkActive="current" ariaCurrentWhenActive="page">{{
               link.label
@@ -16,7 +16,7 @@
 } @else {
   <nav aria-label="Legal">
     <ul class="links">
-      @for (link of links; track link.path) {
+      @for (link of links(); track link.path) {
         <li>
           <a [routerLink]="link.path" routerLinkActive="current" ariaCurrentWhenActive="page">{{
             link.label

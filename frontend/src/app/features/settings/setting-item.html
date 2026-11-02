@@ -1,0 +1,136 @@
+<div class="item">
+  <div class="item-head">
+    <label class="item-label" [for]="inputId()">{{ label() }}</label>
+    <span
+      class="badge"
+      [class.badge-success]="item().source === 'own'"
+      [class.badge-muted]="item().source !== 'own'"
+      >{{ sourceLabel() }}</span
+    >
+  </div>
+  @if (item().help) {
+    <p class="hint item-help" [id]="inputId() + '-help'">{{ item().help }}</p>
+  }
+
+  @if (!item().can_edit) {
+    <p class="readonly" [id]="inputId()">
+      <span class="readonly-value">{{ displayValue() }}</span>
+      <span class="hint">{{ i18n.t('settings.readonly') }}</span>
+    </p>
+  } @else {
+    <form class="edit" (submit)="$event.preventDefault(); dirty() && !busy() && save()" novalidate>
+      @switch (item().type) {
+        @case ('bool') {
+          <label class="check">
+            <input
+              type="checkbox"
+              role="switch"
+              [id]="inputId()"
+              [checked]="draft() === true"
+              [attr.aria-describedby]="inputId() + '-help'"
+              (change)="setBool($event)"
+            />
+            <span>{{ draft() === true ? i18n.t('settings.on') : i18n.t('settings.off') }}</span>
+          </label>
+        }
+        @case ('text') {
+          <textarea
+            class="input"
+            rows="4"
+            [id]="inputId()"
+            [value]="draft()"
+            [attr.aria-describedby]="inputId() + '-help'"
+            (input)="setText($event)"
+          ></textarea>
+        }
+        @case ('choice') {
+          <select
+            class="input"
+            [id]="inputId()"
+            [attr.aria-describedby]="inputId() + '-help'"
+            (change)="setText($event)"
+          >
+            @for (c of item().choices ?? []; track c) {
+              <option [value]="c" [selected]="draft() === c">
+                {{ i18n.server('settings.choice', c, c) }}
+              </option>
+            }
+          </select>
+        }
+        @case ('secret') {
+          <p class="secret-state">
+            <span
+              class="badge"
+              [class.badge-success]="item().is_set"
+              [class.badge-muted]="!item().is_set"
+              >{{ displayValue() }}</span
+            >
+            <span class="hint">{{ i18n.t('settings.secret.never') }}</span>
+          </p>
+          <input
+            class="input"
+            type="password"
+            autocomplete="new-password"
+            [id]="inputId()"
+            [value]="draft()"
+            [placeholder]="i18n.t('settings.secret.placeholder')"
+            [attr.aria-label]="label() + ': ' + i18n.t('settings.secret.replace')"
+            [attr.aria-describedby]="inputId() + '-help'"
+            (input)="setText($event)"
+          />
+        }
+        @default {
+          <input
+            class="input"
+            [type]="inputType()"
+            [attr.inputmode]="item().type === 'int' ? 'numeric' : null"
+            [attr.min]="item().type === 'int' ? item().min : null"
+            [attr.max]="item().type === 'int' ? item().max : null"
+            [attr.step]="item().type === 'int' ? 1 : null"
+            autocomplete="off"
+            [id]="inputId()"
+            [value]="draft()"
+            [attr.aria-describedby]="inputId() + '-help'"
+            (input)="setText($event)"
+          />
+        }
+      }
+      @if (range(); as r) {
+        <p class="hint">{{ r }}</p>
+      }
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary btn-sm" [disabled]="!dirty() || busy()">
+          {{ busy() ? i18n.t('settings.saving') : i18n.t('settings.save') }}
+        </button>
+        @if (isSecret() && item().is_set) {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="busy()"
+            (click)="clearSecret()"
+          >
+            {{ i18n.t('settings.secret.clear') }}
+          </button>
+        }
+        @if (item().source === 'own') {
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="reset()">
+            {{ i18n.t('settings.reset') }}
+          </button>
+        }
+      </div>
+    </form>
+  }
+
+  @if (changed(); as c) {
+    <p class="hint">{{ c }}</p>
+  }
+  <div aria-live="polite">
+    @if (notice(); as n) {
+      <p class="notice" role="status">{{ n }}</p>
+    }
+  </div>
+  @if (error(); as e) {
+    <p class="form-error" role="alert">{{ e }}</p>
+  }
+</div>

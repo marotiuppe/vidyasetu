@@ -67,10 +67,15 @@ def password_problem(
     username: str | None = None,
     email: str | None = None,
     full_name: str | None = None,
+    min_length: int = MIN_LENGTH,
 ) -> str | None:
-    """Return the first rule the password breaks, or None when it is acceptable."""
-    if len(password) < MIN_LENGTH:
-        return f"Password must be at least {MIN_LENGTH} characters"
+    """Return the first rule the password breaks, or None when it is acceptable.
+
+    `min_length` is the school's setting; it can raise the minimum but never lower it below 10.
+    """
+    minimum = max(MIN_LENGTH, min_length)
+    if len(password) < minimum:
+        return f"Password must be at least {minimum} characters"
     if len(password) > MAX_LENGTH:
         return f"Password must be at most {MAX_LENGTH} characters"
     lower = password.lower()
@@ -101,8 +106,11 @@ def enforce_password(
     username: str | None = None,
     email: str | None = None,
     full_name: str | None = None,
+    min_length: int = MIN_LENGTH,
 ) -> None:
     """Raise 422 (code `weak_password`) when the password breaks the policy."""
-    problem = password_problem(password, username=username, email=email, full_name=full_name)
+    problem = password_problem(
+        password, username=username, email=email, full_name=full_name, min_length=min_length
+    )
     if problem is not None:
         raise ApiError(422, problem, WEAK_CODE)
