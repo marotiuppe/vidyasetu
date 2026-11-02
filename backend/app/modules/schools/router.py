@@ -27,6 +27,14 @@ async def list_schools(db: DbSession) -> list[SchoolOut]:
     return [SchoolOut.model_validate(s) for s in result]
 
 
+@router.get("/{school_id}", response_model=SchoolOut, dependencies=[Depends(_platform)])
+async def get_school(school_id: int, db: DbSession) -> SchoolOut:
+    school = await db.get(School, school_id)
+    if school is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="School not found")
+    return SchoolOut.model_validate(school)
+
+
 @router.post(
     "",
     response_model=SchoolOut,

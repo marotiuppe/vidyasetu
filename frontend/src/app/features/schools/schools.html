@@ -1,0 +1,128 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Schools</h1>
+    <p class="page-subtitle">Every school on the platform, each with its own owner account.</p>
+  </div>
+  <button type="button" class="btn btn-primary" [attr.aria-expanded]="showForm()" (click)="toggleForm()">
+    {{ showForm() ? 'Close' : 'New school' }}
+  </button>
+</div>
+
+<div class="stack">
+  @if (showForm()) {
+    <section class="card" aria-labelledby="new-school">
+      <h2 class="card-title" id="new-school">Create a school</h2>
+      <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <div class="form-grid">
+          <label class="field">
+            School name
+            <input class="input" formControlName="name" autocomplete="off" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">Name is required.</span>
+            }
+          </label>
+          <label class="field">
+            Code
+            <input class="input" formControlName="code" autocomplete="off" placeholder="short-code" />
+            @if (form.controls.code.touched && form.controls.code.invalid) {
+              <span class="field-error">Use lowercase letters, digits, hyphen or underscore.</span>
+            }
+          </label>
+          <label class="field">
+            Board
+            <input class="input" formControlName="board" autocomplete="off" />
+            @if (form.controls.board.touched && form.controls.board.invalid) {
+              <span class="field-error">Board is required.</span>
+            }
+          </label>
+        </div>
+        <h3 class="card-title sub">Owner account</h3>
+        <div class="form-grid">
+          <label class="field">
+            Owner full name
+            <input class="input" formControlName="owner_full_name" autocomplete="off" />
+            @if (form.controls.owner_full_name.touched && form.controls.owner_full_name.invalid) {
+              <span class="field-error">Owner name is required.</span>
+            }
+          </label>
+          <label class="field">
+            Owner email
+            <input class="input" type="email" formControlName="owner_email" autocomplete="off" />
+            @if (form.controls.owner_email.touched && form.controls.owner_email.invalid) {
+              <span class="field-error">Enter a valid email address.</span>
+            }
+          </label>
+          <label class="field">
+            Owner password
+            <input class="input" type="password" formControlName="owner_password" autocomplete="new-password" />
+            @if (form.controls.owner_password.touched && form.controls.owner_password.invalid) {
+              <span class="field-error">Use at least 8 characters.</span>
+            }
+          </label>
+        </div>
+        @if (formError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            {{ submitting() ? 'Creating…' : 'Create school' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancel</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="school-list">
+    <h2 class="card-title" id="school-list">All schools</h2>
+    @if (loading()) {
+      <p class="empty" role="status">Loading schools…</p>
+    } @else {
+      <ul class="rows">
+        @for (school of schools(); track school.id) {
+          <li class="row">
+            <span class="row-main">
+              <strong>{{ school.name }}</strong>
+              <span class="row-sub">Code {{ school.code }} · Board {{ school.board }}</span>
+            </span>
+            <span class="badge" [class.badge-success]="school.is_active" [class.badge-muted]="!school.is_active">
+              {{ school.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            @if (confirmId() === school.id) {
+              <span class="row-actions" role="group" [attr.aria-label]="'Confirm for ' + school.name">
+                <span class="row-sub">
+                  {{
+                    school.is_active
+                      ? 'Deactivate this school? Its users will not be able to sign in.'
+                      : 'Activate this school again?'
+                  }}
+                </span>
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  [disabled]="busyId() === school.id"
+                  (click)="confirmToggle(school)"
+                >
+                  Confirm
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="cancelToggle()">Cancel</button>
+              </span>
+            } @else {
+              <span class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="askToggle(school.id)">
+                  {{ school.is_active ? 'Deactivate' : 'Activate' }}
+                </button>
+              </span>
+            }
+          </li>
+        } @empty {
+          <li class="empty">No schools yet. Create the first one above.</li>
+        }
+      </ul>
+    }
+  </section>
+</div>

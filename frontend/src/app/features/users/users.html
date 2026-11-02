@@ -1,0 +1,192 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Users</h1>
+    <p class="page-subtitle">Staff, parent and student accounts you can manage.</p>
+  </div>
+  @if (creatableRoles().length) {
+    <button type="button" class="btn btn-primary" [attr.aria-expanded]="showForm()" (click)="toggleForm()">
+      {{ showForm() ? 'Close' : 'New user' }}
+    </button>
+  }
+</div>
+
+<div class="stack">
+  @if (showForm()) {
+    <section class="card" aria-labelledby="new-user">
+      <h2 class="card-title" id="new-user">Create a user</h2>
+      <form [formGroup]="form" (ngSubmit)="create()" novalidate>
+        <div class="form-grid">
+          <label class="field">
+            Role
+            <select class="input" formControlName="role">
+              @for (r of creatableRoles(); track r) {
+                <option [value]="r">{{ roleLabels[r] }}</option>
+              }
+            </select>
+          </label>
+          @if (needsSchool()) {
+            <label class="field">
+              School
+              <select class="input" formControlName="school_id">
+                <option [value]="0" disabled>Select school</option>
+                @for (s of schools(); track s.id) {
+                  <option [value]="s.id">{{ s.name }}</option>
+                }
+              </select>
+            </label>
+          }
+          @if (needsBranch()) {
+            <label class="field">
+              Branch
+              <select class="input" formControlName="branch_id">
+                <option [value]="0" disabled>Select branch</option>
+                @for (b of branchOptions(); track b.id) {
+                  <option [value]="b.id">{{ b.name }}</option>
+                }
+              </select>
+            </label>
+          }
+          <label class="field">
+            Full name
+            <input class="input" formControlName="full_name" autocomplete="off" />
+            @if (form.controls.full_name.touched && form.controls.full_name.invalid) {
+              <span class="field-error">Name is required.</span>
+            }
+          </label>
+          <label class="field">
+            Email
+            <input class="input" type="email" formControlName="email" autocomplete="off" />
+            @if (form.controls.email.touched && form.controls.email.invalid) {
+              <span class="field-error">Enter a valid email address.</span>
+            }
+          </label>
+          <label class="field">
+            Phone (optional)
+            <input class="input" type="tel" formControlName="phone" autocomplete="off" />
+          </label>
+          <label class="field">
+            Temporary password
+            <input class="input" type="password" formControlName="password" autocomplete="new-password" />
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <span class="field-error">Use at least 8 characters.</span>
+            }
+          </label>
+        </div>
+        @if (formError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            {{ submitting() ? 'Creating…' : 'Create user' }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="toggleForm()">Cancel</button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="user-list">
+    <h2 class="card-title" id="user-list">All users</h2>
+    <form class="toolbar" [formGroup]="filters" (submit)="$event.preventDefault()" role="search">
+      <label class="field">
+        Search
+        <input
+          class="input"
+          type="search"
+          formControlName="q"
+          placeholder="Name or email"
+          autocomplete="off"
+        />
+      </label>
+      <label class="field">
+        Role
+        <select class="input" formControlName="role">
+          <option value="">All roles</option>
+          @for (r of allRoles; track r) {
+            <option [value]="r">{{ roleLabels[r] }}</option>
+          }
+        </select>
+      </label>
+    </form>
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading users…</p>
+    } @else {
+      <ul class="rows">
+        @for (user of users(); track user.id) {
+          <li class="row">
+            <span class="row-main">
+              <strong>{{ user.full_name }}</strong>
+              <span class="row-sub">{{ user.email }}@if (user.phone) { · {{ user.phone }} }</span>
+            </span>
+            <span class="row-main">
+              <span>{{ roleLabels[user.role] }}</span>
+              <span class="row-sub">{{ branchName(user.branch_id) }}</span>
+            </span>
+            <span class="badge" [class.badge-success]="user.is_active" [class.badge-muted]="!user.is_active">
+              {{ user.is_active ? 'Active' : 'Inactive' }}
+            </span>
+            <span class="row-actions">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit(user)">Edit</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="startReset(user)">Reset password</button>
+            </span>
+
+            @if (editingId() === user.id) {
+              <form class="panel" [formGroup]="editForm" (ngSubmit)="saveEdit(user)" novalidate>
+                <div class="form-grid">
+                  <label class="field">
+                    Full name
+                    <input class="input" formControlName="full_name" autocomplete="off" />
+                    @if (editForm.controls.full_name.touched && editForm.controls.full_name.invalid) {
+                      <span class="field-error">Name is required.</span>
+                    }
+                  </label>
+                  <label class="field">
+                    Phone
+                    <input class="input" type="tel" formControlName="phone" autocomplete="off" />
+                  </label>
+                  <label class="check"><input type="checkbox" formControlName="is_active" /> Active</label>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busyId() === user.id">Save</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">Cancel</button>
+                </div>
+              </form>
+            }
+            @if (resettingId() === user.id) {
+              <form class="panel" (submit)="$event.preventDefault(); saveReset(user)" novalidate>
+                <label class="field">
+                  New password for {{ user.full_name }}
+                  <input
+                    class="input"
+                    type="password"
+                    [formControl]="resetControl"
+                    autocomplete="new-password"
+                  />
+                  @if (resetControl.touched && resetControl.invalid) {
+                    <span class="field-error">Use at least 8 characters.</span>
+                  }
+                </label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busyId() === user.id">
+                    Set password
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanels()">Cancel</button>
+                </div>
+              </form>
+            }
+          </li>
+        } @empty {
+          <li class="empty">No users match.</li>
+        }
+      </ul>
+    }
+  </section>
+</div>

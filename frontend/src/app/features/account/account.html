@@ -1,0 +1,55 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Account</h1>
+    <p class="page-subtitle">Your sign-in details and password.</p>
+  </div>
+</div>
+
+<div class="grid">
+  <section class="card" aria-labelledby="profile">
+    <h2 class="card-title" id="profile">Profile</h2>
+    @if (auth.user(); as user) {
+      <dl>
+        <div><dt>Name</dt><dd>{{ user.full_name }}</dd></div>
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>Role</dt><dd>{{ roleLabels[user.role] }}</dd></div>
+      </dl>
+    }
+  </section>
+
+  <section class="card" aria-labelledby="change-password">
+    <h2 class="card-title" id="change-password">Change password</h2>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label class="field">
+        Current password
+        <input class="input" type="password" formControlName="current_password" autocomplete="current-password" />
+        @if (form.controls.current_password.touched && form.controls.current_password.invalid) {
+          <span class="field-error">Enter your current password.</span>
+        }
+      </label>
+      <label class="field">
+        New password
+        <input class="input" type="password" formControlName="new_password" autocomplete="new-password" />
+        @if (form.controls.new_password.touched && form.controls.new_password.invalid) {
+          <span class="field-error">Use at least 8 characters.</span>
+        }
+      </label>
+      <label class="field">
+        Confirm new password
+        <input class="input" type="password" formControlName="confirm" autocomplete="new-password" />
+        @if (form.controls.confirm.touched && form.hasError('mismatch')) {
+          <span class="field-error">Passwords do not match.</span>
+        }
+      </label>
+      @if (error(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+      @if (done()) {
+        <p class="notice" role="status">Password changed.</p>
+      }
+      <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+        {{ submitting() ? 'Saving…' : 'Change password' }}
+      </button>
+    </form>
+  </section>
+</div>

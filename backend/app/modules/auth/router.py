@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 
 from app.core.config import get_settings
@@ -10,6 +10,7 @@ from app.core.security import (
     DUMMY_HASH,
     create_token,
     decode_token,
+    hash_password,
     verify_password,
 )
 from app.modules.schools.models import School
@@ -25,6 +26,11 @@ _invalid = HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Invalid email or 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str = Field(max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
 
 
 class TokenResponse(BaseModel):
@@ -90,3 +96,19 @@ async def logout(response: Response) -> None:
 @router.get("/me", response_model=UserOut)
 async def me(user: CurrentUser) -> UserOut:
     return UserOut.model_validate(user)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    data: ChangePasswordRequest, db: DbSession, user: CurrentUser
+) -> Response:
+    if not verify_password(data.current_password, user.password_hash):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    if data.new_password == data.current_password:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from the current password",
+        )
+    user.password_hash = hash_password(data.new_password)
+    await db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

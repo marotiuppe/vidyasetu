@@ -284,6 +284,71 @@ svg {
   background: var(--success-bg);
 }
 
+.badge-muted {
+  color: var(--muted);
+  background: var(--border);
+}
+
+/* Rows that become stacked cards on phones: <ul class="rows"><li class="row">…</li></ul> */
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 52px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.row-main {
+  display: grid;
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.row-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.empty {
+  padding: 16px 4px;
+  color: var(--muted);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
 .form-error {
   margin: 0;
   padding: 10px;
@@ -320,7 +385,7 @@ svg {
   }
 
   .btn-sm {
-    min-height: 36px;
+    min-height: 44px;
   }
 }
 

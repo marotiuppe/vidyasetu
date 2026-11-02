@@ -26,3 +26,13 @@ class UserCreate(BaseModel):
     school_id: int | None = None
     # Required for branch-bound roles when the creator is not tied to one branch.
     branch_id: int | None = None
+
+
+class UserUpdate(BaseModel):
+    full_name: str | None = Field(default=None, min_length=1, max_length=200)
+    phone: str | None = Field(default=None, max_length=20)
+    is_active: bool | None = None
+
+
+class PasswordReset(BaseModel):
+    new_password: str = Field(min_length=8, max_length=128)

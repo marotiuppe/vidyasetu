@@ -254,6 +254,7 @@
   padding: 0;
   color: var(--text);
   text-align: left;
+  text-decoration: none;
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -301,7 +302,8 @@
   box-shadow: 0 15px 60px #183c3524;
 }
 
-.menu button {
+.menu button,
+.menu a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -317,7 +319,8 @@
   cursor: pointer;
 }
 
-.menu button:hover {
+.menu button:hover,
+.menu a:hover {
   background: #f1f6ec;
 }
 

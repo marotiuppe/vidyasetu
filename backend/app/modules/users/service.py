@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,7 +7,7 @@ from app.core.security import hash_password
 from app.core.tenant import scope_users
 from app.modules.branches.models import Branch
 from app.modules.users.models import BRANCH_ROLES, Role, User
-from app.modules.users.schemas import UserCreate
+from app.modules.users.schemas import UserCreate, UserUpdate
 
 # Which roles each role may create.
 CREATABLE: dict[Role, set[Role]] = {
@@ -18,8 +18,28 @@ CREATABLE: dict[Role, set[Role]] = {
 }
 
 
-async def list_users(db: AsyncSession, actor: User) -> list[User]:
-    result = await db.scalars(scope_users(select(User), actor).order_by(User.id))
+async def list_users(
+    db: AsyncSession,
+    actor: User,
+    *,
+    role: Role | None = None,
+    branch_id: int | None = None,
+    is_active: bool | None = None,
+    q: str | None = None,
+) -> list[User]:
+    stmt = scope_users(select(User), actor)
+    if role is not None:
+        stmt = stmt.where(User.role == role)
+    if branch_id is not None:
+        stmt = stmt.where(User.branch_id == branch_id)
+    if is_active is not None:
+        stmt = stmt.where(User.is_active == is_active)
+    if q and q.strip():
+        like = f"%{q.strip().lower()}%"
+        stmt = stmt.where(
+            or_(func.lower(User.full_name).like(like), func.lower(User.email).like(like))
+        )
+    result = await db.scalars(stmt.order_by(User.id))
     return list(result)
 
 
@@ -72,3 +92,32 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
         await db.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, detail="Email already in use") from None
     return user
+
+
+async def _get_manageable(db: AsyncSession, actor: User, user_id: int) -> User:
+    """Target must be in the actor's scope (else 404) and of a role the actor may manage."""
+    target = await get_user(db, actor, user_id)
+    if target.role not in CREATABLE.get(actor.role, set()):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not allowed to manage this user")
+    return target
+
+
+async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpdate) -> User:
+    target = await _get_manageable(db, actor, user_id)
+    changes = data.model_dump(exclude_unset=True)
+    if "full_name" in changes and changes["full_name"] is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="full_name cannot be null")
+    if changes.get("is_active", True) is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail="is_active cannot be null")
+    if changes.get("is_active") is False and target.id == actor.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="You cannot deactivate yourself")
+    for field, value in changes.items():
+        setattr(target, field, value)
+    await db.commit()
+    return target
+
+
+async def reset_password(db: AsyncSession, actor: User, user_id: int, new_password: str) -> None:
+    target = await _get_manageable(db, actor, user_id)
+    target.password_hash = hash_password(new_password)
+    await db.commit()
