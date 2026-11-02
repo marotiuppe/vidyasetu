@@ -1,0 +1,22 @@
+.roster-title {
+  margin: 12px 0 10px;
+  font-size: 0.9rem;
+}
+
+.toolbar-actions {
+  margin-bottom: 8px;
+}
+
+.remark {
+  flex: 1 1 100%;
+}
+
+.export-hint {
+  margin-bottom: 10px;
+}
+
+@media (max-width: 767px) {
+  .row .seg {
+    flex: 1 1 100%;
+  }
+}

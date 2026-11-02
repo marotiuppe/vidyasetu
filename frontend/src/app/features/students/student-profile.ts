@@ -20,11 +20,12 @@ import {
 } from '../../core/api/students.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { canWriteStudents } from '../../core/auth/permissions';
+import { StudentAttendance } from '../attendance/student-attendance';
 import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
 
 @Component({
   selector: 'sms-student-profile',
-  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet],
+  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet, StudentAttendance],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-profile.html',
   styleUrl: './student-profile.css',

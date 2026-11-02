@@ -13,6 +13,7 @@ from app.core.config import get_settings
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.academics.router import router as academics_router
+from app.modules.attendance.router import router as attendance_router
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
 from app.modules.schools.router import router as schools_router
@@ -70,6 +71,7 @@ api.include_router(branches_router)
 api.include_router(users_router)
 api.include_router(academics_router)
 api.include_router(students_router)
+api.include_router(attendance_router)
 app.include_router(api)
 
 

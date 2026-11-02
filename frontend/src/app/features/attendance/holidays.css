@@ -1,0 +1,9 @@
+.range {
+  margin-bottom: 10px;
+}
+
+.month {
+  margin: 14px 0 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

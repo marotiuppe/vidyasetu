@@ -1,0 +1,66 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Attendance</h1>
+    <p class="page-subtitle">
+      {{ selfService ? 'Daily attendance and school holidays.' : 'Mark, review and export daily attendance.' }}
+    </p>
+  </div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Attendance sections" (keydown)="onTabKey($event)">
+  @for (t of tabs; track t.id) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [id]="'tab-' + t.id"
+      [attr.aria-selected]="active() === t.id"
+      [attr.aria-controls]="'panel-' + t.id"
+      [attr.tabindex]="active() === t.id ? 0 : -1"
+      (click)="select(t.id)"
+    >
+      {{ t.label }}
+    </button>
+  }
+</div>
+
+<div role="tabpanel" [id]="'panel-' + active()" [attr.aria-labelledby]="'tab-' + active()">
+  @switch (active()) {
+    @case ('mark') {
+      <sms-attendance-mark [initialSection]="section()" [initialDate]="date()" />
+    }
+    @case ('summary') {
+      <sms-attendance-summary [canMark]="canMark" />
+    }
+    @case ('staff') {
+      <sms-staff-attendance />
+    }
+    @case ('holidays') {
+      <sms-holidays />
+    }
+    @case ('my') {
+      <div class="stack">
+        @if (childrenError(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        @if (childrenLoading()) {
+          <p class="empty" role="status">Loading…</p>
+        } @else if (!childId()) {
+          <p class="empty">No student record is linked to your account.</p>
+        } @else {
+          @if (children().length > 1) {
+            <label class="field child-pick">
+              Child
+              <select class="input" (change)="pickChild($event)">
+                @for (c of children(); track c.id) {
+                  <option [value]="c.id" [selected]="c.id === childId()">{{ c.full_name }}</option>
+                }
+              </select>
+            </label>
+          }
+          <sms-student-attendance [studentId]="childId()" />
+        }
+      </div>
+    }
+  }
+</div>

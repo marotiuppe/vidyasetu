@@ -1,0 +1,52 @@
+import { StaffMark } from '../../core/api/attendance.api';
+
+export const STUDENT_MARKS = [
+  { value: 'present', label: 'Present' },
+  { value: 'absent', label: 'Absent' },
+  { value: 'leave', label: 'Leave' },
+] as const;
+
+export const STAFF_MARKS = [...STUDENT_MARKS, { value: 'half_day', label: 'Half day' }] as const;
+
+export const MARK_CLASS: Record<StaffMark, string> = {
+  present: 'st-present',
+  absent: 'st-absent',
+  leave: 'st-leave',
+  half_day: 'st-half',
+};
+
+export const MARK_LABEL: Record<StaffMark, string> = {
+  present: 'Present',
+  absent: 'Absent',
+  leave: 'Leave',
+  half_day: 'Half day',
+};
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function isoDate(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function monthStartIso(d = new Date()): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+}
+
+/** Parse YYYY-MM-DD as a local date (no timezone shift). */
+export function parseIso(value: string): Date {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function formatDate(value: string): string {
+  return parseIso(value).toLocaleDateString('en-IN', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+export function percent(part: number, whole: number): number | null {
+  return whole > 0 ? Math.round((part / whole) * 100) : null;
+}

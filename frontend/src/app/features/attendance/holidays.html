@@ -1,0 +1,88 @@
+<div class="stack">
+  @if (canWrite) {
+    <section class="card" aria-labelledby="add-holiday-title">
+      <h2 class="card-title" id="add-holiday-title">Add a holiday</h2>
+      <form [formGroup]="form" (ngSubmit)="add()" novalidate>
+        <div class="form-grid">
+          <label class="field">
+            Date
+            <input class="input" type="date" formControlName="date" />
+            @if (form.controls.date.touched && form.controls.date.invalid) {
+              <span class="field-error">Choose a date.</span>
+            }
+          </label>
+          <label class="field">
+            Name
+            <input class="input" formControlName="name" maxlength="120" autocomplete="off" />
+            @if (form.controls.name.touched && form.controls.name.invalid) {
+              <span class="field-error">Enter a name.</span>
+            }
+          </label>
+          @if (isOwner) {
+            <label class="field">
+              Applies to
+              <select class="input" formControlName="scope">
+                <option [ngValue]="0">Whole school</option>
+                @for (b of branches(); track b.id) {
+                  <option [ngValue]="b.id">{{ b.name }}</option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            <sms-icon name="plus" [size]="16" />
+            {{ busy() ? 'Adding…' : 'Add holiday' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  <section class="card" aria-labelledby="holiday-list-title">
+    <h2 class="card-title" id="holiday-list-title">Holidays</h2>
+    @if (range(); as r) {
+      <p class="hint range">{{ r.label }}: {{ formatDate(r.from) }} to {{ formatDate(r.to) }}</p>
+    }
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading holidays…</p>
+    } @else if (!groups().length) {
+      <p class="empty">No holidays have been added for this period. Sundays are always off.</p>
+    } @else {
+      @for (g of groups(); track g.key) {
+        <h3 class="month">{{ g.label }}</h3>
+        <ul class="rows">
+          @for (h of g.items; track h.id) {
+            <li class="row">
+              <div class="row-main">
+                <strong>{{ h.name }}</strong>
+                <span class="row-sub">{{ formatDate(h.date) }}</span>
+              </div>
+              <span class="badge" [class.badge-muted]="h.branch_id !== null">{{ h.scopeLabel }}</span>
+              @if (canDelete(h)) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="'Delete holiday ' + h.name"
+                  (click)="remove(h)"
+                >
+                  <sms-icon name="trash" [size]="14" />
+                  Delete
+                </button>
+              }
+            </li>
+          }
+        </ul>
+      }
+    }
+  </section>
+</div>

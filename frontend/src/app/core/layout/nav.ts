@@ -19,7 +19,7 @@ const USER_ADMINS: Role[] = ['super_admin', ...MANAGERS];
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Overview', path: '/', icon: 'dashboard' },
   { label: 'Student records', path: '/students', icon: 'users' },
-  { label: 'Attendance', path: '/attendance', icon: 'calendar', roles: STAFF, soon: true },
+  { label: 'Attendance', path: '/attendance', icon: 'calendar', roles: [...STAFF, 'parent', 'student'] },
   { label: 'Academic progress', path: '/progress', icon: 'chart', roles: STAFF, soon: true },
   { label: 'Noticeboard', path: '/notices', icon: 'megaphone', soon: true },
   { label: 'Schools', path: '/schools', icon: 'building', roles: ['super_admin'] },

@@ -38,6 +38,23 @@ export const routes: Routes = [
         loadComponent: () => import('./features/students/student-profile').then((m) => m.StudentProfile),
       },
       {
+        path: 'attendance',
+        data: { title: 'Attendance' },
+        canActivate: [
+          roleGuard(
+            'school_owner',
+            'management',
+            'headmaster',
+            'teacher',
+            'accountant',
+            'clerk',
+            'parent',
+            'student',
+          ),
+        ],
+        loadComponent: () => import('./features/attendance/attendance').then((m) => m.Attendance),
+      },
+      {
         path: 'setup',
         data: { title: 'School setup' },
         canActivate: [roleGuard('school_owner', 'management', 'headmaster')],

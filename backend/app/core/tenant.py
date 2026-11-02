@@ -2,8 +2,9 @@
 
 from typing import Any
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, or_, select
 
+from app.modules.attendance.models import Holiday
 from app.modules.branches.models import Branch
 from app.modules.students.models import Guardian, Student
 from app.modules.users.models import Role, User
@@ -66,3 +67,20 @@ def scope_students(stmt: Select[Any], user: User) -> Select[Any]:
     if user.branch_id is None:
         return stmt.where(False)
     return stmt.where(Student.branch_id == user.branch_id)
+
+
+def scope_holidays(stmt: Select[tuple[Holiday]], user: User) -> Select[tuple[Holiday]]:
+    """Holidays visible to `user`: school-wide ones plus their branch's (owner: all of the school).
+
+    Users without a branch (e.g. parents) only see school-wide holidays.
+    """
+    if user.role == Role.SUPER_ADMIN:
+        return stmt
+    if user.school_id is None:
+        return stmt.where(False)
+    stmt = stmt.where(Holiday.school_id == user.school_id)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    if user.branch_id is None:
+        return stmt.where(Holiday.branch_id.is_(None))
+    return stmt.where(or_(Holiday.branch_id.is_(None), Holiday.branch_id == user.branch_id))

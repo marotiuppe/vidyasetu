@@ -1,0 +1,44 @@
+.meter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 200px;
+}
+
+.bar {
+  flex: 1;
+  height: 8px;
+  overflow: hidden;
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.bar span {
+  display: block;
+  height: 100%;
+  background: var(--success);
+}
+
+.pct {
+  min-width: 64px;
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.totals {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px solid var(--border-strong);
+}
+
+.totals .stat-strip {
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .meter {
+    flex: 1 1 100%;
+  }
+}

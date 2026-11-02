@@ -1,0 +1,96 @@
+<section class="card" aria-labelledby="summary-title">
+  <h2 class="card-title" id="summary-title">Daily summary</h2>
+  <div class="toolbar">
+    <label class="field">
+      Date
+      <input class="input" type="date" [value]="date()" [max]="today" (change)="pickDate($event)" />
+    </label>
+    @if (canPickBranch) {
+      <label class="field">
+        Branch
+        <select class="input" (change)="pickBranch($event)">
+          <option value="0">All branches</option>
+          @for (b of branches(); track b.id) {
+            <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">Loading summary…</p>
+  } @else if (data(); as d) {
+    @if (!d.is_working_day) {
+      <p class="panel" role="status">
+        Not a working day{{ d.non_working_reason ? ': ' + d.non_working_reason : '' }}.
+      </p>
+    }
+
+    @if (d.sections.length) {
+      <ul class="rows">
+        @for (s of d.sections; track s.section_id) {
+          <li class="row">
+            <div class="row-main">
+              <strong>Class {{ s.class_name }}, section {{ s.section_name }}</strong>
+              <span class="row-sub">
+                {{ s.total }} students · Present {{ s.present }} · Absent {{ s.absent }} · Leave {{ s.leave }} ·
+                Unmarked {{ s.unmarked }}
+              </span>
+            </div>
+            <div class="meter">
+              @if (presentPercent(s.present, s.total - s.unmarked); as pct) {
+                <div
+                  class="bar"
+                  role="img"
+                  [attr.aria-label]="pct + ' percent of marked students present'"
+                >
+                  <span [style.width.%]="pct"></span>
+                </div>
+                <span class="pct">{{ pct }}%</span>
+              } @else {
+                <div class="bar" role="img" aria-label="Not marked yet"></div>
+                <span class="pct">
+                  @if (s.total - s.unmarked === 0) {
+                    Not marked
+                  } @else {
+                    0%
+                  }
+                </span>
+              }
+            </div>
+            @if (canMark()) {
+              <a
+                class="btn btn-ghost btn-sm"
+                routerLink="/attendance"
+                [queryParams]="{ tab: 'mark', section: s.section_id, date: date() }"
+                [attr.aria-label]="'Mark attendance for class ' + s.class_name + ' section ' + s.section_name"
+              >
+                Mark
+              </a>
+            }
+          </li>
+        }
+      </ul>
+      <div class="totals" role="group" aria-label="Totals">
+        <strong>Total</strong>
+        <ul class="stat-strip">
+          <li class="badge">Students {{ d.totals.total }}</li>
+          <li class="badge st-tone st-present">Present {{ d.totals.present }}</li>
+          <li class="badge st-tone st-absent">Absent {{ d.totals.absent }}</li>
+          <li class="badge st-tone st-leave">Leave {{ d.totals.leave }}</li>
+          <li class="badge badge-muted">Unmarked {{ d.totals.unmarked }}</li>
+          @if (totalPercent() !== null) {
+            <li class="badge badge-success">{{ totalPercent() }}% present</li>
+          }
+        </ul>
+      </div>
+    } @else {
+      <p class="empty">No class sections found.</p>
+    }
+  }
+</section>

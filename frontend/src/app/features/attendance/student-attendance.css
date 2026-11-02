@@ -1,0 +1,86 @@
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.head .card-title {
+  margin: 0;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-label {
+  min-width: 130px;
+  text-align: center;
+}
+
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  max-width: 560px;
+}
+
+.dow {
+  padding-bottom: 2px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-align: center;
+  color: var(--muted);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.day.st-tone {
+  border-color: var(--c);
+}
+
+.day.muted {
+  color: var(--faint);
+  background: var(--bg);
+}
+
+.num {
+  font-size: 0.7rem;
+}
+
+.mark {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.legend {
+  margin-top: 12px;
+}
+
+@media (max-width: 767px) {
+  .cal {
+    gap: 3px;
+  }
+
+  .day {
+    min-height: 44px;
+  }
+
+  .mark {
+    font-size: 0.85rem;
+  }
+}

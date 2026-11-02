@@ -1,0 +1,13 @@
+.toolbar-actions {
+  margin-bottom: 8px;
+}
+
+.remark {
+  flex: 1 1 100%;
+}
+
+@media (max-width: 767px) {
+  .row .seg {
+    flex: 1 1 100%;
+  }
+}

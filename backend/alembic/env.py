@@ -10,6 +10,7 @@ from app.db.base import Base
 
 # Import every model so its table is registered on Base.metadata.
 from app.modules.academics import models as _academics  # noqa: F401
+from app.modules.attendance import models as _attendance  # noqa: F401
 from app.modules.branches import models as _branches  # noqa: F401
 from app.modules.schools import models as _schools  # noqa: F401
 from app.modules.students import models as _students  # noqa: F401

@@ -1,0 +1,129 @@
+<section class="card" aria-labelledby="staff-title">
+  <h2 class="card-title" id="staff-title">Staff attendance</h2>
+  <div class="toolbar">
+    <label class="field">
+      Date
+      <input class="input" type="date" [value]="date()" [max]="today" (change)="pickDate($event)" />
+    </label>
+    @if (canPickBranch) {
+      <label class="field">
+        Branch
+        <select class="input" (change)="pickBranch($event)">
+          <option value="0">All branches</option>
+          @for (b of branches(); track b.id) {
+            <option [value]="b.id" [selected]="b.id === branchId()">{{ b.name }}</option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">Loading staff…</p>
+  } @else if (sheet(); as s) {
+    @if (!s.is_working_day) {
+      <p class="panel" role="status">
+        Not a working day{{ s.non_working_reason ? ': ' + s.non_working_reason : '' }}. Attendance cannot be saved.
+      </p>
+    }
+
+    <ul class="stat-strip" aria-label="Summary">
+      <li class="badge">Staff {{ counts().total }}</li>
+      <li class="badge st-tone st-present">Present {{ counts().present }}</li>
+      <li class="badge st-tone st-absent">Absent {{ counts().absent }}</li>
+      <li class="badge st-tone st-leave">Leave {{ counts().leave }}</li>
+      <li class="badge st-tone st-half">Half day {{ counts().half }}</li>
+      <li class="badge badge-muted">Unmarked {{ counts().unmarked }}</li>
+    </ul>
+
+    @if (rows().length) {
+      <div class="toolbar-actions">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="!counts().unmarked || !s.is_working_day"
+          (click)="markAllPresent()"
+        >
+          Mark all present
+        </button>
+      </div>
+      <ul class="rows">
+        @for (r of rows(); track r.user_id) {
+          <li class="row">
+            <div class="row-main">
+              <strong>{{ r.full_name }}</strong>
+              <span class="row-sub">
+                {{ r.roleLabel }}@if (r.branchName) {
+                  · {{ r.branchName }}
+                }
+              </span>
+            </div>
+            <div class="seg" role="radiogroup" [attr.aria-label]="'Attendance for ' + r.full_name">
+              @for (m of marks; track m.value) {
+                <label [class]="markClass[m.value]">
+                  <input
+                    type="radio"
+                    [name]="'staff-' + r.user_id"
+                    [value]="m.value"
+                    [checked]="r.status === m.value"
+                    [disabled]="!s.is_working_day"
+                    (change)="setStatus(r.user_id, m.value)"
+                  />
+                  <span>{{ m.label }}</span>
+                </label>
+              }
+            </div>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="!r.status || !s.is_working_day"
+              [attr.aria-expanded]="!!openRemarks()[r.user_id] || !!r.remark"
+              [attr.aria-label]="'Remark for ' + r.full_name"
+              (click)="toggleRemark(r.user_id)"
+            >
+              Remark
+            </button>
+            @if (openRemarks()[r.user_id] || r.remark) {
+              <input
+                class="input remark"
+                maxlength="200"
+                placeholder="Optional remark"
+                [attr.aria-label]="'Remark text for ' + r.full_name"
+                [value]="r.remark"
+                [disabled]="!s.is_working_day"
+                (input)="setRemark(r.user_id, $event)"
+              />
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="empty">No staff found.</p>
+    }
+
+    <div class="save-bar">
+      <span role="status">
+        @if (dirty()) {
+          <span class="badge st-tone st-leave">Unsaved changes</span>
+        } @else {
+          <span class="hint">No changes to save.</span>
+        }
+      </span>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="saving() || !dirty() || !s.is_working_day"
+        (click)="save()"
+      >
+        {{ saving() ? 'Saving…' : 'Save attendance' }}
+      </button>
+    </div>
+  }
+</section>
