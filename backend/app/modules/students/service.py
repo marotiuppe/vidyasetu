@@ -674,6 +674,43 @@ async def _parent_phone(db: AsyncSession, raw: str | None, school_id: int) -> st
     return phone
 
 
+async def _existing_parent(
+    db: AsyncSession,
+    school_id: int,
+    guardian: Guardian,
+    data: LoginCreate,
+    email: str | None,
+) -> User | None:
+    """The parent login of this school this guardian should share, if there is one.
+
+    Matched by the given email, then the given username, then the guardian's mobile number
+    (unique per school). A match that is not a parent of this school is refused with the same
+    generic answer as any taken email or username, so other schools are never revealed.
+    """
+    user: User | None = None
+    taken: IdentityInUse | None = None
+    if email is not None:
+        user = await db.scalar(select(User).where(User.email == email))
+        taken = IdentityInUse("Email already in use", "email_taken")
+    if user is None and data.username is not None:
+        user = await db.scalar(select(User).where(User.username == data.username))
+        taken = IdentityInUse("Username already in use", "username_taken")
+    if user is not None:
+        if user.role != Role.PARENT or user.school_id != school_id:
+            assert taken is not None
+            raise taken
+        return user
+    try:
+        phone = normalize_phone(guardian.phone)
+    except ValueError:
+        return None
+    return await db.scalar(
+        select(User).where(
+            User.phone == phone, User.school_id == school_id, User.role == Role.PARENT
+        )
+    )
+
+
 async def create_guardian_login(
     db: AsyncSession, actor: User, guardian_id: int, data: LoginCreate
 ) -> GuardianOut:
@@ -681,20 +718,14 @@ async def create_guardian_login(
     if guardian.user_id is not None:
         raise _conflict("Guardian already has a login")
     email = str(data.email).lower() if data.email is not None else None
-    user = None
-    if email is not None:
-        user = await db.scalar(select(User).where(User.email == email))
-    if user is not None:
-        # An existing parent of this school may be linked (their password is left untouched).
-        # Anything else gets the same generic answer so other schools' emails are not revealed.
-        if user.role != Role.PARENT or user.school_id != student.school_id:
-            raise IdentityInUse("Email already in use", "email_taken")
-    else:
-        username = await _login_username(db, data)
+    user = await _existing_parent(db, student.school_id, guardian, data, email)
+    # Several students (siblings) can share one parent login: an existing one is linked to this
+    # guardian too and its password is left untouched.
+    if user is None:
         user = User(
             school_id=student.school_id,
             branch_id=None,
-            username=username,
+            username=await _login_username(db, data),
             email=email,
             full_name=guardian.full_name,
             phone=await _parent_phone(db, guardian.phone, student.school_id),
