@@ -1,16 +1,14 @@
-import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
 
+import { SchoolService } from '../api/school.service';
 import { AuthService } from '../auth/auth.service';
 import { Icon } from '../ui/icon';
 import { NAV_ITEMS, ROLE_LABELS } from './nav';
 
-interface SchoolInfo {
-  name: string;
-}
+const PRODUCT_NAME = 'Vidyasetu';
 
 @Component({
   selector: 'sms-shell',
@@ -26,14 +24,13 @@ interface SchoolInfo {
 export class Shell {
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly http = inject(HttpClient);
+  private readonly school = inject(SchoolService);
 
   protected readonly menuOpen = signal(false);
   protected readonly userMenuOpen = signal(false);
-  protected readonly school = signal<SchoolInfo | null>(null);
-  protected readonly year = signal<string | null>(null);
+  protected readonly year = this.school.year;
 
-  protected readonly schoolName = computed(() => this.school()?.name ?? 'School Management');
+  protected readonly schoolName = computed(() => this.school.name() ?? PRODUCT_NAME);
   protected readonly roleLabel = computed(() => {
     const user = this.auth.user();
     return user ? ROLE_LABELS[user.role] : '';
@@ -64,12 +61,7 @@ export class Shell {
   );
 
   constructor() {
-    if (this.auth.user()?.school_id != null) {
-      this.http.get<SchoolInfo>('/api/v1/schools/me').subscribe((s) => this.school.set(s));
-      this.http
-        .get<{ name: string; is_current: boolean }[]>('/api/v1/academic-years')
-        .subscribe((years) => this.year.set(years.find((y) => y.is_current)?.name ?? null));
-    }
+    this.school.load();
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe(() => this.closeOverlays());

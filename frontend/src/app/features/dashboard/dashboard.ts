@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
 import { AcademicsApi } from '../../core/api/academics.api';
+import { SchoolService } from '../../core/api/school.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { Icon, IconName } from '../../core/ui/icon';
 
@@ -34,7 +35,9 @@ export class Dashboard {
   private readonly branches = signal<number | null>(null);
   private readonly classes = signal<number | null>(null);
   private readonly sections = signal<number | null>(null);
-  protected readonly yearName = signal<string | null>(null);
+  private readonly school = inject(SchoolService);
+  protected readonly yearName = this.school.year;
+  protected readonly schoolName = computed(() => this.school.name() ?? 'School portal');
 
   protected readonly stats = computed<Stat[]>(() => [
     {
@@ -71,7 +74,6 @@ export class Dashboard {
     this.api.branches().subscribe((b) => this.branches.set(b.length));
     this.api.classes().subscribe((c) => this.classes.set(c.length));
     this.api.sections().subscribe((s) => this.sections.set(s.length));
-    this.api.years().subscribe((years) => this.yearName.set(years.find((y) => y.is_current)?.name ?? null));
   }
 
   private fmt(value: number | null): string {
