@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -101,9 +102,19 @@ export class Shell {
       this.logoUrl();
       this.logoFailed.set(false);
     });
-    this.school.load();
-    this.settings.load();
-    this.notices.refresh();
+    // While a forced step (two-factor setup, password change) is pending the API refuses these
+    // calls, so they run once, as soon as nothing is pending any more.
+    let started = false;
+    effect(() => {
+      const user = this.auth.user();
+      if (started || !user || user.mfa_setup_required || user.must_change_password) return;
+      started = true;
+      untracked(() => {
+        this.school.load();
+        this.settings.load();
+        this.notices.refresh();
+      });
+    });
     const timer = setInterval(() => this.notices.refresh(), NOTICE_POLL_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
     this.router.events

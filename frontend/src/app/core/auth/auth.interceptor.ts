@@ -19,6 +19,11 @@ const errorCode = (error: HttpErrorResponse): string | null => {
   return typeof code === 'string' ? code : null;
 };
 
+/** True when the router is already on, or already heading to, a path (no second redirect needed). */
+const alreadyAt = (router: Router, path: string): boolean =>
+  router.url.startsWith(path) ||
+  (router.currentNavigation()?.extractedUrl.toString().startsWith(path) ?? false);
+
 /**
  * Attach the access token and the CSRF header (`X-Requested-With`) to every API call.
  * On a 401 refresh once and retry (concurrent 401s share one refresh call), otherwise sign out.
@@ -48,17 +53,17 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         const code = errorCode(error);
         if (code === 'password_change_required') {
           auth.requirePasswordChange();
-          void router.navigate(['/change-password']);
+          if (!alreadyAt(router, '/change-password')) void router.navigate(['/change-password']);
           return throwError(() => error);
         }
         if (code === 'mfa_setup_required') {
           auth.requireMfaSetup();
-          void router.navigate(['/account/mfa']);
+          if (!alreadyAt(router, '/account/mfa')) void router.navigate(['/account/mfa']);
           return throwError(() => error);
         }
         if (code === 'policy_acceptance_required') {
           auth.setPoliciesPending(true);
-          void router.navigate(['/accept-policies']);
+          if (!alreadyAt(router, '/accept-policies')) void router.navigate(['/accept-policies']);
           return throwError(() => error);
         }
       }
