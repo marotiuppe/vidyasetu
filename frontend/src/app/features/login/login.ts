@@ -13,6 +13,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { I18n } from '../../core/i18n/i18n';
+import { focusById } from '../../core/ui/download';
 import { LegalLinks } from '../../core/legal/legal-links';
 import { Icon } from '../../core/ui/icon';
 
@@ -29,12 +31,20 @@ export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly i18n = inject(I18n);
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     identifier: ['', [Validators.required]],
     password: ['', [Validators.required]],
     rememberMe: [false],
   });
+  protected readonly codeForm = inject(NonNullableFormBuilder).group({
+    code: ['', [Validators.required]],
+  });
+  /** 'password' is the first step; 'code' asks for the two-factor code. */
+  protected readonly step = signal<'password' | 'code'>('password');
+  protected readonly useRecovery = signal(false);
+  private mfaToken: string | null = null;
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showPassword = signal(false);
@@ -77,7 +87,18 @@ export class Login {
     this.error.set(null);
     const { identifier, password, rememberMe } = this.form.getRawValue();
     this.auth.login(identifier.trim(), password, rememberMe).subscribe({
-      next: () => void this.router.navigate(['/']),
+      next: (result) => {
+        if (result.kind === 'mfa') {
+          this.mfaToken = result.mfaToken;
+          this.loading.set(false);
+          this.codeForm.reset();
+          this.useRecovery.set(false);
+          this.step.set('code');
+          focusById('mfa-heading');
+          return;
+        }
+        void this.router.navigate(['/']);
+      },
       error: (err: unknown) => {
         this.loading.set(false);
         if (err instanceof HttpErrorResponse && err.status === 429) {
@@ -88,6 +109,54 @@ export class Login {
           err instanceof HttpErrorResponse && err.status === 401
             ? 'Invalid credentials. Check your username, mobile or email and password.'
             : 'Could not sign in. Please try again.',
+        );
+      },
+    });
+  }
+
+  protected toggleRecovery(): void {
+    this.useRecovery.update((v) => !v);
+    this.codeForm.reset();
+    this.error.set(null);
+    focusById('mfa-code');
+  }
+
+  /** Back to the password step (also used when the short-lived token has expired). */
+  protected backToPassword(): void {
+    this.mfaToken = null;
+    this.error.set(null);
+    this.step.set('password');
+    focusById('password');
+  }
+
+  protected submitCode(): void {
+    const token = this.mfaToken;
+    if (this.codeForm.invalid || this.loading() || this.blocked() || token === null) {
+      this.codeForm.markAllAsTouched();
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+    const raw = this.codeForm.getRawValue().code.trim();
+    const payload = this.useRecovery() ? { recovery_code: raw } : { code: raw.replace(/\s+/g, '') };
+    this.auth.loginMfa(token, payload, this.form.getRawValue().rememberMe).subscribe({
+      next: () => void this.router.navigate(['/']),
+      error: (err: unknown) => {
+        this.loading.set(false);
+        if (err instanceof HttpErrorResponse && err.status === 429) {
+          this.startRetryCountdown(retryAfterSeconds(err));
+          return;
+        }
+        const code: unknown = err instanceof HttpErrorResponse ? err.error?.code : null;
+        if (code === 'mfa_token_expired' || code === 'mfa_token_invalid') {
+          this.backToPassword();
+          this.error.set(this.i18n.t('mfa.login.expired'));
+          return;
+        }
+        this.error.set(
+          err instanceof HttpErrorResponse && err.status === 401
+            ? this.i18n.t(this.useRecovery() ? 'mfa.login.badRecovery' : 'mfa.login.badCode')
+            : this.i18n.t('mfa.login.failed'),
         );
       },
     });

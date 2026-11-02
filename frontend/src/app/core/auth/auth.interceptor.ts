@@ -21,6 +21,16 @@ const isPasswordChangeRequired = (error: HttpErrorResponse): boolean => {
   );
 };
 
+/** The server answers 403 with this code until two-factor sign-in has been set up. */
+const isMfaSetupRequired = (error: HttpErrorResponse): boolean => {
+  const body: unknown = error.error;
+  return (
+    typeof body === 'object' &&
+    body !== null &&
+    (body as { code?: unknown }).code === 'mfa_setup_required'
+  );
+};
+
 /**
  * Attach the access token and the CSRF header (`X-Requested-With`) to every API call.
  * On a 401 refresh once and retry (concurrent 401s share one refresh call), otherwise sign out.
@@ -48,6 +58,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 403 && isPasswordChangeRequired(error)) {
         auth.requirePasswordChange();
         void router.navigate(['/change-password']);
+        return throwError(() => error);
+      }
+      if (error.status === 403 && isMfaSetupRequired(error)) {
+        auth.requireMfaSetup();
+        void router.navigate(['/account/mfa']);
         return throwError(() => error);
       }
       if (error.status !== 401) {

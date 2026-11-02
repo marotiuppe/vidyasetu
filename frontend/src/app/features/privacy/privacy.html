@@ -1,0 +1,166 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('privacy.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('privacy.subtitle') }}</p>
+  </div>
+  <a class="btn btn-ghost" routerLink="/settings">{{ i18n.t('privacy.backToSettings') }}</a>
+</div>
+
+<div class="stack">
+  <section class="card" aria-labelledby="my-data-title">
+    <h2 class="card-title" id="my-data-title">{{ i18n.t('privacy.download.title') }}</h2>
+    <p>{{ i18n.t('privacy.download.help') }}</p>
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" [disabled]="downloading()" (click)="download()">
+        {{ downloading() ? i18n.t('privacy.download.busy') : i18n.t('privacy.download.button') }}
+      </button>
+    </div>
+    @if (downloadError(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+  </section>
+
+  <section class="card" aria-labelledby="request-title">
+    <h2 class="card-title" id="request-title">{{ i18n.t('privacy.request.title') }}</h2>
+    <p>{{ i18n.t('privacy.request.help') }}</p>
+    <div aria-live="polite">
+      @if (notice(); as message) {
+        <p class="notice" id="privacy-request-notice" tabindex="-1">{{ message }}</p>
+      }
+    </div>
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('privacy.request.type') }}
+          <select class="input" formControlName="type">
+            @for (t of types; track t) {
+              <option [value]="t">{{ i18n.t('privacy.type.' + t) }}</option>
+            }
+          </select>
+        </label>
+        @if (isParent() && children().length > 0) {
+          <label class="field">
+            {{ i18n.t('privacy.request.child') }}
+            <select class="input" formControlName="student_id">
+              @if (children().length > 1) {
+                <option [ngValue]="0">{{ i18n.t('privacy.request.pickChild') }}</option>
+              }
+              @for (c of children(); track c.id) {
+                <option [ngValue]="c.id">{{ c.full_name }}</option>
+              }
+            </select>
+          </label>
+        }
+      </div>
+      <p class="hint">{{ i18n.t('privacy.typeHelp.' + form.controls.type.value) }}</p>
+      <label class="field" for="privacy-message">
+        {{ i18n.t('privacy.request.message') }}
+        <textarea
+          class="input"
+          id="privacy-message"
+          rows="4"
+          maxlength="2000"
+          formControlName="message"
+          required
+        ></textarea>
+      </label>
+      @if (form.controls.message.touched && form.controls.message.invalid) {
+        <p class="field-error" role="alert">{{ i18n.t('privacy.request.messageRequired') }}</p>
+      }
+      @if (formError(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+          {{ submitting() ? i18n.t('privacy.request.sending') : i18n.t('privacy.request.send') }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="mine-title">
+    <h2 class="card-title" id="mine-title">{{ i18n.t('privacy.mine.title') }}</h2>
+    @if (requestsLoading()) {
+      <p class="empty" role="status">{{ i18n.t('privacy.mine.loading') }}</p>
+    } @else if (requestsError(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    } @else {
+      <ul class="rows">
+        @for (r of requests(); track r.id) {
+          <li class="row">
+            <span class="row-main">
+              <span>
+                {{ i18n.t('privacy.type.' + r.type) }}
+                @if (r.student_name) {
+                  <span class="row-sub"> · {{ r.student_name }}</span>
+                }
+              </span>
+              <span class="row-sub">{{ r.message }}</span>
+              @if (r.response_note) {
+                <span class="row-sub"
+                  >{{ i18n.t('privacy.mine.response') }}: {{ r.response_note }}</span
+                >
+              }
+              <span class="row-sub">
+                {{ i18n.t('privacy.mine.raised', { date: date(r.created_at) }) }}
+                @if (r.due_on) {
+                  · {{ i18n.t('privacy.mine.due', { date: date(r.due_on) }) }}
+                }
+              </span>
+            </span>
+            <span
+              class="badge"
+              [class.badge-success]="r.status === 'completed'"
+              [class.badge-warn]="r.status === 'in_progress'"
+              [class.badge-danger]="r.status === 'rejected'"
+            >
+              {{ i18n.t('request.status.' + r.status) }}
+            </span>
+          </li>
+        } @empty {
+          <li class="empty">{{ i18n.t('privacy.mine.empty') }}</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="card" aria-labelledby="policies-title">
+    <h2 class="card-title" id="policies-title">{{ i18n.t('privacy.policies.title') }}</h2>
+    @if (!policiesLoaded()) {
+      <p class="empty" role="status">{{ i18n.t('privacy.mine.loading') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (p of policies(); track p.policy) {
+          <li class="row">
+            <span class="row-main">
+              <span>{{ i18n.t('policy.name.' + p.policy) }}</span>
+              <span class="row-sub">
+                {{ i18n.t('policy.version', { version: p.version }) }}
+                @if (p.accepted) {
+                  · {{ i18n.t('privacy.policies.acceptedOn', { date: dateTime(p.accepted_at) }) }}
+                }
+              </span>
+            </span>
+            <span class="badge" [class.badge-success]="p.accepted" [class.badge-warn]="!p.accepted">
+              {{
+                p.accepted
+                  ? i18n.t('privacy.policies.accepted')
+                  : i18n.t('privacy.policies.pending')
+              }}
+            </span>
+            <a
+              class="btn btn-ghost btn-sm"
+              [routerLink]="p.policy === 'privacy' ? '/privacy' : '/terms'"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ i18n.t('policy.read') }}
+            </a>
+          </li>
+        } @empty {
+          <li class="empty">{{ i18n.t('privacy.policies.empty') }}</li>
+        }
+      </ul>
+    }
+  </section>
+</div>

@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateChildFn, CanActivateFn, CanMatchFn, Router } from '@angular/router';
-import { map } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
+
+import { PrivacyApi } from '../api/privacy.api';
 
 import { Role } from './auth.models';
 import { AuthService } from './auth.service';
@@ -45,4 +47,40 @@ export const mustChangePasswordGuard: CanActivateChildFn = () => {
   return auth.user()?.must_change_password
     ? inject(Router).createUrlTree(['/change-password'])
     : true;
+};
+
+const MFA_PATH = '/account/mfa';
+
+/** A user whose policy requires two-factor stays on the setup page until it is enabled. */
+export const mfaSetupGuard: CanActivateChildFn = (_route, state) => {
+  const auth = inject(AuthService);
+  if (!auth.user()?.mfa_setup_required || state.url.startsWith(MFA_PATH)) {
+    return true;
+  }
+  return inject(Router).createUrlTree([MFA_PATH]);
+};
+
+/**
+ * Block the app until the current Privacy Policy and Terms of Use are accepted.
+ * Checked once per session; fails open when the check itself errors.
+ */
+export const policyGuard: CanActivateChildFn = (_route, state) => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (state.url.startsWith(MFA_PATH) || auth.user()?.mfa_setup_required) {
+    return true;
+  }
+  const pending = auth.policyGate();
+  if (pending !== null) {
+    return pending ? router.createUrlTree(['/accept-policies']) : true;
+  }
+  return inject(PrivacyApi)
+    .policies()
+    .pipe(
+      map((res) => {
+        auth.setPoliciesPending(res.pending);
+        return res.pending ? router.createUrlTree(['/accept-policies']) : true;
+      }),
+      catchError(() => of(true)),
+    );
 };

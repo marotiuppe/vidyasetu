@@ -19,3 +19,15 @@ class RefreshToken(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class MfaRecoveryCode(Base):
+    """A one-time recovery code for two-factor sign-in, stored hashed."""
+
+    __tablename__ = "mfa_recovery_codes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    code_hash: Mapped[str] = mapped_column(String(255))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -23,8 +23,14 @@ from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.academics.router import router as academics_router
 from app.modules.attendance.router import router as attendance_router
+from app.modules.audit.router import router as audit_router
+from app.modules.auth.mfa_router import router as mfa_router
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
+from app.modules.consent.router import router as consent_router
+from app.modules.consent.router import student_router as consent_student_router
+from app.modules.datarights.router import router as datarights_router
+from app.modules.datarights.router import student_router as datarights_student_router
 from app.modules.fees.router import router as fees_router
 from app.modules.notices.router import router as notices_router
 from app.modules.public.router import router as public_router
@@ -144,6 +150,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 api = APIRouter(prefix="/api/v1")
 api.include_router(auth_router)
+api.include_router(mfa_router)
 api.include_router(schools_router)
 api.include_router(branches_router)
 api.include_router(users_router)
@@ -154,6 +161,11 @@ api.include_router(attendance_router)
 api.include_router(notices_router)
 api.include_router(fees_router)
 api.include_router(settings_router)
+api.include_router(audit_router)
+api.include_router(consent_router)
+api.include_router(consent_student_router)
+api.include_router(datarights_router)
+api.include_router(datarights_student_router)
 api.include_router(public_router)
 app.include_router(api)
 app.include_router(public_site_router)

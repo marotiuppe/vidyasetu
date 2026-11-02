@@ -1,0 +1,65 @@
+.wrap {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+.scan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.qr {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.secret-box {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+
+.secret {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  overflow-wrap: anywhere;
+}
+
+.code-input {
+  max-width: 180px;
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+}
+
+.codes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  list-style: none;
+  font-family: ui-monospace, monospace;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.info-note {
+  max-width: 560px;
+  margin: 0 0 16px;
+  padding: 10px;
+  font-size: 0.8rem;
+  background: var(--amber-bg);
+  border-radius: 6px;
+}

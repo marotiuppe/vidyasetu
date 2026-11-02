@@ -2,11 +2,13 @@ import { Routes } from '@angular/router';
 
 import {
   authGuard,
+  mfaSetupGuard,
   mustChangePasswordGuard,
+  policyGuard,
   publicOnlyMatch,
   roleGuard,
 } from './core/auth/auth.guard';
-import { STUDENT_WRITER_ROLES } from './core/auth/permissions';
+import { PRIVACY_ADMIN_ROLES, STUDENT_WRITER_ROLES } from './core/auth/permissions';
 
 const LEGAL_CHILDREN: Routes = [
   {
@@ -61,6 +63,13 @@ export const routes: Routes = [
       import('./features/password/change-password').then((m) => m.ChangePassword),
   },
   {
+    // Blocking acceptance of the current Privacy Policy and Terms of Use (outside the shell).
+    path: 'accept-policies',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/policies/accept-policies').then((m) => m.AcceptPolicies),
+  },
+  {
     // Public legal pages: outside the shell and without authGuard, so visitors and signed-in users can read them.
     path: '',
     loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
@@ -85,7 +94,7 @@ export const routes: Routes = [
     path: '',
     canActivate: [authGuard],
     // Checked on every child navigation: a user who must change the password stays on that screen.
-    canActivateChild: [mustChangePasswordGuard],
+    canActivateChild: [mustChangePasswordGuard, mfaSetupGuard, policyGuard],
     loadComponent: () => import('./core/layout/shell').then((m) => m.Shell),
     children: [
       {
@@ -196,6 +205,29 @@ export const routes: Routes = [
         path: 'settings',
         data: { title: 'Settings' },
         loadComponent: () => import('./features/settings/settings').then((m) => m.Settings),
+      },
+      {
+        path: 'settings/privacy',
+        data: { title: 'Privacy and data' },
+        loadComponent: () => import('./features/privacy/privacy').then((m) => m.Privacy),
+      },
+      {
+        path: 'account/mfa',
+        data: { title: 'Two-factor sign-in' },
+        loadComponent: () => import('./features/mfa/mfa-setup').then((m) => m.MfaSetup),
+      },
+      {
+        path: 'audit',
+        data: { title: 'Audit log' },
+        canActivate: [roleGuard(...PRIVACY_ADMIN_ROLES)],
+        loadComponent: () => import('./features/audit/audit').then((m) => m.Audit),
+      },
+      {
+        path: 'data-requests',
+        data: { title: 'Data requests' },
+        canActivate: [roleGuard(...PRIVACY_ADMIN_ROLES)],
+        loadComponent: () =>
+          import('./features/data-requests/data-requests').then((m) => m.DataRequests),
       },
       {
         path: 'account',

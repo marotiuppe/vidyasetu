@@ -98,6 +98,15 @@ _platform("legal.hosting_region", "string", G, "Hosting region",
           env="hosting_region", max_len=100)
 _platform("legal.policy_effective_date", "date", G, "Policy effective date",
           "Date from which the published policies apply.", env="policy_effective_date")
+_platform("legal.privacy_version", "string", G, "Privacy policy version",
+          "Raise this when the privacy policy changes; everyone is asked to accept it again.",
+          "1", max_len=20, pattern=r"^[A-Za-z0-9._-]{1,20}$")
+_platform("legal.terms_version", "string", G, "Terms of use version",
+          "Raise this when the terms change; everyone is asked to accept them again.",
+          "1", max_len=20, pattern=r"^[A-Za-z0-9._-]{1,20}$")
+G = "Security"
+_platform("security.mfa_required_super_admin", "bool", G, "Two-factor for platform admins",
+          "Platform admins must set up two-factor sign-in before using the app.", True)
 G = "Platform"
 _platform("platform.name", "string", G, "Platform name", "Product name shown to visitors.",
           max_len=100)
@@ -160,6 +169,15 @@ _school("security.remember_me_days", "int", G, "Remember-me days",
         bounded_by=(None, "limits.remember_me_max_days"))
 _school("security.force_password_change_new_accounts", "bool", G, "Force password change",
         "New and reset accounts must choose their own password at first sign-in.", True)
+_school("security.mfa_required_school_owner", "bool", G, "Two-factor for school owners",
+        "School owners must set up two-factor sign-in. Only a platform admin can switch this off.",
+        True, edit=_SUPER)
+_school("security.mfa_required_management", "bool", G, "Two-factor for management",
+        "Management users must set up two-factor sign-in.", False)
+_school("security.mfa_required_headmaster", "bool", G, "Two-factor for headmasters",
+        "Headmasters must set up two-factor sign-in.", False)
+_school("security.mfa_required_accountant", "bool", G, "Two-factor for accountants",
+        "Accountants must set up two-factor sign-in.", False)
 G = "Academics"
 _school("academic.year_start_month", "int", G, "Academic year start month",
         "Month number (1 to 12) when the academic year starts.", 4, min=1, max=12)

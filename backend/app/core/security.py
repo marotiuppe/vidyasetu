@@ -12,7 +12,8 @@ _hasher = PasswordHasher()
 # Used to keep login timing similar when the email does not exist.
 DUMMY_HASH = _hasher.hash("not-a-real-password")
 
-TokenType = Literal["access", "refresh"]
+TokenType = Literal["access", "refresh", "mfa"]
+MFA_TOKEN_MINUTES = 5
 ALGORITHM = "HS256"
 
 
@@ -31,11 +32,12 @@ def create_token(
     user_id: int, token_type: TokenType, extra_claims: dict[str, Any] | None = None
 ) -> str:
     settings = get_settings()
-    delta = (
-        timedelta(minutes=settings.access_token_minutes)
-        if token_type == "access"
-        else timedelta(days=settings.refresh_token_days)
-    )
+    if token_type == "access":
+        delta = timedelta(minutes=settings.access_token_minutes)
+    elif token_type == "mfa":
+        delta = timedelta(minutes=MFA_TOKEN_MINUTES)
+    else:
+        delta = timedelta(days=settings.refresh_token_days)
     payload: dict[str, Any] = {**(extra_claims or {})}
     payload.update(
         {
@@ -106,3 +108,29 @@ def decode_refresh_token(token: str) -> RefreshClaims | None:
     if not isinstance(jti, str) or not jti:
         return None
     return RefreshClaims(user_id=user_id, remember_me=data.get("rem", True) is True, jti=jti)
+
+
+@dataclass(frozen=True)
+class MfaClaims:
+    user_id: int
+    remember_me: bool
+    token_version: int
+
+
+def decode_mfa_token(token: str) -> MfaClaims | None:
+    """Claims of the short-lived token issued after a correct password for an MFA account.
+
+    It is only accepted by the second sign-in step, never as an access or refresh token.
+    """
+    data = _decode(token, "mfa")
+    if data is None:
+        return None
+    try:
+        user_id = int(data["sub"])
+        version = data.get("tv", 0)
+        if not isinstance(version, int) or isinstance(version, bool):
+            return None
+    except (KeyError, ValueError, TypeError):
+        return None
+    remember = data.get("rem", False) is True
+    return MfaClaims(user_id=user_id, remember_me=remember, token_version=version)

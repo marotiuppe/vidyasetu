@@ -39,6 +39,7 @@ class UserOut(BaseModel):
     is_active: bool
     must_change_password: bool
     is_locked: bool
+    mfa_enabled: bool
 
 
 class UserCreate(BaseModel):

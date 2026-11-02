@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.errors import ApiError
 from app.db.base import utcnow
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
 from app.modules.schools.models import School
 from app.modules.settings import crypto
@@ -269,6 +270,34 @@ async def school_features(db: AsyncSession, school_id: int) -> dict[str, bool]:
 
 async def feature_enabled(db: AsyncSession, school_id: int, feature: str) -> bool:
     return bool(await resolve(db, f"feature.{feature}", school_id=school_id))
+
+
+_MFA_KEYS = {
+    Role.SUPER_ADMIN: "security.mfa_required_super_admin",
+    Role.SCHOOL_OWNER: "security.mfa_required_school_owner",
+    Role.MANAGEMENT: "security.mfa_required_management",
+    Role.HEADMASTER: "security.mfa_required_headmaster",
+    Role.ACCOUNTANT: "security.mfa_required_accountant",
+}
+
+
+async def mfa_required(db: AsyncSession, user: User) -> bool:
+    """Whether policy requires this user's role to use two-factor sign-in."""
+    key = _MFA_KEYS.get(user.role)
+    if key is None:
+        return False
+    if user.role != Role.SUPER_ADMIN and user.school_id is None:
+        return False
+    return bool(await resolve(db, key, school_id=user.school_id))
+
+
+async def policy_versions(db: AsyncSession) -> dict[str, str]:
+    """Current version of each policy users must accept (platform settings)."""
+    values = await resolve_many(db, ["legal.privacy_version", "legal.terms_version"], Ctx())
+    return {
+        "privacy": str(values["legal.privacy_version"] or "1"),
+        "terms": str(values["legal.terms_version"] or "1"),
+    }
 
 
 async def legal_values(db: AsyncSession, school_id: int | None) -> dict[str, Any]:
@@ -545,6 +574,16 @@ async def _upsert(db: AsyncSession, user: User, d: SettingDef, target: Target, s
                 row.is_secret = d.secret
                 row.updated_by = user.id
                 row.updated_at = now
+        await audit.record(
+            db,
+            user,
+            "settings.changed",
+            "setting",
+            d.key,
+            detail={"key": d.key, "level": d.level, "change": "set"},
+            school_id=target.school_id if d.level != "user" else user.school_id,
+            branch_id=target.branch_id if d.level == "branch" else None,
+        )
         try:
             await db.commit()
             return
@@ -554,8 +593,22 @@ async def _upsert(db: AsyncSession, user: User, d: SettingDef, target: Target, s
                 raise
 
 
+async def _record_reset(db: AsyncSession, user: User, d: SettingDef, target: Target) -> None:
+    await audit.record(
+        db,
+        user,
+        "settings.changed",
+        "setting",
+        d.key,
+        detail={"key": d.key, "level": d.level, "change": "reset"},
+        school_id=target.school_id if d.level != "user" else user.school_id,
+        branch_id=target.branch_id if d.level == "branch" else None,
+    )
+
+
 async def _reset(db: AsyncSession, user: User, d: SettingDef, target: Target) -> SettingItem:
     await _delete_row(db, user, d, target)
+    await _record_reset(db, user, d, target)
     await db.commit()
     return (await _items(db, user, target, [d]))[0]
 
@@ -590,6 +643,7 @@ async def reset_value(
         raise _forbidden()
     target = await _target(db, user, level, school_id, branch_id)
     await _delete_row(db, user, d, target)
+    await _record_reset(db, user, d, target)
     await db.commit()
 
 

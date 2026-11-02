@@ -12,6 +12,7 @@ from starlette.datastructures import Headers, MutableHeaders
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from app.core import request_context as request_ctx
 from app.core.config import get_settings
 from app.core.rate_limit import client_ip, limiter, rule_for
 
@@ -49,6 +50,8 @@ class SecurityHeadersMiddleware:
         # Client-supplied request ids are never trusted.
         request_id = uuid.uuid4().hex
         _state(scope)["request_id"] = request_id
+        request_ctx.request_id.set(request_id)
+        request_ctx.request_ip.set(client_ip(scope))
         path = str(scope.get("path", ""))
         production = get_settings().is_production
         skip_csp = not production and path in DEV_DOC_PATHS

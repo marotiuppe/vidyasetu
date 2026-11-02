@@ -44,11 +44,12 @@ import {
 } from '../../core/create/create-new';
 import { PendingReturn, ReturnStateService } from '../../core/create/return-state.service';
 import { StudentAttendance } from '../attendance/student-attendance';
+import { StudentConsent } from './student-consent';
 import { PHONE_PATTERN, initials, statusLabel, titleCase, todayIso } from './student-labels';
 
 @Component({
   selector: 'sms-student-profile',
-  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet, StudentAttendance],
+  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet, StudentAttendance, StudentConsent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-profile.html',
   styleUrl: './student-profile.css',
@@ -72,6 +73,8 @@ export class StudentProfile {
   protected readonly today = todayIso();
   protected readonly usernameHint = USERNAME_HINT;
   protected readonly canWrite = canWriteStudents(this.auth);
+  /** Students see their own profile but consent is a matter for parents and the school. */
+  protected readonly isStudentLogin = this.auth.hasRole('student');
   protected readonly createNew = CREATE_NEW;
   protected readonly createNewLabel = CREATE_NEW_LABEL;
   protected readonly canCreateYear = canCreateRecord(this.auth, 'academic_year');

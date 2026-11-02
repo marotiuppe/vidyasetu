@@ -223,6 +223,9 @@
             @if (user.is_locked) {
               <span class="badge badge-warn">Locked</span>
             }
+            @if (user.mfa_enabled) {
+              <span class="badge badge-success">{{ i18n.t('users.mfaOn') }}</span>
+            }
             <span class="row-actions">
               @if (user.is_locked) {
                 <button
@@ -240,6 +243,25 @@
               <button type="button" class="btn btn-ghost btn-sm" (click)="startReset(user)">
                 Reset password
               </button>
+              @if (canResetMfa && user.mfa_enabled !== false && user.id !== auth.user()?.id) {
+                @if (confirmMfaId() === user.id) {
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="busyId() === user.id"
+                    (click)="resetMfa(user)"
+                  >
+                    {{ i18n.t('users.mfaConfirm') }}
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelResetMfa()">
+                    {{ i18n.t('users.mfaCancel') }}
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="askResetMfa(user)">
+                    {{ i18n.t('users.mfaReset') }}
+                  </button>
+                }
+              }
             </span>
 
             @if (editingId() === user.id) {

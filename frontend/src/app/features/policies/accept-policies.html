@@ -1,0 +1,57 @@
+<main class="gate">
+  <section class="card box" aria-labelledby="gate-title">
+    <h1 class="page-title" id="gate-title" tabindex="-1">{{ i18n.t('policy.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('policy.intro') }}</p>
+
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('policy.loading') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (p of pending(); track p.policy) {
+          <li class="row">
+            <span class="row-main">
+              <span>{{ i18n.t('policy.name.' + p.policy) }}</span>
+              <span class="row-sub">{{ i18n.t('policy.version', { version: p.version }) }}</span>
+            </span>
+            <a
+              class="btn btn-ghost btn-sm"
+              [routerLink]="p.policy === 'privacy' ? '/privacy' : '/terms'"
+              target="_blank"
+              rel="noopener"
+            >
+              {{ i18n.t('policy.read') }}
+              <span class="sr-only"
+                >{{ i18n.t('policy.name.' + p.policy) }} {{ i18n.t('policy.newTab') }}</span
+              >
+            </a>
+          </li>
+        }
+      </ul>
+
+      <label class="check" for="policy-agree">
+        <input id="policy-agree" type="checkbox" [checked]="agreed()" (change)="toggle($event)" />
+        {{ i18n.t('policy.agree') }}
+      </label>
+
+      <div aria-live="assertive">
+        @if (error(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+      </div>
+
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!agreed() || saving()"
+          (click)="accept()"
+        >
+          {{ saving() ? i18n.t('policy.saving') : i18n.t('policy.accept') }}
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="signOut()">
+          {{ i18n.t('policy.signOut') }}
+        </button>
+      </div>
+    }
+  </section>
+</main>

@@ -17,6 +17,8 @@ from app.core.security import (
     verify_password,
 )
 from app.db.base import as_utc, utcnow
+from app.modules.audit import service as audit
+from app.modules.auth import mfa
 from app.modules.auth.models import RefreshToken
 from app.modules.schools.models import School
 from app.modules.settings import service as settings_service
@@ -62,12 +64,24 @@ async def _lockout_limits(db: AsyncSession, user: User) -> tuple[int, int]:
     return await settings_service.lockout_limits(db, user.school_id)
 
 
-async def _register_failure(db: AsyncSession, user: User) -> None:
+async def register_failure(db: AsyncSession, user: User) -> bool:
+    """Count a failed attempt against the account; True when this attempt locked it."""
     user.failed_login_count += 1
     max_attempts, minutes = await _lockout_limits(db, user)
     if user.failed_login_count >= max_attempts:
         user.locked_until = utcnow() + timedelta(minutes=minutes)
         user.failed_login_count = 0
+        return True
+    return False
+
+
+async def _audit_failure(db: AsyncSession, user: User | None, reason: str, locked: bool) -> None:
+    await audit.record(
+        db, user, "auth.login_failed", "user", user.id if user else None,
+        outcome="failed", detail={"reason": reason},
+    )
+    if locked and user is not None:
+        await audit.record(db, user, "auth.locked", "user", user.id, outcome="denied")
 
 
 async def authenticate(db: AsyncSession, identifier: str, password: str) -> User | None:
@@ -80,6 +94,8 @@ async def authenticate(db: AsyncSession, identifier: str, password: str) -> User
     if not candidates:
         # Same work as a real check, so timing does not reveal whether the account exists.
         verify_password(password, DUMMY_HASH)
+        await _audit_failure(db, None, "unknown_account", False)
+        await db.commit()
         return None
 
     password_ok = {u.id: verify_password(password, u.password_hash) for u in candidates}
@@ -92,15 +108,25 @@ async def authenticate(db: AsyncSession, identifier: str, password: str) -> User
 
     if len(eligible) == 1:
         user = eligible[0]
-        user.failed_login_count = 0
-        user.locked_until = None
+        if not user.mfa_enabled:
+            # With two-factor on, the counter is cleared only after the second step succeeds,
+            # so wrong codes keep counting toward the lockout.
+            user.failed_login_count = 0
+            user.locked_until = None
         return user
 
     # Failure: count it against every active, unlocked account whose password was wrong.
     # With a shared mobile number and no matching password, that is every account.
     for user in candidates:
-        if user.is_active and not user.is_locked and not password_ok[user.id]:
-            await _register_failure(db, user)
+        if user in eligible:
+            continue  # ambiguous shared number with the same password: not counted
+        if not user.is_active or not await _school_active(db, user):
+            await _audit_failure(db, user, "inactive", False)
+        elif user.is_locked:
+            await _audit_failure(db, user, "locked", False)
+        else:
+            locked = await register_failure(db, user)
+            await _audit_failure(db, user, "bad_password", locked)
     await db.commit()
     return None
 
@@ -201,3 +227,44 @@ async def revoke_user_sessions(db: AsyncSession, user: User) -> None:
         .where(RefreshToken.user_id == user.id, RefreshToken.revoked_at.is_(None))
         .values(revoked_at=utcnow())
     )
+
+
+async def complete_mfa_login(
+    db: AsyncSession,
+    user_id: int,
+    token_version: int,
+    code: str | None,
+    recovery_code: str | None,
+    remember_me: bool,
+) -> Session | None:
+    """Second sign-in step. None for any failure (the caller answers generically).
+
+    A wrong code counts against the account lockout; a locked account fails without counting.
+    """
+    user = await db.get(User, user_id)
+    if (
+        user is None
+        or not user.is_active
+        or not user.mfa_enabled
+        or user.token_version != token_version
+        or not await _school_active(db, user)
+    ):
+        return None
+    if user.is_locked:
+        await _audit_failure(db, user, "locked", False)
+        await db.commit()
+        return None
+    method = await mfa.verify_second_factor(db, user, code, recovery_code)
+    if method is None:
+        locked = await register_failure(db, user)
+        await _audit_failure(db, user, "mfa_invalid", locked)
+        await db.commit()
+        return None
+    user.failed_login_count = 0
+    user.locked_until = None
+    await audit.record(
+        db, user, "auth.login_ok", "user", user.id, detail={"mfa": True, "method": method}
+    )
+    if method == "recovery":
+        await audit.record(db, user, "mfa.recovery_code_used", "user", user.id)
+    return await start_session(db, user, remember_me)

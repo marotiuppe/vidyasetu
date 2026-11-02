@@ -10,6 +10,7 @@ from app.core.errors import ApiError
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.modules.schools.models import School
+from app.modules.settings import service as settings_service
 from app.modules.users.models import Role, User
 
 bearer = HTTPBearer(auto_error=False)
@@ -30,6 +31,13 @@ PASSWORD_CHANGE_EXEMPT = frozenset(
         "/api/v1/auth/refresh",
     }
 )
+
+
+# While two-factor setup is required, only these (plus the lists above) are open.
+MFA_SETUP_EXEMPT = PASSWORD_CHANGE_EXEMPT | {
+    "/api/v1/auth/mfa/setup",
+    "/api/v1/auth/mfa/enable",
+}
 
 
 async def get_current_user(
@@ -57,6 +65,14 @@ async def get_current_user(
             status.HTTP_403_FORBIDDEN,
             "Password change required",
             "password_change_required",
+        )
+    if (
+        not user.mfa_enabled
+        and request.url.path not in MFA_SETUP_EXEMPT
+        and await settings_service.mfa_required(db, user)
+    ):
+        raise ApiError(
+            status.HTTP_403_FORBIDDEN, "Two-factor setup required", "mfa_setup_required"
         )
     return user
 

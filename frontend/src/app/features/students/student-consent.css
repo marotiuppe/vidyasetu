@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+.purpose {
+  font-weight: 600;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}

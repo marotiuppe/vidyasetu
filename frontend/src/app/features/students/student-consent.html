@@ -1,0 +1,183 @@
+@if (!unavailable()) {
+  <section class="card" aria-labelledby="consent-title">
+    <div class="card-head">
+      <h2 class="card-title" id="consent-title">{{ i18n.t('consent.title') }}</h2>
+      @if (canDownload()) {
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="downloading()"
+          (click)="download()"
+        >
+          {{ downloading() ? i18n.t('consent.downloading') : i18n.t('consent.download') }}
+        </button>
+      }
+    </div>
+    <p class="hint">
+      {{ isParent() ? i18n.t('consent.help.parent') : i18n.t('consent.help.staff') }}
+    </p>
+
+    <div aria-live="polite">
+      @if (notice(); as message) {
+        <p class="notice">{{ message }}</p>
+      }
+    </div>
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('consent.loading') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (p of purposes; track p) {
+          <li class="row">
+            <span class="row-main">
+              <span class="purpose">{{ i18n.t('consent.purpose.' + p) }}</span>
+              <span class="row-sub">{{ i18n.t('consent.purposeHelp.' + p) }}</span>
+              @if (whenOf(p); as when) {
+                <span class="row-sub">{{ when }}</span>
+              }
+            </span>
+            <span
+              class="badge"
+              [class.badge-success]="statusOf(p) === 'granted'"
+              [class.badge-danger]="statusOf(p) === 'refused'"
+              [class.badge-warn]="statusOf(p) === 'withdrawn'"
+              [class.badge-muted]="statusOf(p) === 'none'"
+            >
+              {{ i18n.t('consent.status.' + statusOf(p)) }}
+            </span>
+
+            @if (isParent()) {
+              <span class="row-actions">
+                @if (statusOf(p) !== 'granted') {
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    [disabled]="busy()"
+                    [attr.aria-label]="
+                      i18n.t('consent.action.grant') + ': ' + i18n.t('consent.purpose.' + p)
+                    "
+                    (click)="parentAct(p, 'granted')"
+                  >
+                    {{ i18n.t('consent.action.grant') }}
+                  </button>
+                }
+                @if (statusOf(p) === 'none') {
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="busy()"
+                    [attr.aria-label]="
+                      i18n.t('consent.action.refuse') + ': ' + i18n.t('consent.purpose.' + p)
+                    "
+                    (click)="parentAct(p, 'refused')"
+                  >
+                    {{ i18n.t('consent.action.refuse') }}
+                  </button>
+                }
+                @if (statusOf(p) === 'granted') {
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="busy()"
+                    [attr.aria-label]="
+                      i18n.t('consent.action.withdraw') + ': ' + i18n.t('consent.purpose.' + p)
+                    "
+                    (click)="parentAct(p, 'withdrawn')"
+                  >
+                    {{ i18n.t('consent.action.withdraw') }}
+                  </button>
+                }
+              </span>
+            } @else if (isStaffRecorder && recording() !== p) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="
+                  i18n.t('consent.action.record') + ': ' + i18n.t('consent.purpose.' + p)
+                "
+                (click)="startRecord(p)"
+              >
+                {{ i18n.t('consent.action.record') }}
+              </button>
+            }
+
+            @if (recording() === p) {
+              <form class="panel" [formGroup]="recordForm" (ngSubmit)="submitRecord()">
+                <div class="form-grid">
+                  <label class="field">
+                    {{ i18n.t('consent.record.status') }}
+                    <select class="input" formControlName="status">
+                      <option value="granted">{{ i18n.t('consent.status.granted') }}</option>
+                      <option value="refused">{{ i18n.t('consent.status.refused') }}</option>
+                      <option value="withdrawn">{{ i18n.t('consent.status.withdrawn') }}</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    {{ i18n.t('consent.record.method') }}
+                    <select class="input" formControlName="method">
+                      <option value="paper">{{ i18n.t('consent.method.paper') }}</option>
+                      <option value="in_person">{{ i18n.t('consent.method.in_person') }}</option>
+                    </select>
+                  </label>
+                </div>
+                <label class="field">
+                  {{ i18n.t('consent.record.note') }}
+                  <input class="input" formControlName="note" maxlength="500" autocomplete="off" />
+                </label>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+                    {{ i18n.t('consent.record.save') }}
+                  </button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="cancelRecord()">
+                    {{ i18n.t('consent.record.cancel') }}
+                  </button>
+                </div>
+              </form>
+            }
+          </li>
+        }
+      </ul>
+
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        [attr.aria-expanded]="showHistory()"
+        aria-controls="consent-history"
+        (click)="toggleHistory()"
+      >
+        {{ showHistory() ? i18n.t('consent.history.hide') : i18n.t('consent.history.show') }}
+      </button>
+      @if (showHistory()) {
+        <ul class="rows" id="consent-history">
+          @for (h of data()?.history ?? []; track h.id) {
+            <li class="row">
+              <span class="row-main">
+                <span>
+                  {{ i18n.t('consent.purpose.' + h.purpose) }}:
+                  {{ i18n.t('consent.status.' + h.status) }}
+                </span>
+                <span class="row-sub">
+                  {{ dateTime(h.recorded_at) }}
+                  @if (h.method) {
+                    · {{ i18n.t('consent.method.' + h.method) }}
+                  }
+                  @if (h.recorded_by_name) {
+                    · {{ h.recorded_by_name }}
+                  }
+                </span>
+                @if (h.note) {
+                  <span class="row-sub">{{ h.note }}</span>
+                }
+              </span>
+            </li>
+          } @empty {
+            <li class="empty">{{ i18n.t('consent.history.empty') }}</li>
+          }
+        </ul>
+      }
+    }
+  </section>
+}

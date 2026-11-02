@@ -176,6 +176,20 @@
           i18n.t('settings.my.password')
         }}</a>
       </section>
+      <section class="card extra" aria-labelledby="mfa-title">
+        <h2 class="card-title" id="mfa-title">{{ i18n.t('settings.my.mfa') }}</h2>
+        <p class="hint">{{ i18n.t('settings.my.mfaHelp') }}</p>
+        <a class="btn btn-ghost btn-sm" routerLink="/account/mfa">{{
+          i18n.t('settings.my.mfaOpen')
+        }}</a>
+      </section>
+      <section class="card extra" aria-labelledby="privacy-title">
+        <h2 class="card-title" id="privacy-title">{{ i18n.t('settings.my.privacy') }}</h2>
+        <p class="hint">{{ i18n.t('settings.my.privacyHelp') }}</p>
+        <a class="btn btn-ghost btn-sm" routerLink="/settings/privacy">{{
+          i18n.t('settings.my.privacyOpen')
+        }}</a>
+      </section>
     }
   </div>
 }

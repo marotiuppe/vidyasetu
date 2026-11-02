@@ -42,6 +42,7 @@
           "builder": "@angular/build:application",
           "options": {
             "browser": "src/main.ts",
+            "allowedCommonJsDependencies": ["qrcode", "dijkstrajs"],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {

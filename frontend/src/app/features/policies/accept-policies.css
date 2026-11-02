@@ -1,0 +1,23 @@
+.gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 16px;
+}
+
+.box {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

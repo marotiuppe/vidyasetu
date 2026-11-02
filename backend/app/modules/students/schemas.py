@@ -109,6 +109,8 @@ class StudentDetail(StudentOut):
     previous_school: str | None
     guardians: list[GuardianOut]
     enrollments: list[EnrollmentOut]
+    # Current parental consent per purpose: granted, refused, withdrawn or none.
+    consent_status: dict[str, str] = {}
 
 
 class StudentPage(BaseModel):

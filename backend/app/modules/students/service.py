@@ -19,7 +19,9 @@ from app.core.password_policy import enforce_password, password_problem
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
+from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
+from app.modules.consent import service as consent_service
 from app.modules.settings import service as settings_service
 from app.modules.students.models import (
     Enrollment,
@@ -221,6 +223,7 @@ async def _build_detail(db: AsyncSession, s: Student) -> StudentDetail:
         previous_school=s.previous_school,
         guardians=[_guardian_out(g) for g in guardians],
         enrollments=all_enrollments,
+        consent_status=await consent_service.current_status(db, s.id),
     )
 
 
@@ -370,11 +373,27 @@ async def export_csv(db: AsyncSession, actor: User, f: StudentFilters) -> str:
                 s.address,
             )
         )
+    await audit.record(
+        db, actor, "student.exported", "student", None,
+        detail={"scope": "list", "rows": len(rows)}, commit=True,
+    )
     return buf.getvalue()
 
 
-async def get_student(db: AsyncSession, actor: User, student_id: int) -> StudentDetail:
-    return await _build_detail(db, await _get_student(db, actor, student_id))
+_PEOPLE_WHO_VIEW_OWN = (Role.PARENT, Role.STUDENT)
+
+
+async def get_student(
+    db: AsyncSession, actor: User, student_id: int, *, log_view: bool = True
+) -> StudentDetail:
+    student = await _get_student(db, actor, student_id)
+    if log_view and actor.role not in _PEOPLE_WHO_VIEW_OWN:
+        # Staff reads of a student's full profile are logged (parents and students see their own).
+        await audit.record(
+            db, actor, "student.viewed", "student", student.id,
+            school_id=student.school_id, branch_id=student.branch_id, commit=True,
+        )
+    return await _build_detail(db, student)
 
 
 # ---- enrolment ----
@@ -794,6 +813,11 @@ async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> 
             db, branch, fields, data.guardians, data.enrollment
         )
         credentials = await _create_logins(db, student, guardians, data, requested)
+        await audit.record(
+            db, actor, "student.created", "student", student.id,
+            school_id=student.school_id, branch_id=student.branch_id,
+            detail={"logins_created": requested},
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -893,6 +917,11 @@ async def update_student(
             raise _unprocessable(f"{field} cannot be null")
     for field, value in changes.items():
         setattr(student, field, value)
+    await audit.record(
+        db, actor, "student.updated", "student", student.id,
+        detail={"fields": ",".join(sorted(changes))},
+        school_id=student.school_id, branch_id=student.branch_id,
+    )
     await db.commit()
     return await _build_detail(db, student)
 
@@ -1217,5 +1246,10 @@ async def import_students(db: AsyncSession, actor: User, data: ImportRequest) ->
             errors.append(ImportRowError(row=number, message=_validation_message(exc)))
         except HTTPException as exc:
             errors.append(ImportRowError(row=number, message=str(exc.detail)))
+    await audit.record(
+        db, actor, "student.imported", "student", None,
+        detail={"created": created, "failed": len(errors)},
+        school_id=branch.school_id, branch_id=branch.id,
+    )
     await db.commit()
     return ImportResult(created=created, failed=len(errors), errors=errors)

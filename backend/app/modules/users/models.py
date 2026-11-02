@@ -78,6 +78,11 @@ class User(TimestampMixin, Base):
     # Failed sign-ins since the last success or lock; the lock applies until locked_until.
     failed_login_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Two-factor sign-in (TOTP). The secret is stored encrypted; it is set at setup, but the
+    # factor only counts once `mfa_enabled` is true. `mfa_last_step` blocks code replay.
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    mfa_secret_encrypted: Mapped[str | None] = mapped_column(String(500))
+    mfa_last_step: Mapped[int | None] = mapped_column(Integer)
 
     @property
     def is_locked(self) -> bool:

@@ -22,7 +22,9 @@ import { Role, User } from '../../core/auth/auth.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { MOBILE_HINT, USERNAME_HINT, mobileFormat, usernameFormat } from '../../core/auth/identity';
 import { PASSWORD_HINT, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
+import { I18n } from '../../core/i18n/i18n';
 import { ROLE_LABELS } from '../../core/layout/nav';
+import { PrivacyApi } from '../../core/api/privacy.api';
 
 const BRANCH_BOUND: Role[] = [
   'management',
@@ -45,8 +47,13 @@ const BRANCH_LEVEL_CREATORS: Role[] = ['teacher', 'accountant', 'clerk', 'studen
 export class Users {
   private readonly api = inject(AdminApi);
   private readonly fb = inject(NonNullableFormBuilder);
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly privacy = inject(PrivacyApi);
+  protected readonly i18n = inject(I18n);
+  /** Only a school owner or platform admin may switch a user's two-factor off. */
+  protected readonly canResetMfa = this.auth.hasRole('super_admin', 'school_owner');
+  protected readonly confirmMfaId = signal<number | null>(null);
 
   protected readonly roleLabels = ROLE_LABELS;
   protected readonly allRoles = ALL_ROLES;
@@ -302,6 +309,21 @@ export class Users {
   protected unlock(user: User): void {
     this.run(user.id, this.api.unlockUser(user.id), () => {
       this.notice.set(`${user.full_name} can sign in again.`);
+    });
+  }
+
+  protected askResetMfa(user: User): void {
+    this.confirmMfaId.set(user.id);
+  }
+
+  protected cancelResetMfa(): void {
+    this.confirmMfaId.set(null);
+  }
+
+  protected resetMfa(user: User): void {
+    this.confirmMfaId.set(null);
+    this.run(user.id, this.privacy.resetUserMfa(user.id), () => {
+      this.notice.set(this.i18n.t('users.mfaResetDone', { name: user.full_name }));
     });
   }
 

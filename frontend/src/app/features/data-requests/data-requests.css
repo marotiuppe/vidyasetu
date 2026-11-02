@@ -1,0 +1,28 @@
+.filter {
+  min-width: 180px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.message {
+  white-space: pre-wrap;
+}
+
+.overdue {
+  background: var(--danger-bg);
+  border-left: 3px solid var(--danger);
+  padding-left: 10px;
+}
+
+form {
+  display: grid;
+  gap: 12px;
+}
+
+textarea.input {
+  resize: vertical;
+}

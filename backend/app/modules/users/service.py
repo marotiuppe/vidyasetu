@@ -8,6 +8,8 @@ from app.core.errors import IdentityInUse
 from app.core.password_policy import enforce_password
 from app.core.security import hash_password
 from app.core.tenant import scope_users
+from app.modules.audit import service as audit
+from app.modules.auth import mfa
 from app.modules.auth.service import revoke_user_sessions
 from app.modules.branches.models import Branch
 from app.modules.settings import service as settings_service
@@ -163,6 +165,11 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
     )
     db.add(user)
     try:
+        await db.flush()
+        await audit.record(
+            db, actor, "user.created", "user", user.id,
+            detail={"role": user.role.value}, school_id=school_id, branch_id=branch_id,
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -200,6 +207,22 @@ async def update_user(db: AsyncSession, actor: User, user_id: int, data: UserUpd
         setattr(target, field, value)
     if changes.get("is_active") is False:
         await revoke_user_sessions(db, target)
+    if changes:
+        sid, bid = target.school_id, target.branch_id
+        if changes.get("is_active") is False:
+            await audit.record(
+                db, actor, "user.deactivated", "user", target.id, school_id=sid, branch_id=bid
+            )
+        elif changes.get("is_active") is True:
+            await audit.record(
+                db, actor, "user.reactivated", "user", target.id, school_id=sid, branch_id=bid
+            )
+        if set(changes) - {"is_active"}:
+            await audit.record(
+                db, actor, "user.updated", "user", target.id,
+                detail={"fields": ",".join(sorted(set(changes) - {"is_active"}))},
+                school_id=sid, branch_id=bid,
+            )
     try:
         await db.commit()
     except IntegrityError:
@@ -222,6 +245,10 @@ async def reset_password(db: AsyncSession, actor: User, user_id: int, new_passwo
     target.failed_login_count = 0
     target.locked_until = None
     await revoke_user_sessions(db, target)
+    await audit.record(
+        db, actor, "user.password_reset", "user", target.id,
+        school_id=target.school_id, branch_id=target.branch_id,
+    )
     await db.commit()
 
 
@@ -230,4 +257,28 @@ async def unlock_user(db: AsyncSession, actor: User, user_id: int) -> None:
     target = await _get_manageable(db, actor, user_id)
     target.failed_login_count = 0
     target.locked_until = None
+    await audit.record(
+        db, actor, "user.unlocked", "user", target.id,
+        school_id=target.school_id, branch_id=target.branch_id,
+    )
+    await db.commit()
+
+
+async def reset_mfa(db: AsyncSession, actor: User, user_id: int) -> None:
+    """Remove a user's two-factor sign-in (lost device). Ends all their sessions.
+
+    School owners may do this for users of their own school; platform admins for anyone. The
+    caller has checked the role; the target must be in the actor's scope (else 404).
+    """
+    target = await get_user(db, actor, user_id)
+    if target.id == actor.id:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, detail="Use the two-factor settings for your own account"
+        )
+    await mfa.clear_factor(db, target)
+    await revoke_user_sessions(db, target)
+    await audit.record(
+        db, actor, "mfa.reset", "user", target.id,
+        school_id=target.school_id, branch_id=target.branch_id,
+    )
     await db.commit()

@@ -1,0 +1,206 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('mfa.setup.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('mfa.setup.subtitle') }}</p>
+  </div>
+  @if (!forced()) {
+    <a class="btn btn-ghost" routerLink="/settings">{{ i18n.t('mfa.setup.backToSettings') }}</a>
+  }
+</div>
+
+@if (forced()) {
+  <p class="info-note" role="status">{{ i18n.t('mfa.setup.forced') }}</p>
+}
+@if (policyLocked()) {
+  <p class="info-note" role="status">{{ i18n.t('mfa.setup.policyLocked') }}</p>
+}
+
+<section class="card wrap" aria-labelledby="mfa-step-heading">
+  <div aria-live="polite">
+    @if (notice(); as message) {
+      <p class="notice">{{ message }}</p>
+    }
+  </div>
+
+  @switch (view()) {
+    @case ('password') {
+      <h2 class="card-title" id="mfa-step-heading" tabindex="-1">
+        {{ i18n.t('mfa.setup.step1') }}
+      </h2>
+      <p>{{ i18n.t('mfa.setup.step1Help') }}</p>
+      <form [formGroup]="passwordForm" (ngSubmit)="startSetup()" novalidate>
+        <label class="field" for="mfa-password">
+          {{ i18n.t('mfa.setup.password') }}
+          <input
+            class="input"
+            id="mfa-password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        @if (passwordForm.controls.password.touched && passwordForm.controls.password.invalid) {
+          <p class="field-error" role="alert">{{ i18n.t('mfa.setup.passwordRequired') }}</p>
+        }
+        @if (error(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            {{ busy() ? i18n.t('mfa.setup.working') : i18n.t('mfa.setup.continue') }}
+          </button>
+        </div>
+      </form>
+    }
+    @case ('scan') {
+      <h2 class="card-title" id="mfa-step-heading" tabindex="-1">
+        {{ i18n.t('mfa.setup.step2') }}
+      </h2>
+      <p>{{ i18n.t('mfa.setup.step2Help') }}</p>
+      <div class="scan">
+        @if (qr(); as src) {
+          <img class="qr" [src]="src" width="220" height="220" [alt]="i18n.t('mfa.setup.qrAlt')" />
+        }
+        <div class="secret-box">
+          <p class="hint">{{ i18n.t('mfa.setup.manualKey') }}</p>
+          <p class="secret" translate="no">{{ spacedSecret() }}</p>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="copy(secret(), 'secret')">
+            {{ i18n.t('mfa.setup.copySecret') }}
+          </button>
+        </div>
+      </div>
+      <form [formGroup]="codeForm" (ngSubmit)="verify()" novalidate>
+        <label class="field" for="mfa-verify-code">
+          {{ i18n.t('mfa.setup.codeLabel') }}
+          <input
+            class="input code-input"
+            id="mfa-verify-code"
+            type="text"
+            inputmode="numeric"
+            maxlength="7"
+            formControlName="code"
+            autocomplete="one-time-code"
+            required
+          />
+        </label>
+        @if (codeForm.controls.code.touched && codeForm.controls.code.invalid) {
+          <p class="field-error" role="alert">{{ i18n.t('mfa.setup.codeInvalid') }}</p>
+        }
+        @if (error(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="busy()">
+            {{ busy() ? i18n.t('mfa.setup.working') : i18n.t('mfa.setup.verify') }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="backToStart()">
+            {{ i18n.t('mfa.setup.startOver') }}
+          </button>
+        </div>
+      </form>
+    }
+    @case ('codes') {
+      <h2 class="card-title" id="mfa-step-heading" tabindex="-1">
+        {{ i18n.t('mfa.setup.step3') }}
+      </h2>
+      <p>{{ i18n.t('mfa.setup.step3Help') }}</p>
+      <ul class="codes" translate="no">
+        @for (c of recoveryCodes(); track c) {
+          <li>{{ c }}</li>
+        }
+      </ul>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="copy(codesText(), 'codes')">
+          {{ i18n.t('mfa.setup.copyCodes') }}
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="downloadCodes()">
+          {{ i18n.t('mfa.setup.downloadCodes') }}
+        </button>
+      </div>
+      <label class="check" for="mfa-saved">
+        <input id="mfa-saved" type="checkbox" [checked]="saved()" (change)="toggleSaved($event)" />
+        {{ i18n.t('mfa.setup.saved') }}
+      </label>
+      <div class="form-actions">
+        <button type="button" class="btn btn-primary" [disabled]="!saved()" (click)="done()">
+          {{ i18n.t('mfa.setup.finish') }}
+        </button>
+      </div>
+    }
+    @case ('manage') {
+      <h2 class="card-title" id="mfa-step-heading" tabindex="-1">
+        {{ i18n.t('mfa.setup.manageTitle') }}
+      </h2>
+      <p>
+        <span class="badge badge-success">{{ i18n.t('mfa.setup.on') }}</span>
+      </p>
+      <p>{{ i18n.t('mfa.setup.manageHelp') }}</p>
+
+      @if (manageAction() === null) {
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" (click)="openManage('regenerate')">
+            {{ i18n.t('mfa.setup.regenerate') }}
+          </button>
+          <button type="button" class="btn btn-ghost" (click)="openManage('disable')">
+            {{ i18n.t('mfa.setup.disable') }}
+          </button>
+        </div>
+      } @else {
+        <form class="panel" [formGroup]="manageForm" (ngSubmit)="submitManage()" novalidate>
+          <p>
+            {{
+              manageAction() === 'regenerate'
+                ? i18n.t('mfa.setup.regenerateHelp')
+                : i18n.t('mfa.setup.disableHelp')
+            }}
+          </p>
+          <label class="field" for="manage-password">
+            {{ i18n.t('mfa.setup.password') }}
+            <input
+              class="input"
+              id="manage-password"
+              type="password"
+              formControlName="password"
+              autocomplete="current-password"
+              required
+            />
+          </label>
+          <label class="field" for="manage-code">
+            {{ i18n.t('mfa.setup.codeLabel') }}
+            <input
+              class="input code-input"
+              id="manage-code"
+              type="text"
+              inputmode="numeric"
+              maxlength="7"
+              formControlName="code"
+              autocomplete="one-time-code"
+              required
+            />
+          </label>
+          @if (manageForm.touched && manageForm.invalid) {
+            <p class="field-error" role="alert">{{ i18n.t('mfa.setup.manageInvalid') }}</p>
+          }
+          @if (error(); as message) {
+            <p class="form-error" role="alert">{{ message }}</p>
+          }
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">
+              {{
+                busy()
+                  ? i18n.t('mfa.setup.working')
+                  : manageAction() === 'regenerate'
+                    ? i18n.t('mfa.setup.regenerate')
+                    : i18n.t('mfa.setup.disable')
+              }}
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="cancelManage()">
+              {{ i18n.t('mfa.setup.cancel') }}
+            </button>
+          </div>
+        </form>
+      }
+    }
+  }
+</section>

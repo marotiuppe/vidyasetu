@@ -1,5 +1,8 @@
+import { MR_PRIVACY } from './mr.privacy';
+
 /** Marathi UI strings. Missing keys fall back to English. Server setting labels use `settings.<key>`. */
 export const MR: Record<string, string> = {
+  ...MR_PRIVACY,
   'nav.settings': 'सेटिंग्ज',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

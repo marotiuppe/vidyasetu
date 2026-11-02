@@ -69,3 +69,13 @@ async def reset_password(
 async def unlock_user(user_id: int, db: DbSession, actor: CurrentUser) -> Response:
     await service.unlock_user(db, actor, user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{user_id}/mfa/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_roles(Role.SUPER_ADMIN, Role.SCHOOL_OWNER))],
+)
+async def reset_mfa(user_id: int, db: DbSession, actor: CurrentUser) -> Response:
+    await service.reset_mfa(db, actor, user_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

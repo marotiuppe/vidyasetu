@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from pydantic import BaseModel, Field, model_validator
@@ -6,9 +6,11 @@ from pydantic import BaseModel, Field, model_validator
 from app.core.config import get_settings
 from app.core.deps import CurrentUser, DbSession, require_cookie_request
 from app.core.password_policy import enforce_password
-from app.core.security import hash_password, verify_password
+from app.core.security import create_token, decode_mfa_token, hash_password, verify_password
+from app.modules.audit import service as audit
 from app.modules.auth import service
 from app.modules.settings import service as settings_service
+from app.modules.users.models import User
 from app.modules.users.schemas import UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -48,10 +50,41 @@ class ChangePasswordRequest(BaseModel):
     new_password: str = Field(max_length=128)
 
 
+class MeOut(UserOut):
+    # Policy requires two-factor for this role and the user has not set it up yet.
+    mfa_setup_required: bool
+
+
 class TokenResponse(BaseModel):
+    mfa_required: Literal[False] = False
     access_token: str
     token_type: str = "bearer"
-    user: UserOut
+    user: MeOut
+
+
+class MfaChallenge(BaseModel):
+    """Returned instead of a session when the account has two-factor on."""
+
+    mfa_required: Literal[True] = True
+    mfa_token: str
+
+
+class MfaLoginRequest(BaseModel):
+    mfa_token: str = Field(min_length=1, max_length=2000)
+    code: str | None = Field(default=None, min_length=1, max_length=20)
+    recovery_code: str | None = Field(default=None, min_length=1, max_length=40)
+    remember_me: bool | None = None
+
+    @model_validator(mode="after")
+    def _one_code(self) -> "MfaLoginRequest":
+        if (self.code is None) == (self.recovery_code is None):
+            raise ValueError("Send either code or recovery_code")
+        return self
+
+
+async def me_out(db: DbSession, user: User) -> MeOut:
+    required = not user.mfa_enabled and await settings_service.mfa_required(db, user)
+    return MeOut(**UserOut.model_validate(user).model_dump(), mfa_setup_required=required)
 
 
 def _set_refresh_cookie(response: Response, token: str, remember_me: bool) -> None:
@@ -79,10 +112,12 @@ def _delete_refresh_cookie(response: Response) -> None:
     )
 
 
-def _token_response(response: Response, session: service.Session) -> TokenResponse:
+async def _token_response(
+    response: Response, session: service.Session, db: DbSession
+) -> TokenResponse:
     _set_refresh_cookie(response, session.refresh_token, session.remember_me)
     return TokenResponse(
-        access_token=session.access_token, user=UserOut.model_validate(session.user)
+        access_token=session.access_token, user=await me_out(db, session.user)
     )
 
 
@@ -93,15 +128,43 @@ async def auth_options() -> AuthOptions:
 
 @router.post(
     "/login",
-    response_model=TokenResponse,
+    response_model=TokenResponse | MfaChallenge,
     dependencies=[Depends(require_cookie_request)],
 )
-async def login(data: LoginRequest, response: Response, db: DbSession) -> TokenResponse:
+async def login(
+    data: LoginRequest, response: Response, db: DbSession
+) -> TokenResponse | MfaChallenge:
     user = await service.authenticate(db, data.identifier, data.password)
     if user is None:
         raise _invalid
+    if user.mfa_enabled:
+        # No session and no cookie until the second step succeeds.
+        return MfaChallenge(
+            mfa_token=create_token(
+                user.id, "mfa", {"tv": user.token_version, "rem": data.remember_me}
+            )
+        )
+    await audit.record(db, user, "auth.login_ok", "user", user.id, detail={"mfa": False})
     session = await service.start_session(db, user, data.remember_me)
-    return _token_response(response, session)
+    return await _token_response(response, session, db)
+
+
+@router.post(
+    "/login/mfa",
+    response_model=TokenResponse,
+    dependencies=[Depends(require_cookie_request)],
+)
+async def login_mfa(data: MfaLoginRequest, response: Response, db: DbSession) -> TokenResponse:
+    claims = decode_mfa_token(data.mfa_token)
+    if claims is None:
+        raise _invalid
+    remember = claims.remember_me if data.remember_me is None else data.remember_me
+    session = await service.complete_mfa_login(
+        db, claims.user_id, claims.token_version, data.code, data.recovery_code, remember
+    )
+    if session is None:
+        raise _invalid
+    return await _token_response(response, session, db)
 
 
 @router.post(
@@ -117,7 +180,7 @@ async def refresh(
     session = await service.rotate_session(db, refresh_token) if refresh_token else None
     if session is None:
         raise _session_expired
-    return _token_response(response, session)
+    return await _token_response(response, session, db)
 
 
 @router.post(
@@ -135,9 +198,9 @@ async def logout(
     _delete_refresh_cookie(response)
 
 
-@router.get("/me", response_model=UserOut)
-async def me(user: CurrentUser) -> UserOut:
-    return UserOut.model_validate(user)
+@router.get("/me", response_model=MeOut)
+async def me(db: DbSession, user: CurrentUser) -> MeOut:
+    return await me_out(db, user)
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
@@ -162,6 +225,7 @@ async def change_password(
     user.password_hash = hash_password(data.new_password)
     user.must_change_password = False
     await service.revoke_user_sessions(db, user)
+    await audit.record(db, user, "auth.password_changed", "user", user.id)
     await db.commit()
     response = Response(status_code=status.HTTP_204_NO_CONTENT)
     _delete_refresh_cookie(response)

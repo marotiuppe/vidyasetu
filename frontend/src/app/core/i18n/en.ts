@@ -1,5 +1,8 @@
+import { EN_PRIVACY } from './en.privacy';
+
 /** English UI strings for the Settings area. English is the fallback for every language. */
 export const EN: Record<string, string> = {
+  ...EN_PRIVACY,
   'nav.settings': 'Settings',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

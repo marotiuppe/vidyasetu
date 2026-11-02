@@ -1,0 +1,81 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.log {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.log th {
+  padding: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.log td {
+  padding: 10px 8px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+}
+
+.sub {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+code {
+  font-size: 0.78rem;
+}
+
+/* On phones every row becomes a stacked card with the column name before each value. */
+@media (max-width: 767px) {
+  .log thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .log,
+  .log tbody,
+  .log tr,
+  .log td {
+    display: block;
+  }
+
+  .log tr {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .log td {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 8px;
+    padding: 4px 4px;
+    border: 0;
+  }
+
+  .log td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .log tr.none td::before {
+    content: none;
+  }
+}

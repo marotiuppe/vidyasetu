@@ -64,8 +64,14 @@ def rule_for(path: str) -> tuple[str, int] | None:
     if not path.startswith("/api/"):
         return None
     settings = get_settings()
-    if path == "/api/v1/auth/login":
+    if path in ("/api/v1/auth/login", "/api/v1/auth/login/mfa"):
         return "login", settings.rate_limit_login_per_minute
+    if path.startswith("/api/v1/auth/mfa/"):
+        return "mfa", settings.rate_limit_mfa_per_minute
+    if path == "/api/v1/me/export" or (
+        path.startswith("/api/v1/students/") and path.endswith("/export") and path.count("/") == 5
+    ):
+        return "export", settings.rate_limit_export_per_minute
     if path == "/api/v1/auth/refresh":
         return "refresh", settings.rate_limit_refresh_per_minute
     if path == "/api/v1/auth/change-password":

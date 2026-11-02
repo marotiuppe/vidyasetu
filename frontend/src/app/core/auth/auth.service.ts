@@ -3,7 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, finalize, map, of, shareReplay } from 'rxjs';
 
-import { AuthOptions, Role, TokenResponse, User } from './auth.models';
+import { AuthOptions, LoginResult, MfaChallenge, Role, TokenResponse, User } from './auth.models';
 
 const API = '/api/v1/auth';
 
@@ -20,6 +20,10 @@ export class AuthService {
   readonly user = this.currentUser.asReadonly();
   readonly isLoggedIn = computed(() => this.currentUser() !== null);
 
+  /** Whether the current session still has policies to accept. Null until checked. */
+  private readonly policiesPending = signal<boolean | null>(null);
+  readonly policyGate = this.policiesPending.asReadonly();
+
   token(): string | null {
     return this.accessToken;
   }
@@ -30,9 +34,34 @@ export class AuthService {
   }
 
   /** `identifier` is a username, a mobile number or an email address. */
-  login(identifier: string, password: string, rememberMe: boolean): Observable<User> {
+  login(identifier: string, password: string, rememberMe: boolean): Observable<LoginResult> {
     return this.http
-      .post<TokenResponse>(`${API}/login`, { identifier, password, remember_me: rememberMe })
+      .post<TokenResponse | MfaChallenge>(`${API}/login`, {
+        identifier,
+        password,
+        remember_me: rememberMe,
+      })
+      .pipe(
+        map((res): LoginResult =>
+          'mfa_required' in res && res.mfa_required
+            ? { kind: 'mfa', mfaToken: res.mfa_token }
+            : { kind: 'signed_in', user: this.accept(res as TokenResponse) },
+        ),
+      );
+  }
+
+  /** Second sign-in step: a 6-digit code or a recovery code. */
+  loginMfa(
+    mfaToken: string,
+    code: { code: string } | { recovery_code: string },
+    rememberMe: boolean,
+  ): Observable<User> {
+    return this.http
+      .post<TokenResponse>(`${API}/login/mfa`, {
+        mfa_token: mfaToken,
+        ...code,
+        remember_me: rememberMe,
+      })
       .pipe(map((res) => this.accept(res)));
   }
 
@@ -83,6 +112,17 @@ export class AuthService {
   clear(): void {
     this.accessToken = null;
     this.currentUser.set(null);
+    this.policiesPending.set(null);
+  }
+
+  /** Remember the result of the policy check (false once accepted). */
+  setPoliciesPending(pending: boolean): void {
+    this.policiesPending.set(pending);
+  }
+
+  /** Called when the server says two-factor must be set up before anything else. */
+  requireMfaSetup(): void {
+    this.currentUser.update((user) => (user ? { ...user, mfa_setup_required: true } : user));
   }
 
   /** Re-read the signed-in user (for example after changing the password). */

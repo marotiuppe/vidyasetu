@@ -1,102 +1,162 @@
 <main class="login">
-  <form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <div class="brand">
-      <img class="brand-mark" src="brand/logo-mark.svg" alt="" width="48" height="48" />
-      <div>
-        <h1>Vidyasetu</h1>
-        <p>School workspace</p>
+  @if (step() === 'password') {
+    <form class="card form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="brand">
+        <img class="brand-mark" src="brand/logo-mark.svg" alt="" width="48" height="48" />
+        <div>
+          <h1>Vidyasetu</h1>
+          <p>School workspace</p>
+        </div>
       </div>
-    </div>
 
-    <label class="field" for="identifier">
-      Username, mobile or email
-      <input
-        class="input"
-        id="identifier"
-        type="text"
-        formControlName="identifier"
-        autocomplete="username"
-        autocapitalize="none"
-        spellcheck="false"
-        required
-      />
-    </label>
-    @if (form.controls.identifier.touched && form.controls.identifier.invalid) {
-      <p class="field-error" role="alert">Enter your username, mobile number or email.</p>
-    }
-
-    <div class="field">
-      <label for="password">Password</label>
-      <div class="password-wrap">
+      <label class="field" for="identifier">
+        Username, mobile or email
         <input
           class="input"
-          id="password"
-          [type]="showPassword() ? 'text' : 'password'"
-          formControlName="password"
-          autocomplete="current-password"
+          id="identifier"
+          type="text"
+          formControlName="identifier"
+          autocomplete="username"
+          autocapitalize="none"
+          spellcheck="false"
           required
         />
+      </label>
+      @if (form.controls.identifier.touched && form.controls.identifier.invalid) {
+        <p class="field-error" role="alert">Enter your username, mobile number or email.</p>
+      }
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input
+            class="input"
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+            required
+          />
+          <button
+            type="button"
+            class="eye-btn"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="showPassword()"
+            (click)="togglePassword()"
+          >
+            <sms-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="18" />
+          </button>
+        </div>
+      </div>
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <p class="field-error" role="alert">Enter your password.</p>
+      }
+
+      <div class="row-between">
+        <div class="remember">
+          <label class="check" for="remember-me">
+            <input
+              id="remember-me"
+              type="checkbox"
+              formControlName="rememberMe"
+              aria-describedby="remember-help"
+            />
+            Remember me
+          </label>
+          <p class="hint" id="remember-help">
+            Keep me signed in on this device. Do not tick on a shared computer.
+          </p>
+        </div>
         <button
           type="button"
-          class="eye-btn"
-          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
-          [attr.aria-pressed]="showPassword()"
-          (click)="togglePassword()"
+          class="btn btn-ghost btn-sm"
+          [attr.aria-expanded]="resetInfo()"
+          (click)="forgotPassword()"
         >
-          <sms-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="18" />
+          Forgot password?
         </button>
       </div>
-    </div>
-    @if (form.controls.password.touched && form.controls.password.invalid) {
-      <p class="field-error" role="alert">Enter your password.</p>
-    }
-
-    <div class="row-between">
-      <div class="remember">
-        <label class="check" for="remember-me">
-          <input
-            id="remember-me"
-            type="checkbox"
-            formControlName="rememberMe"
-            aria-describedby="remember-help"
-          />
-          Remember me
-        </label>
-        <p class="hint" id="remember-help">
-          Keep me signed in on this device. Do not tick on a shared computer.
+      @if (resetInfo()) {
+        <p class="info-note" role="status">
+          Please ask your school administrator to reset your password.
         </p>
-      </div>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm"
-        [attr.aria-expanded]="resetInfo()"
-        (click)="forgotPassword()"
-      >
-        Forgot password?
+      }
+
+      @if (passwordChanged) {
+        <p class="hint" role="status">Password changed. Please sign in with your new password.</p>
+      }
+      @if (error(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+      @if (blocked()) {
+        <p class="form-error" role="status">
+          Too many attempts. Please wait {{ retryIn() }} seconds and try again.
+        </p>
+      }
+
+      <button class="btn btn-primary" type="submit" [disabled]="loading() || blocked()">
+        {{ loading() ? 'Signing in…' : 'Sign in' }}
       </button>
-    </div>
-    @if (resetInfo()) {
-      <p class="info-note" role="status">
-        Please ask your school administrator to reset your password.
-      </p>
-    }
+    </form>
+  } @else {
+    <form class="card form" [formGroup]="codeForm" (ngSubmit)="submitCode()" novalidate>
+      <div class="brand">
+        <img class="brand-mark" src="brand/logo-mark.svg" alt="" width="48" height="48" />
+        <div>
+          <h1 id="mfa-heading" tabindex="-1">{{ i18n.t('mfa.login.title') }}</h1>
+          <p>{{ i18n.t(useRecovery() ? 'mfa.login.recoveryHelp' : 'mfa.login.help') }}</p>
+        </div>
+      </div>
 
-    @if (passwordChanged) {
-      <p class="hint" role="status">Password changed. Please sign in with your new password.</p>
-    }
-    @if (error(); as message) {
-      <p class="form-error" role="alert">{{ message }}</p>
-    }
-    @if (blocked()) {
-      <p class="form-error" role="status">
-        Too many attempts. Please wait {{ retryIn() }} seconds and try again.
+      <label class="field" for="mfa-code">
+        {{ i18n.t(useRecovery() ? 'mfa.login.recoveryLabel' : 'mfa.login.codeLabel') }}
+        <input
+          class="input"
+          id="mfa-code"
+          type="text"
+          formControlName="code"
+          [attr.inputmode]="useRecovery() ? 'text' : 'numeric'"
+          [attr.maxlength]="useRecovery() ? 32 : 7"
+          [attr.pattern]="useRecovery() ? null : '[0-9 ]*'"
+          autocomplete="one-time-code"
+          autocapitalize="none"
+          spellcheck="false"
+          required
+          autofocus
+          aria-describedby="mfa-code-help"
+        />
+      </label>
+      <p class="hint" id="mfa-code-help">
+        {{ i18n.t(useRecovery() ? 'mfa.login.recoveryHint' : 'mfa.login.codeHint') }}
       </p>
-    }
+      @if (codeForm.controls.code.touched && codeForm.controls.code.invalid) {
+        <p class="field-error" role="alert">{{ i18n.t('mfa.login.required') }}</p>
+      }
 
-    <button class="btn btn-primary" type="submit" [disabled]="loading() || blocked()">
-      {{ loading() ? 'Signing in…' : 'Sign in' }}
-    </button>
-  </form>
+      <div aria-live="assertive">
+        @if (error(); as message) {
+          <p class="form-error" role="alert">{{ message }}</p>
+        }
+        @if (blocked()) {
+          <p class="form-error" role="status">
+            Too many attempts. Please wait {{ retryIn() }} seconds and try again.
+          </p>
+        }
+      </div>
+
+      <button class="btn btn-primary" type="submit" [disabled]="loading() || blocked()">
+        {{ loading() ? i18n.t('mfa.login.verifying') : i18n.t('mfa.login.verify') }}
+      </button>
+      <div class="row-between">
+        <button type="button" class="btn btn-ghost btn-sm" (click)="toggleRecovery()">
+          {{ i18n.t(useRecovery() ? 'mfa.login.useCode' : 'mfa.login.useRecovery') }}
+        </button>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="backToPassword()">
+          {{ i18n.t('mfa.login.back') }}
+        </button>
+      </div>
+    </form>
+  }
   <footer class="login-foot">
     <sms-legal-links />
   </footer>

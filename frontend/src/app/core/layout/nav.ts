@@ -1,4 +1,5 @@
 import { Role } from '../auth/auth.models';
+import { PRIVACY_ADMIN_ROLES } from '../auth/permissions';
 import { IconName } from '../ui/icon';
 
 export interface NavItem {
@@ -67,6 +68,20 @@ export const NAV_ITEMS: NavItem[] = [
     roles: ['super_admin', 'school_owner'],
   },
   { label: 'Users', path: '/users', icon: 'user', roles: USER_ADMINS },
+  {
+    label: 'Audit log',
+    labelKey: 'nav.audit',
+    path: '/audit',
+    icon: 'history',
+    roles: PRIVACY_ADMIN_ROLES,
+  },
+  {
+    label: 'Data requests',
+    labelKey: 'nav.dataRequests',
+    path: '/data-requests',
+    icon: 'inbox',
+    roles: PRIVACY_ADMIN_ROLES,
+  },
   { label: 'School profile', path: '/school', icon: 'building', roles: ['school_owner'] },
   { label: 'School setup', path: '/setup', icon: 'settings', roles: MANAGERS },
   { label: 'Settings', labelKey: 'nav.settings', path: '/settings', icon: 'gear' },

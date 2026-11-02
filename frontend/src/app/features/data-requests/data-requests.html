@@ -1,0 +1,118 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('requests.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('requests.subtitle') }}</p>
+  </div>
+</div>
+
+<section class="card" aria-labelledby="requests-title">
+  <div class="card-head">
+    <h2 class="card-title" id="requests-title">{{ i18n.t('requests.inbox') }}</h2>
+    <label class="field filter">
+      {{ i18n.t('requests.filter') }}
+      <select class="input" (change)="onFilter($event)">
+        <option value="" [selected]="filter() === ''">{{ i18n.t('requests.all') }}</option>
+        @for (s of statuses; track s) {
+          <option [value]="s" [selected]="filter() === s">
+            {{ i18n.t('request.status.' + s) }}
+          </option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div aria-live="polite">
+    @if (notice(); as message) {
+      <p class="notice">{{ message }}</p>
+    }
+  </div>
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('requests.loading') }}</p>
+  } @else {
+    <ul class="rows">
+      @for (r of items(); track r.id) {
+        <li class="row" [class.overdue]="isOverdue(r)">
+          <span class="row-main">
+            <span class="head">
+              <strong>{{ i18n.t('privacy.type.' + r.type) }}</strong>
+              @if (r.student_name) {
+                <span class="row-sub">· {{ r.student_name }}</span>
+              }
+            </span>
+            <span class="row-sub">
+              {{ i18n.t('requests.from', { name: r.requester_name ?? '-' }) }} ·
+              {{ i18n.t('privacy.mine.raised', { date: dateTime(r.created_at) }) }}
+              @if (r.due_on) {
+                · {{ i18n.t('privacy.mine.due', { date: date(r.due_on) }) }}
+              }
+            </span>
+            <span class="message">{{ r.message }}</span>
+            @if (r.response_note) {
+              <span class="row-sub"
+                >{{ i18n.t('privacy.mine.response') }}: {{ r.response_note }}</span
+              >
+            }
+          </span>
+          @if (isOverdue(r)) {
+            <span class="badge badge-danger">{{ i18n.t('requests.overdue') }}</span>
+          }
+          <span
+            class="badge"
+            [class.badge-success]="r.status === 'completed'"
+            [class.badge-warn]="r.status === 'in_progress'"
+            [class.badge-danger]="r.status === 'rejected'"
+          >
+            {{ i18n.t('request.status.' + r.status) }}
+          </span>
+          @if (openId() !== r.id) {
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [attr.aria-label]="i18n.t('requests.open') + ': ' + i18n.t('privacy.type.' + r.type)"
+              (click)="open(r)"
+            >
+              {{ i18n.t('requests.open') }}
+            </button>
+          } @else {
+            <form class="panel" [formGroup]="form" (ngSubmit)="save(r)" novalidate>
+              <label class="field">
+                {{ i18n.t('requests.status') }}
+                <select class="input" id="request-status" formControlName="status">
+                  @for (s of statuses; track s) {
+                    <option [value]="s">{{ i18n.t('request.status.' + s) }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                {{ i18n.t('requests.note') }}
+                <textarea
+                  class="input"
+                  rows="3"
+                  maxlength="2000"
+                  formControlName="response_note"
+                ></textarea>
+              </label>
+              @if (editError(); as message) {
+                <p class="form-error" role="alert">{{ message }}</p>
+              }
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">
+                  {{ saving() ? i18n.t('requests.saving') : i18n.t('requests.save') }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="close()">
+                  {{ i18n.t('requests.cancel') }}
+                </button>
+              </div>
+            </form>
+          }
+        </li>
+      } @empty {
+        <li class="empty">{{ i18n.t('requests.empty') }}</li>
+      }
+    </ul>
+  }
+</section>

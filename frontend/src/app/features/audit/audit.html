@@ -1,0 +1,148 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('audit.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('audit.subtitle') }}</p>
+  </div>
+  <button type="button" class="btn btn-ghost" [disabled]="exporting()" (click)="exportCsv()">
+    <sms-icon name="download" [size]="16" />
+    {{ exporting() ? i18n.t('audit.exporting') : i18n.t('audit.export') }}
+  </button>
+</div>
+
+<section class="card" aria-labelledby="audit-list-title">
+  <h2 class="card-title" id="audit-list-title">{{ i18n.t('audit.entries') }}</h2>
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="apply()"
+    role="search"
+    [attr.aria-label]="i18n.t('audit.filters')"
+  >
+    <div class="toolbar">
+      <label class="field">
+        {{ i18n.t('audit.from') }}
+        <input class="input" type="date" formControlName="from" />
+      </label>
+      <label class="field">
+        {{ i18n.t('audit.to') }}
+        <input class="input" type="date" formControlName="to" />
+      </label>
+      <label class="field">
+        {{ i18n.t('audit.action') }}
+        <input class="input" type="text" formControlName="action" autocomplete="off" />
+      </label>
+      <label class="field">
+        {{ i18n.t('audit.entityType') }}
+        <input class="input" type="text" formControlName="entity_type" autocomplete="off" />
+      </label>
+      <label class="field">
+        {{ i18n.t('audit.actorId') }}
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          formControlName="actor_id"
+          autocomplete="off"
+        />
+      </label>
+    </div>
+    @if (dateError()) {
+      <p class="field-error" role="alert">{{ i18n.t('audit.dateError') }}</p>
+    }
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary btn-sm">{{ i18n.t('audit.apply') }}</button>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="clear()">
+        {{ i18n.t('audit.clear') }}
+      </button>
+    </div>
+  </form>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <div aria-live="polite">
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('audit.loading') }}</p>
+    }
+  </div>
+
+  @if (!loading() && !error()) {
+    <table class="log">
+      <caption class="sr-only">
+        {{
+          i18n.t('audit.entries')
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">{{ i18n.t('audit.col.when') }}</th>
+          <th scope="col">{{ i18n.t('audit.col.who') }}</th>
+          <th scope="col">{{ i18n.t('audit.col.action') }}</th>
+          <th scope="col">{{ i18n.t('audit.col.entity') }}</th>
+          <th scope="col">{{ i18n.t('audit.col.outcome') }}</th>
+          <th scope="col">{{ i18n.t('audit.col.ip') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (e of items(); track e.id) {
+          <tr>
+            <td [attr.data-label]="i18n.t('audit.col.when')">{{ when(e.at) }}</td>
+            <td [attr.data-label]="i18n.t('audit.col.who')">
+              {{ e.actor_name ?? i18n.t('audit.system') }}
+              @if (e.actor_role) {
+                <span class="sub">{{ e.actor_role }}</span>
+              }
+            </td>
+            <td [attr.data-label]="i18n.t('audit.col.action')">
+              <code>{{ e.action }}</code>
+              @if (detail(e); as d) {
+                <span class="sub">{{ d }}</span>
+              }
+            </td>
+            <td [attr.data-label]="i18n.t('audit.col.entity')">
+              {{ e.entity_type ?? '' }}
+              @if (e.entity_id !== null && e.entity_id !== undefined) {
+                <span class="sub">#{{ e.entity_id }}</span>
+              }
+            </td>
+            <td [attr.data-label]="i18n.t('audit.col.outcome')">
+              <span [class]="'badge ' + outcomeClass(e.outcome)">{{
+                outcomeLabel(e.outcome)
+              }}</span>
+            </td>
+            <td [attr.data-label]="i18n.t('audit.col.ip')">{{ e.ip ?? '' }}</td>
+          </tr>
+        } @empty {
+          <tr class="none">
+            <td colspan="6" class="empty">{{ i18n.t('audit.empty') }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (total() > 0) {
+      <nav class="pager" [attr.aria-label]="i18n.t('audit.pagination')">
+        <span>{{ i18n.t('audit.range', { from: from(), to: to(), total: total() }) }}</span>
+        <span class="row-actions">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="page() <= 1"
+            (click)="prev()"
+          >
+            {{ i18n.t('audit.prev') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="to() >= total()"
+            (click)="next()"
+          >
+            {{ i18n.t('audit.next') }}
+          </button>
+        </span>
+      </nav>
+    }
+  }
+</section>
