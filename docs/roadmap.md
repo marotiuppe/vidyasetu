@@ -19,15 +19,16 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 | 5.5 | Legal pages | Public Privacy Policy, Terms of Use, Children's privacy notice, Cookie and storage notice, Accessibility statement, Grievance page, Security and responsible-disclosure page; operator and grievance-officer details configurable; links in footers | Not started | | |
 | 5.6 | Consent, audit log, data rights and MFA | Parental consent and policy-acceptance records, audit log with viewer, data access/correction/erasure requests, student data export, TOTP two-factor sign-in for privileged roles | Not started | | |
 | 5.7 | Compliance pack and security review | `docs/compliance` (data protection and security policy, incident response, retention schedule, data inventory, control matrix against OWASP / DPDP / CERT-In / GIGW), threat model, authorization sweep, penetration-style checks, fixes, backup and restore drill (moved up from phase 12 so it is proven before real student data is entered) | Not started | | |
-| 5.8 | Admissions and enquiries | Enquiry and lead list, online application form, status pipeline (enquiry, applied, admitted, rejected), document upload, convert an admitted applicant into a student record | Not started | | |
+| 5.8 | Admissions and enquiries | Enquiry and lead list, online application form, status pipeline (enquiry, applied, admitted, rejected), document upload, convert an admitted applicant into a student record; government identity fields on the student record: PEN, APAAR ID (optional, with a recorded parental consent that can be refused) and optional Aadhaar-matching name, date of birth and gender check, with sensitive ones masked and access-logged | Not started | | |
 | 5.9 | Promotion and year-end | Promote a whole class or section to the next academic year in one step (including the move from the primary to the secondary branch), carry over fee dues, mark leavers and detained students, undo window | Not started | | |
 | 5.10 | Fee tools | Bulk invoice generation for a class or branch, concessions and scholarships, sibling discounts, late fees, fee reminders (on screen now, SMS and WhatsApp once phase 11 exists) | Not started | | |
-| 5.11 | Import, export and language | CSV import with dry-run preview and error report for staff and fees (students already done), Marathi coverage check of every screen, receipt PDF Unicode font (rupee sign, Devanagari names) | Not started | | |
-| 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, academic progress | Not started | | |
+| 5.11 | Search, import, export and language | Global search in the top bar (students, guardians, receipts, notices, scoped by role and branch), CSV import with dry-run preview and error report for staff and fees (students already done), Marathi coverage check of every screen, receipt PDF Unicode font (rupee sign, Devanagari names) | Not started | | |
+| 6 | Exams and report cards | Terms, subjects, marks entry, grading (CBSE default, configurable), report card PDF, NEP-style Holistic Progress Card (academic, co-curricular and behavioural sections, configurable per school), academic progress | Not started | | |
 | 7 | Timetable and homework | Per-branch timings and periods, timetable, homework | Not started | | |
 | 8 | Staff | Staff records, leave, payroll | Not started | | |
 | 9 | Extras | Certificates (bonafide, transfer, leaving), library, transport | Not started | | |
-| 10 | Dashboards and portals | Separate overview (dashboard) for every role: platform admin (super admin), school owner, management, headmaster, teacher, accountant, clerk, student and parent, each with its own real numbers and cards (see "Requested changes" below); parent and student portal views, reports, global search in the top bar, parent-teacher messages, parent leave applications with teacher approval, events and calendar, offline attendance marking (sync later) | Not started | | |
+| 9.1 | Government reporting | UDISE+ student-level data export from live data (needs students, staff and class data from earlier phases), annual data checks and a missing-data report so schools can fix gaps before the submission deadline; format must be checked against the official UDISE+ portal and circulars before building | Not started | | |
+| 10 | Dashboards and portals | Separate overview (dashboard) for every role: platform admin (super admin), school owner, management, headmaster, teacher, accountant, clerk, student and parent, each with its own real numbers and cards (see "Requested changes" below); parent and student portal views, reports, parent-teacher messages, parent leave applications with teacher approval, events and calendar, offline attendance marking (sync later) | Not started | | |
 | 11 | Optional integrations | Razorpay payments, SMS and WhatsApp alerts, email, file storage (all off unless `.env` keys are set) | Not started | | |
 | 12 | Release | PostgreSQL row-level security and PostgreSQL re-check of all modules (payment locking), formal tests, performance, Render deployment and automated backups (the restore drill is in phase 5.7), independent security audit before go-live | Not started | | |
 
@@ -43,8 +44,14 @@ Placed in the build order as follows. Order of the 5.x phases was set so that si
 | Promotion and year-end | 5.9 |
 | Bulk fee tools (concessions, sibling discounts, late fees, reminders) | 5.10 |
 | Import and export, Marathi coverage, receipt font | 5.11 |
+| PEN and APAAR fields | 5.8 |
+| UDISE+ student-level data export | 9.1 |
+| NEP Holistic Progress Card | 6 |
 | Backups and restore drill | 5.7 (automation in 12) |
-| Global search, parent-teacher messages, leave applications, events calendar, offline attendance | 10 |
+| Global search | 5.11 |
+| Parent-teacher messages, leave applications, events calendar, offline attendance | 10 |
+
+Notes: the UDISE+ and APAAR points come from education blogs, not official texts, so confirm them on udiseplus.gov.in, the APAAR portal and CBSE circulars before building. PEN and APAAR are personal identifiers of minors: store them only if the school enables them, keep them out of logs and exports unless needed, and handle them under the consent rules of phase 5.6.
 
 ## Plan for phases 5.3 to 5.7 (security and compliance; planned 2026-11-02, not started)
 
