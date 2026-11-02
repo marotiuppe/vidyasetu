@@ -18,7 +18,7 @@ const USER_ADMINS: Role[] = ['super_admin', ...MANAGERS];
 /** Sidebar navigation. When a module ships, remove its `soon` flag. */
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Overview', path: '/', icon: 'dashboard' },
-  { label: 'Student records', path: '/students', icon: 'users', roles: STAFF, soon: true },
+  { label: 'Student records', path: '/students', icon: 'users' },
   { label: 'Attendance', path: '/attendance', icon: 'calendar', roles: STAFF, soon: true },
   { label: 'Academic progress', path: '/progress', icon: 'chart', roles: STAFF, soon: true },
   { label: 'Noticeboard', path: '/notices', icon: 'megaphone', soon: true },

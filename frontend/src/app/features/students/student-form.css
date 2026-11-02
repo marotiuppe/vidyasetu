@@ -1,0 +1,19 @@
+.wide {
+  grid-column: 1 / -1;
+}
+
+.guardian {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.guardian legend {
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 650;
+  color: var(--muted);
+}

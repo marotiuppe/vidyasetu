@@ -402,3 +402,82 @@ svg {
     transition: none !important;
   }
 }
+
+/* ============================================================
+   Shared by several screens: filters toolbar, inline panel,
+   notices, checkbox row, initials avatar, pager
+   ============================================================ */
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel {
+  flex: 1 1 100%;
+  padding: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.notice {
+  margin: 0;
+  padding: 10px;
+  font-size: 0.8rem;
+  color: var(--success);
+  background: var(--success-bg);
+  border-radius: 6px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 750;
+  color: var(--tone-green-fg);
+  background: var(--tone-green-bg);
+  border-radius: 50%;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.hint {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .page-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+}

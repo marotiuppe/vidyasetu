@@ -8,7 +8,7 @@ Phases are built in order; each phase ends with a commit and push. Within a phas
 |---|---|---|---|---|---|
 | 0 | Foundation | Scaffold, auth (JWT + refresh cookie), multi-tenancy (schools, branches), users and roles, academic years, classes and sections, app shell and design system, PWA | Done | 2026-11-01 evening (1) | 2026-11-02 10:56 |
 | 1 | Admin console | Generic branding (school name from data), screens to create schools (platform admin), branches (owner) and users (managers), user edit / deactivate / password reset, change password | Done | 2026-11-02 11:11 | 2026-11-02 11:24 |
-| 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | In progress | 2026-11-02 11:26 | |
+| 2 | Students | Student and guardian records, admission, class and section enrolment per academic year, parent login linked to children (across branches), student profile, CSV import and export | Done | 2026-11-02 11:26 | 2026-11-02 11:38 |
 | 3 | Attendance | Daily student attendance (present / absent / leave) per section, staff attendance, summaries and calendar view | Not started | | |
 | 4 | Notices | School, branch and class notices, pinning, read status, parent and student view | Not started | | |
 | 5 | Fees | Fee heads and structures per class, invoices, receipts (PDF), dues and reports | Not started | | |

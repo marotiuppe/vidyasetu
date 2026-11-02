@@ -1,0 +1,13 @@
+.name {
+  font-weight: 650;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.cell {
+  flex: 1 1 160px;
+}

@@ -2,9 +2,10 @@
 
 from typing import Any
 
-from sqlalchemy import Select
+from sqlalchemy import Select, select
 
 from app.modules.branches.models import Branch
+from app.modules.students.models import Guardian, Student
 from app.modules.users.models import Role, User
 
 
@@ -41,3 +42,27 @@ def scope_users(stmt: Select[tuple[User]], user: User) -> Select[tuple[User]]:
     if user.branch_id is not None:
         stmt = stmt.where(User.branch_id == user.branch_id)
     return stmt
+
+
+def scope_students(stmt: Select[Any], user: User) -> Select[Any]:
+    """Restrict a student query (any select that includes `Student`) to what `user` may see.
+
+    Staff see their branch (school owner: whole school, super admin: everything); a parent only
+    sees students with a guardian linked to them; a student only sees themself.
+    """
+    if user.role == Role.SUPER_ADMIN:
+        return stmt
+    if user.school_id is None:
+        return stmt.where(False)
+    stmt = stmt.where(Student.school_id == user.school_id)
+    if user.role == Role.PARENT:
+        return stmt.where(
+            Student.id.in_(select(Guardian.student_id).where(Guardian.user_id == user.id))
+        )
+    if user.role == Role.STUDENT:
+        return stmt.where(Student.user_id == user.id)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    if user.branch_id is None:
+        return stmt.where(False)
+    return stmt.where(Student.branch_id == user.branch_id)

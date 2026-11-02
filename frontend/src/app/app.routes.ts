@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, roleGuard } from './core/auth/auth.guard';
+import { STUDENT_WRITER_ROLES } from './core/auth/permissions';
 
 export const routes: Routes = [
   {
@@ -19,6 +20,22 @@ export const routes: Routes = [
         pathMatch: 'full',
         data: { title: 'Overview' },
         loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'students',
+        data: { title: 'Student records' },
+        loadComponent: () => import('./features/students/student-list').then((m) => m.StudentList),
+      },
+      {
+        path: 'students/new',
+        data: { title: 'New admission' },
+        canActivate: [roleGuard(...STUDENT_WRITER_ROLES)],
+        loadComponent: () => import('./features/students/student-form').then((m) => m.StudentForm),
+      },
+      {
+        path: 'students/:id',
+        data: { title: 'Student profile' },
+        loadComponent: () => import('./features/students/student-profile').then((m) => m.StudentProfile),
       },
       {
         path: 'setup',

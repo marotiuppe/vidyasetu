@@ -16,6 +16,7 @@ from app.modules.academics.router import router as academics_router
 from app.modules.auth.router import router as auth_router
 from app.modules.branches.router import router as branches_router
 from app.modules.schools.router import router as schools_router
+from app.modules.students.router import router as students_router
 from app.modules.users.models import Role, User
 from app.modules.users.router import router as users_router
 
@@ -68,6 +69,7 @@ api.include_router(schools_router)
 api.include_router(branches_router)
 api.include_router(users_router)
 api.include_router(academics_router)
+api.include_router(students_router)
 app.include_router(api)
 
 

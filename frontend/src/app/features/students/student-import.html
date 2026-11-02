@@ -1,0 +1,96 @@
+<section class="card" aria-labelledby="import-title">
+  <h2 class="card-title" id="import-title">Import students from CSV</h2>
+  <p class="hint">
+    One student per row with a header row. Required columns: first_name, last_name, gender, date_of_birth
+    (YYYY-MM-DD), guardian_name, guardian_phone. Optional: admission_date, admission_no, address,
+    guardian_relation, class, section, roll_no. Up to {{ maxRows }} rows.
+    <button type="button" class="link" (click)="downloadTemplate()">Download template</button>
+  </p>
+
+  <div class="form-grid options">
+    @if (canPickBranch()) {
+      <label class="field">
+        Branch
+        <select class="input" (change)="onBranch($event)">
+          <option value="0" [selected]="true">Select branch</option>
+          @for (b of branches(); track b.id) {
+            <option [value]="b.id">{{ b.name }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="field">
+      Academic year for class and section
+      <select class="input" (change)="onYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="selectedYear() === y.id">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      CSV file
+      <input class="input" type="file" accept=".csv,text/csv" (change)="onFile($event)" />
+    </label>
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (rows().length) {
+    <p class="summary" role="status">
+      {{ rows().length }} row{{ rows().length === 1 ? '' : 's' }} in {{ fileName() }}. Preview of the first
+      {{ preview().length }}:
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Gender</th>
+            <th>Date of birth</th>
+            <th>Guardian</th>
+            <th>Phone</th>
+            <th>Class</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of preview(); track $index) {
+            <tr>
+              <td>{{ r.first_name }}</td>
+              <td>{{ r.last_name }}</td>
+              <td>{{ r.gender }}</td>
+              <td>{{ r.date_of_birth }}</td>
+              <td>{{ r.guardian_name }}</td>
+              <td>{{ r.guardian_phone }}</td>
+              <td>{{ r.class }} {{ r.section }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (result(); as res) {
+    <div class="result" role="status">
+      <p>
+        <strong>{{ res.created }}</strong> created, <strong>{{ res.failed }}</strong> failed.
+      </p>
+      @if (res.errors.length) {
+        <ul class="errors">
+          @for (er of res.errors; track $index) {
+            <li>Row {{ er.row }}: {{ er.message }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-primary" [disabled]="!canSend()" (click)="submit()">
+      {{ submitting() ? 'Importing…' : 'Import ' + rows().length + ' students' }}
+    </button>
+    <button type="button" class="btn btn-ghost" (click)="closed.emit()">Close</button>
+  </div>
+</section>

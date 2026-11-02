@@ -12,6 +12,7 @@ from app.db.base import Base
 from app.modules.academics import models as _academics  # noqa: F401
 from app.modules.branches import models as _branches  # noqa: F401
 from app.modules.schools import models as _schools  # noqa: F401
+from app.modules.students import models as _students  # noqa: F401
 from app.modules.users import models as _users  # noqa: F401
 
 config = context.config

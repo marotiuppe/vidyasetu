@@ -1,0 +1,801 @@
+import csv
+import io
+import re
+from dataclasses import dataclass
+from datetime import date
+from typing import Any
+
+from fastapi import HTTPException, status
+from pydantic import ValidationError
+from sqlalchemy import and_, exists, func, or_, select, update
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
+
+from app.core.security import hash_password
+from app.core.tenant import scope_branches, scope_students
+from app.modules.academics.models import AcademicYear, SchoolClass, Section
+from app.modules.branches.models import Branch
+from app.modules.students.models import (
+    Enrollment,
+    Guardian,
+    GuardianRelation,
+    Student,
+    StudentStatus,
+)
+from app.modules.students.schemas import (
+    EnrollmentIn,
+    EnrollmentOut,
+    GuardianCreate,
+    GuardianOut,
+    GuardianUpdate,
+    ImportRequest,
+    ImportResult,
+    ImportRow,
+    ImportRowError,
+    LoginCreate,
+    PrimaryGuardianOut,
+    StudentCreate,
+    StudentDetail,
+    StudentOut,
+    StudentPage,
+    StudentUpdate,
+)
+from app.modules.users.models import Role, User
+
+MAX_ROLL = 999
+_GENERATED = ("admission_no", "admission_date")
+CSV_COLUMNS = [
+    "admission_no",
+    "first_name",
+    "last_name",
+    "gender",
+    "date_of_birth",
+    "admission_date",
+    "status",
+    "class",
+    "section",
+    "roll_no",
+    "guardian_name",
+    "guardian_phone",
+    "guardian_relation",
+    "address",
+]
+
+
+def _not_found(what: str) -> HTTPException:
+    return HTTPException(status.HTTP_404_NOT_FOUND, detail=f"{what} not found")
+
+
+def _conflict(detail: str) -> HTTPException:
+    return HTTPException(status.HTTP_409_CONFLICT, detail=detail)
+
+
+def _unprocessable(detail: str) -> HTTPException:
+    return HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
+
+
+@dataclass
+class StudentFilters:
+    branch_id: int | None = None
+    class_id: int | None = None
+    section_id: int | None = None
+    academic_year_id: int | None = None
+    status: StudentStatus | None = None
+    q: str | None = None
+
+
+# ---- output building (batched, no N+1) ----
+
+
+def _guardian_out(g: Guardian) -> GuardianOut:
+    return GuardianOut(
+        id=g.id,
+        student_id=g.student_id,
+        full_name=g.full_name,
+        relation=g.relation,
+        phone=g.phone,
+        email=g.email,
+        is_primary=g.is_primary,
+        user_id=g.user_id,
+        has_login=g.user_id is not None,
+    )
+
+
+async def _enrollments_by_student(
+    db: AsyncSession, student_ids: list[int], current_only: bool
+) -> dict[int, list[EnrollmentOut]]:
+    """Enrolments (newest academic year first) with year/class/section names, in one query."""
+    stmt = (
+        select(Enrollment, AcademicYear.name, SchoolClass.name, Section.name)
+        .join(AcademicYear, AcademicYear.id == Enrollment.academic_year_id)
+        .join(SchoolClass, SchoolClass.id == Enrollment.class_id)
+        .outerjoin(Section, Section.id == Enrollment.section_id)
+        .where(Enrollment.student_id.in_(student_ids))
+        .order_by(AcademicYear.start_date.desc(), Enrollment.id.desc())
+    )
+    if current_only:
+        stmt = stmt.where(AcademicYear.is_current)
+    out: dict[int, list[EnrollmentOut]] = {}
+    for enr, year_name, class_name, sec_name in (await db.execute(stmt)).all():
+        out.setdefault(enr.student_id, []).append(
+            EnrollmentOut(
+                id=enr.id,
+                student_id=enr.student_id,
+                academic_year_id=enr.academic_year_id,
+                academic_year_name=year_name,
+                class_id=enr.class_id,
+                class_name=class_name,
+                section_id=enr.section_id,
+                section_name=sec_name,
+                roll_no=enr.roll_no,
+            )
+        )
+    return out
+
+
+async def _guardians_by_student(
+    db: AsyncSession, student_ids: list[int], primary_only: bool
+) -> dict[int, list[Guardian]]:
+    stmt = select(Guardian).where(Guardian.student_id.in_(student_ids))
+    if primary_only:
+        stmt = stmt.where(Guardian.is_primary)
+    out: dict[int, list[Guardian]] = {}
+    for g in await db.scalars(stmt.order_by(Guardian.is_primary.desc(), Guardian.id)):
+        out.setdefault(g.student_id, []).append(g)
+    return out
+
+
+def _base_fields(
+    s: Student, current: EnrollmentOut | None, guardians: list[Guardian]
+) -> dict[str, Any]:
+    primary = next((g for g in guardians if g.is_primary), None)
+    return {
+        "id": s.id,
+        "school_id": s.school_id,
+        "branch_id": s.branch_id,
+        "admission_no": s.admission_no,
+        "first_name": s.first_name,
+        "last_name": s.last_name,
+        "full_name": f"{s.first_name} {s.last_name}".strip(),
+        "gender": s.gender,
+        "date_of_birth": s.date_of_birth,
+        "admission_date": s.admission_date,
+        "status": s.status,
+        "user_id": s.user_id,
+        "current_enrollment": current,
+        "primary_guardian": PrimaryGuardianOut(
+            full_name=primary.full_name, phone=primary.phone, relation=primary.relation
+        )
+        if primary
+        else None,
+    }
+
+
+async def _build_list(db: AsyncSession, students: list[Student]) -> list[StudentOut]:
+    if not students:
+        return []
+    ids = [s.id for s in students]
+    enrollments = await _enrollments_by_student(db, ids, current_only=True)
+    guardians = await _guardians_by_student(db, ids, primary_only=True)
+    return [
+        StudentOut(
+            **_base_fields(
+                s, (enrollments.get(s.id) or [None])[0], guardians.get(s.id, [])
+            )
+        )
+        for s in students
+    ]
+
+
+async def _build_detail(db: AsyncSession, s: Student) -> StudentDetail:
+    all_enrollments = (await _enrollments_by_student(db, [s.id], current_only=False)).get(s.id, [])
+    guardians = (await _guardians_by_student(db, [s.id], primary_only=False)).get(s.id, [])
+    current_ids = set(
+        await db.scalars(
+            select(Enrollment.id)
+            .join(AcademicYear, AcademicYear.id == Enrollment.academic_year_id)
+            .where(Enrollment.student_id == s.id, AcademicYear.is_current)
+        )
+    )
+    current = next((e for e in all_enrollments if e.id in current_ids), None)
+    return StudentDetail(
+        **_base_fields(s, current, guardians),
+        address=s.address,
+        previous_school=s.previous_school,
+        guardians=[_guardian_out(g) for g in guardians],
+        enrollments=all_enrollments,
+    )
+
+
+# ---- lookups ----
+
+
+async def _get_student(db: AsyncSession, actor: User, student_id: int) -> Student:
+    student = await db.scalar(
+        scope_students(select(Student), actor).where(Student.id == student_id)
+    )
+    if student is None:
+        raise _not_found("Student")
+    return student
+
+
+async def _get_guardian(
+    db: AsyncSession, actor: User, guardian_id: int
+) -> tuple[Guardian, Student]:
+    guardian = await db.scalar(
+        select(Guardian).where(
+            Guardian.id == guardian_id,
+            Guardian.student_id.in_(scope_students(select(Student.id), actor)),
+        )
+    )
+    if guardian is None:
+        raise _not_found("Guardian")
+    student = await db.get(Student, guardian.student_id)
+    if student is None:  # FK guarantees it
+        raise _not_found("Student")
+    return guardian, student
+
+
+async def _resolve_branch(db: AsyncSession, actor: User, branch_id: int | None) -> Branch:
+    wanted = actor.branch_id if actor.branch_id is not None else branch_id
+    if wanted is None:
+        raise _unprocessable("branch_id required")
+    branch = await db.scalar(scope_branches(select(Branch), actor).where(Branch.id == wanted))
+    if branch is None:
+        raise _not_found("Branch")
+    return branch
+
+
+# ---- list / export ----
+
+
+def _filtered(actor: User, f: StudentFilters) -> tuple[Any, Any, Any, Any]:
+    """Scoped, filtered and ordered student query plus the aliased enrolment joins."""
+    enr = aliased(Enrollment)
+    cls = aliased(SchoolClass)
+    sec = aliased(Section)
+    if f.academic_year_id is not None:
+        year_cond = enr.academic_year_id == f.academic_year_id
+    else:
+        year_cond = enr.academic_year_id.in_(select(AcademicYear.id).where(AcademicYear.is_current))
+    stmt = (
+        scope_students(select(Student), actor)
+        .select_from(Student)
+        .outerjoin(enr, and_(enr.student_id == Student.id, year_cond))
+        .outerjoin(cls, cls.id == enr.class_id)
+        .outerjoin(sec, sec.id == enr.section_id)
+    )
+    if f.branch_id is not None:
+        stmt = stmt.where(Student.branch_id == f.branch_id)
+    if f.status is not None:
+        stmt = stmt.where(Student.status == f.status)
+    if f.class_id is not None:
+        stmt = stmt.where(enr.class_id == f.class_id)
+    if f.section_id is not None:
+        stmt = stmt.where(enr.section_id == f.section_id)
+    term = (f.q or "").strip().lower()
+    if term:
+        stmt = stmt.where(
+            or_(
+                func.lower(Student.first_name).contains(term, autoescape=True),
+                func.lower(Student.last_name).contains(term, autoescape=True),
+                func.lower(Student.first_name + " " + Student.last_name).contains(
+                    term, autoescape=True
+                ),
+                func.lower(Student.admission_no).contains(term, autoescape=True),
+                exists().where(
+                    Guardian.student_id == Student.id,
+                    or_(
+                        func.lower(Guardian.full_name).contains(term, autoescape=True),
+                        Guardian.phone.contains(term, autoescape=True),
+                    ),
+                ),
+            )
+        )
+    stmt = stmt.order_by(
+        cls.level.asc().nulls_last(),
+        sec.name.asc().nulls_last(),
+        enr.roll_no.asc().nulls_last(),
+        Student.first_name,
+        Student.last_name,
+        Student.id,
+    )
+    return stmt, cls, sec, enr
+
+
+async def list_students(
+    db: AsyncSession, actor: User, f: StudentFilters, page: int, page_size: int
+) -> StudentPage:
+    stmt, *_ = _filtered(actor, f)
+    total = await db.scalar(
+        select(func.count()).select_from(
+            stmt.with_only_columns(Student.id).order_by(None).subquery()
+        )
+    )
+    rows = await db.scalars(stmt.offset((page - 1) * page_size).limit(page_size))
+    items = await _build_list(db, list(rows))
+    return StudentPage(items=items, total=total or 0, page=page, page_size=page_size)
+
+
+def _csv_cell(value: Any) -> str:
+    """Neutralise spreadsheet formula injection."""
+    text = "" if value is None else str(value)
+    if text and text[0] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + text
+    return text
+
+
+async def export_csv(db: AsyncSession, actor: User, f: StudentFilters) -> str:
+    stmt, cls, sec, enr = _filtered(actor, f)
+    rows = (await db.execute(stmt.add_columns(cls.name, sec.name, enr.roll_no))).all()
+    guardians = await _guardians_by_student(db, [r[0].id for r in rows], primary_only=True)
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\r\n")
+    writer.writerow(CSV_COLUMNS)
+    for s, class_name, sec_name, roll_no in rows:
+        g = next(iter(guardians.get(s.id, [])), None)
+        writer.writerow(
+            _csv_cell(v)
+            for v in (
+                s.admission_no,
+                s.first_name,
+                s.last_name,
+                s.gender.value,
+                s.date_of_birth.isoformat(),
+                s.admission_date.isoformat(),
+                s.status.value,
+                class_name,
+                sec_name,
+                roll_no,
+                g.full_name if g else None,
+                g.phone if g else None,
+                g.relation.value if g else None,
+                s.address,
+            )
+        )
+    return buf.getvalue()
+
+
+async def get_student(db: AsyncSession, actor: User, student_id: int) -> StudentDetail:
+    return await _build_detail(db, await _get_student(db, actor, student_id))
+
+
+# ---- enrolment ----
+
+
+async def _validate_enrollment(
+    db: AsyncSession, school_id: int, branch_id: int, data: EnrollmentIn
+) -> tuple[AcademicYear, SchoolClass, Section | None]:
+    year = await db.scalar(
+        select(AcademicYear).where(
+            AcademicYear.id == data.academic_year_id, AcademicYear.school_id == school_id
+        )
+    )
+    if year is None:
+        raise _not_found("Academic year")
+    school_class = await db.scalar(
+        select(SchoolClass).where(
+            SchoolClass.id == data.class_id,
+            SchoolClass.branch_id == branch_id,
+            SchoolClass.school_id == school_id,
+        )
+    )
+    if school_class is None:
+        raise _not_found("Class")
+    section = None
+    if data.section_id is not None:
+        section = await db.scalar(
+            select(Section).where(
+                Section.id == data.section_id, Section.class_id == school_class.id
+            )
+        )
+        if section is None:
+            raise _unprocessable("Section does not belong to the class")
+    return year, school_class, section
+
+
+async def _next_roll(db: AsyncSession, section_id: int, year_id: int) -> int:
+    highest = await db.scalar(
+        select(func.max(Enrollment.roll_no)).where(
+            Enrollment.section_id == section_id, Enrollment.academic_year_id == year_id
+        )
+    )
+    nxt = (highest or 0) + 1
+    if nxt > MAX_ROLL:
+        raise _unprocessable("No free roll number in this section")
+    return nxt
+
+
+async def _apply_enrollment(db: AsyncSession, student: Student, data: EnrollmentIn) -> None:
+    """Upsert the student's enrolment for one academic year (caller commits)."""
+    year, school_class, section = await _validate_enrollment(
+        db, student.school_id, student.branch_id, data
+    )
+    existing = await db.scalar(
+        select(Enrollment).where(
+            Enrollment.student_id == student.id, Enrollment.academic_year_id == year.id
+        )
+    )
+    section_id = section.id if section else None
+    roll = data.roll_no
+    if section_id is not None:
+        if roll is None:
+            if existing and existing.section_id == section_id and existing.roll_no is not None:
+                roll = existing.roll_no
+            else:
+                roll = await _next_roll(db, section_id, year.id)
+        else:
+            clash = await db.scalar(
+                select(Enrollment.id).where(
+                    Enrollment.section_id == section_id,
+                    Enrollment.academic_year_id == year.id,
+                    Enrollment.roll_no == roll,
+                    Enrollment.student_id != student.id,
+                )
+            )
+            if clash is not None:
+                raise _conflict("Roll number already taken in this section")
+    if existing is None:
+        existing = Enrollment(
+            school_id=student.school_id,
+            branch_id=student.branch_id,
+            student_id=student.id,
+            academic_year_id=year.id,
+        )
+        db.add(existing)
+    existing.class_id = school_class.id
+    existing.section_id = section_id
+    existing.roll_no = roll
+    await db.flush()
+
+
+async def set_enrollment(
+    db: AsyncSession, actor: User, student_id: int, data: EnrollmentIn
+) -> StudentDetail:
+    student = await _get_student(db, actor, student_id)
+    try:
+        await _apply_enrollment(db, student, data)
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise _conflict("Roll number already taken in this section") from None
+    return await _build_detail(db, student)
+
+
+# ---- create / update ----
+
+
+async def _next_admission_no(db: AsyncSession, school_id: int, year: int) -> str:
+    """`{YYYY}-{seq:04d}` where seq is the highest existing sequence for that year, plus one."""
+    pattern = re.compile(rf"^{year}-(\d+)$")
+    highest = 0
+    for no in await db.scalars(
+        select(Student.admission_no).where(
+            Student.school_id == school_id,
+            Student.admission_no.startswith(f"{year}-", autoescape=True),
+        )
+    ):
+        m = pattern.match(no)
+        if m:
+            highest = max(highest, int(m.group(1)))
+    return f"{year}-{highest + 1:04d}"
+
+
+async def _insert_student(
+    db: AsyncSession,
+    branch: Branch,
+    fields: dict[str, Any],
+    guardians: list[GuardianCreate],
+    enrollment: EnrollmentIn | None,
+) -> Student:
+    """Insert a student, guardians and optional enrolment atomically (one savepoint)."""
+    admission_date: date = fields["admission_date"] or date.today()
+    supplied: str | None = fields["admission_no"]
+    if supplied is not None and await db.scalar(
+        select(Student.id).where(
+            Student.school_id == branch.school_id, Student.admission_no == supplied
+        )
+    ):
+        raise _conflict("Admission number already exists")
+    primary_idx = next((i for i, g in enumerate(guardians) if g.is_primary), 0)
+    for attempt in (0, 1):
+        try:
+            async with db.begin_nested():
+                student = Student(
+                    **{k: v for k, v in fields.items() if k not in _GENERATED},
+                    school_id=branch.school_id,
+                    branch_id=branch.id,
+                    admission_date=admission_date,
+                    admission_no=supplied
+                    or await _next_admission_no(db, branch.school_id, admission_date.year),
+                    status=StudentStatus.ACTIVE,
+                )
+                db.add(student)
+                await db.flush()
+                for i, g in enumerate(guardians):
+                    db.add(
+                        Guardian(
+                            school_id=branch.school_id,
+                            student_id=student.id,
+                            full_name=g.full_name,
+                            relation=g.relation,
+                            phone=g.phone,
+                            email=g.email,
+                            is_primary=i == primary_idx,
+                        )
+                    )
+                await db.flush()
+                if enrollment is not None:
+                    await _apply_enrollment(db, student, enrollment)
+            return student
+        except IntegrityError:
+            if attempt == 0 and supplied is None:
+                continue  # lost a race for the generated number; regenerate once
+            raise _conflict("Admission or roll number already exists, please retry") from None
+    raise AssertionError("unreachable")
+
+
+async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> StudentDetail:
+    branch = await _resolve_branch(db, actor, data.branch_id)
+    fields = data.model_dump(exclude={"branch_id", "guardians", "enrollment"})
+    student = await _insert_student(db, branch, fields, data.guardians, data.enrollment)
+    await db.commit()
+    return await _build_detail(db, student)
+
+
+async def update_student(
+    db: AsyncSession, actor: User, student_id: int, data: StudentUpdate
+) -> StudentDetail:
+    student = await _get_student(db, actor, student_id)
+    changes = data.model_dump(exclude_unset=True)
+    for field in ("first_name", "last_name", "gender", "date_of_birth", "admission_date", "status"):
+        if field in changes and changes[field] is None:
+            raise _unprocessable(f"{field} cannot be null")
+    for field, value in changes.items():
+        setattr(student, field, value)
+    await db.commit()
+    return await _build_detail(db, student)
+
+
+# ---- guardians ----
+
+
+async def _clear_primary(db: AsyncSession, student_id: int, except_id: int | None) -> None:
+    stmt = update(Guardian).where(Guardian.student_id == student_id, Guardian.is_primary)
+    if except_id is not None:
+        stmt = stmt.where(Guardian.id != except_id)
+    await db.execute(stmt.values(is_primary=False))
+
+
+async def _count_guardians(db: AsyncSession, student_id: int) -> int:
+    count = await db.scalar(
+        select(func.count()).select_from(Guardian).where(Guardian.student_id == student_id)
+    )
+    return count or 0
+
+
+async def add_guardian(
+    db: AsyncSession, actor: User, student_id: int, data: GuardianCreate
+) -> GuardianOut:
+    student = await _get_student(db, actor, student_id)
+    primary = await _count_guardians(db, student.id) == 0 or bool(data.is_primary)
+    if primary:
+        await _clear_primary(db, student.id, None)
+    guardian = Guardian(
+        school_id=student.school_id,
+        student_id=student.id,
+        full_name=data.full_name,
+        relation=data.relation,
+        phone=data.phone,
+        email=data.email,
+        is_primary=primary,
+    )
+    db.add(guardian)
+    await db.commit()
+    return _guardian_out(guardian)
+
+
+async def update_guardian(
+    db: AsyncSession, actor: User, guardian_id: int, data: GuardianUpdate
+) -> GuardianOut:
+    guardian, _ = await _get_guardian(db, actor, guardian_id)
+    changes = data.model_dump(exclude_unset=True)
+    for field in ("full_name", "relation", "phone", "is_primary"):
+        if field in changes and changes[field] is None:
+            raise _unprocessable(f"{field} cannot be null")
+    make_primary = changes.pop("is_primary", None)
+    if make_primary is False and guardian.is_primary:
+        raise _unprocessable(
+            "A student must have a primary guardian; mark another guardian as primary"
+        )
+    for field, value in changes.items():
+        setattr(guardian, field, value)
+    if make_primary and not guardian.is_primary:
+        await _clear_primary(db, guardian.student_id, guardian.id)
+        guardian.is_primary = True
+    await db.commit()
+    return _guardian_out(guardian)
+
+
+async def delete_guardian(db: AsyncSession, actor: User, guardian_id: int) -> None:
+    guardian, _ = await _get_guardian(db, actor, guardian_id)
+    if await _count_guardians(db, guardian.student_id) <= 1:
+        raise _conflict("A student must have at least one guardian")
+    was_primary = guardian.is_primary
+    student_id = guardian.student_id
+    await db.delete(guardian)
+    await db.flush()
+    if was_primary:
+        heir = await db.scalar(
+            select(Guardian).where(Guardian.student_id == student_id).order_by(Guardian.id).limit(1)
+        )
+        if heir is not None:
+            heir.is_primary = True
+    await db.commit()
+
+
+async def _commit_login(db: AsyncSession) -> None:
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise _conflict("Email already in use") from None
+
+
+async def create_guardian_login(
+    db: AsyncSession, actor: User, guardian_id: int, data: LoginCreate
+) -> GuardianOut:
+    guardian, student = await _get_guardian(db, actor, guardian_id)
+    if guardian.user_id is not None:
+        raise _conflict("Guardian already has a login")
+    email = str(data.email).lower()
+    user = await db.scalar(select(User).where(User.email == email))
+    if user is not None:
+        # An existing parent of this school may be linked (their password is left untouched).
+        # Anything else gets the same generic answer so other schools' emails are not revealed.
+        if user.role != Role.PARENT or user.school_id != student.school_id:
+            raise _conflict("Email already in use")
+    else:
+        user = User(
+            school_id=student.school_id,
+            branch_id=None,
+            email=email,
+            full_name=guardian.full_name,
+            phone=guardian.phone,
+            password_hash=hash_password(data.password),
+            role=Role.PARENT,
+        )
+        db.add(user)
+        await db.flush()
+    guardian.user_id = user.id
+    await _commit_login(db)
+    return _guardian_out(guardian)
+
+
+async def remove_guardian_login(db: AsyncSession, actor: User, guardian_id: int) -> None:
+    guardian, _ = await _get_guardian(db, actor, guardian_id)
+    guardian.user_id = None
+    await db.commit()
+
+
+async def create_student_login(
+    db: AsyncSession, actor: User, student_id: int, data: LoginCreate
+) -> StudentDetail:
+    student = await _get_student(db, actor, student_id)
+    if student.user_id is not None:
+        raise _conflict("Student already has a login")
+    email = str(data.email).lower()
+    if await db.scalar(select(User.id).where(User.email == email)) is not None:
+        raise _conflict("Email already in use")
+    user = User(
+        school_id=student.school_id,
+        branch_id=student.branch_id,
+        email=email,
+        full_name=f"{student.first_name} {student.last_name}",
+        password_hash=hash_password(data.password),
+        role=Role.STUDENT,
+    )
+    db.add(user)
+    try:
+        await db.flush()
+    except IntegrityError:
+        await db.rollback()
+        raise _conflict("Email already in use") from None
+    student.user_id = user.id
+    await _commit_login(db)
+    return await _build_detail(db, student)
+
+
+# ---- import ----
+
+
+def _validation_message(exc: ValidationError) -> str:
+    parts = []
+    for err in exc.errors():
+        loc = ".".join(str(p) for p in err["loc"])
+        msg = err["msg"].removeprefix("Value error, ")
+        parts.append(f"{loc}: {msg}" if loc else msg)
+    return "; ".join(parts)
+
+
+def _row_enrollment(
+    row: ImportRow,
+    year: AcademicYear | None,
+    classes: dict[str, SchoolClass],
+    sections: dict[tuple[int, str], Section],
+) -> EnrollmentIn | None:
+    if row.class_ is None:
+        if row.section is not None or row.roll_no is not None:
+            raise _unprocessable("class is required when section or roll_no is given")
+        return None
+    school_class = classes.get(row.class_.lower())
+    if school_class is None:
+        raise _unprocessable(f"Class '{row.class_}' not found in this branch")
+    section_id = None
+    if row.section is not None:
+        section = sections.get((school_class.id, row.section.lower()))
+        if section is None:
+            raise _unprocessable(f"Section '{row.section}' not found in class '{row.class_}'")
+        section_id = section.id
+    if year is None:
+        raise _unprocessable("No current academic year; pass academic_year_id")
+    return EnrollmentIn(
+        academic_year_id=year.id,
+        class_id=school_class.id,
+        section_id=section_id,
+        roll_no=row.roll_no,
+    )
+
+
+async def import_students(db: AsyncSession, actor: User, data: ImportRequest) -> ImportResult:
+    branch = await _resolve_branch(db, actor, data.branch_id)
+    year_stmt = select(AcademicYear).where(AcademicYear.school_id == branch.school_id)
+    if data.academic_year_id is not None:
+        year = await db.scalar(year_stmt.where(AcademicYear.id == data.academic_year_id))
+        if year is None:
+            raise _not_found("Academic year")
+    else:
+        year = await db.scalar(year_stmt.where(AcademicYear.is_current))
+    classes: dict[str, SchoolClass] = {}
+    for c in await db.scalars(
+        select(SchoolClass).where(SchoolClass.branch_id == branch.id).order_by(SchoolClass.level)
+    ):
+        classes.setdefault(c.name.strip().lower(), c)
+    sections = {
+        (s.class_id, s.name.strip().lower()): s
+        for s in await db.scalars(select(Section).where(Section.branch_id == branch.id))
+    }
+
+    created = 0
+    errors: list[ImportRowError] = []
+    for number, raw in enumerate(data.rows, start=1):
+        try:
+            row = ImportRow.model_validate(raw)
+            enrollment = _row_enrollment(row, year, classes, sections)
+            fields = {
+                "first_name": row.first_name,
+                "last_name": row.last_name,
+                "gender": row.gender,
+                "date_of_birth": row.date_of_birth,
+                "admission_date": row.admission_date,
+                "admission_no": row.admission_no,
+                "address": row.address,
+                "previous_school": None,
+            }
+            guardian = GuardianCreate(
+                full_name=row.guardian_name,
+                relation=row.guardian_relation or GuardianRelation.GUARDIAN,
+                phone=row.guardian_phone,
+                is_primary=True,
+            )
+            # _insert_student works inside its own savepoint, so a failing row is rolled back
+            # without affecting the rows already created.
+            await _insert_student(db, branch, fields, [guardian], enrollment)
+            created += 1
+        except ValidationError as exc:
+            errors.append(ImportRowError(row=number, message=_validation_message(exc)))
+        except HTTPException as exc:
+            errors.append(ImportRowError(row=number, message=str(exc.detail)))
+    await db.commit()
+    return ImportResult(created=created, failed=len(errors), errors=errors)

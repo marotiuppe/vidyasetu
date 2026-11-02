@@ -1,0 +1,67 @@
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.card-head .card-title {
+  margin: 0;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.avatar.big {
+  width: 52px;
+  height: 52px;
+  font-size: 1rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+  margin: 0;
+}
+
+.facts dt {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.current {
+  margin-top: 12px;
+}
+
+.sub-title {
+  margin: 16px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.hint {
+  margin: 0;
+}

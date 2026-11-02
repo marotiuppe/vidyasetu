@@ -1,0 +1,180 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ title }}</h1>
+    @if (!selfService) {
+      <p class="page-subtitle">Admissions, classes and guardians.</p>
+    }
+  </div>
+  @if (canWrite || !selfService) {
+    <div class="header-actions">
+      @if (!selfService) {
+        <button type="button" class="btn btn-ghost" [disabled]="exporting()" (click)="exportCsv()">
+          <sms-icon name="download" [size]="16" />
+          {{ exporting() ? 'Exporting…' : 'Export CSV' }}
+        </button>
+      }
+      @if (canWrite) {
+        <button
+          type="button"
+          class="btn btn-ghost"
+          [attr.aria-expanded]="showImport()"
+          (click)="showImport.set(!showImport())"
+        >
+          <sms-icon name="upload" [size]="16" />
+          Import CSV
+        </button>
+        <a class="btn btn-primary" routerLink="/students/new">
+          <sms-icon name="plus" [size]="16" />
+          New admission
+        </a>
+      }
+    </div>
+  }
+</div>
+
+<div class="stack">
+  @if (showImport() && canWrite) {
+    <sms-student-import
+      [branches]="branches()"
+      [years]="years()"
+      [canPickBranch]="canPickBranch"
+      (imported)="imported($event)"
+      (closed)="showImport.set(false)"
+    />
+  }
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="student-list">
+    <h2 class="card-title" id="student-list">{{ selfService ? title : 'All students' }}</h2>
+
+    @if (!selfService) {
+      <div class="toolbar" role="search">
+        <label class="field">
+          Search
+          <input
+            class="input"
+            type="search"
+            placeholder="Name or admission no."
+            autocomplete="off"
+            [value]="filters().q"
+            (input)="onSearch($event)"
+          />
+        </label>
+        @if (canPickBranch) {
+          <label class="field">
+            Branch
+            <select class="input" (change)="onSelect('branchId', $event)">
+              <option value="0" [selected]="filters().branchId === 0">All branches</option>
+              @for (b of branches(); track b.id) {
+                <option [value]="b.id" [selected]="filters().branchId === b.id">{{ b.name }}</option>
+              }
+            </select>
+          </label>
+        }
+        <label class="field">
+          Academic year
+          <select class="input" (change)="onSelect('yearId', $event)">
+            <option value="0" [selected]="filters().yearId === 0">All years</option>
+            @for (y of years(); track y.id) {
+              <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Class
+          <select class="input" (change)="onSelect('classId', $event)">
+            <option value="0" [selected]="filters().classId === 0">All classes</option>
+            @for (c of classOptions(); track c.id) {
+              <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Section
+          <select class="input" [disabled]="!filters().classId" (change)="onSelect('sectionId', $event)">
+            <option value="0" [selected]="filters().sectionId === 0">All sections</option>
+            @for (s of sectionOptions(); track s.id) {
+              <option [value]="s.id" [selected]="filters().sectionId === s.id">{{ s.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          Status
+          <select class="input" (change)="onStatus($event)">
+            <option value="" [selected]="filters().status === ''">All statuses</option>
+            @for (s of statuses; track s) {
+              <option [value]="s" [selected]="filters().status === s">{{ statusLabel(s) }}</option>
+            }
+          </select>
+        </label>
+      </div>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">Loading students…</p>
+    } @else {
+      <ul class="rows">
+        @for (s of items(); track s.id) {
+          <li class="row">
+            <span class="avatar" aria-hidden="true">{{ initials(s.full_name) }}</span>
+            <span class="row-main">
+              <a class="name" [routerLink]="['/students', s.id]">{{ s.full_name }}</a>
+              <span class="row-sub">Admission no. {{ s.admission_no }}</span>
+            </span>
+            <span class="row-main cell">
+              @if (s.current_enrollment; as e) {
+                <span>
+                  {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
+                </span>
+                <span class="row-sub">
+                  @if (e.roll_no !== null) { Roll {{ e.roll_no }} · }{{ e.academic_year_name }}
+                </span>
+              } @else {
+                <span class="row-sub">Not enrolled</span>
+              }
+            </span>
+            <span class="row-main cell">
+              @if (s.primary_guardian; as g) {
+                <span>{{ g.full_name }}</span>
+                <span class="row-sub">{{ g.phone }}</span>
+              } @else {
+                <span class="row-sub">No guardian</span>
+              }
+            </span>
+            <span
+              class="badge"
+              [class.badge-success]="s.status === 'active'"
+              [class.badge-muted]="s.status !== 'active'"
+            >
+              {{ statusLabel(s.status) }}
+            </span>
+          </li>
+        } @empty {
+          <li class="empty">
+            {{ selfService ? 'No student records are linked to your account.' : 'No students match.' }}
+          </li>
+        }
+      </ul>
+
+      @if (total() > 0) {
+        <nav class="pager" aria-label="Pagination">
+          <span>{{ from() }}–{{ to() }} of {{ total() }}</span>
+          <span class="row-actions">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="page() <= 1" (click)="prev()">
+              Previous
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="to() >= total()" (click)="next()">
+              Next
+            </button>
+          </span>
+        </nav>
+      }
+    }
+  </section>
+</div>

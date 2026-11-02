@@ -1,0 +1,382 @@
+<div class="page-header">
+  <div>
+    @if (student(); as s) {
+      <h1 class="page-title">{{ s.full_name }}</h1>
+      <p class="page-subtitle">Admission no. {{ s.admission_no }}</p>
+    } @else {
+      <h1 class="page-title">Student profile</h1>
+    }
+  </div>
+  <a class="btn btn-ghost" routerLink="/students">Back to students</a>
+</div>
+
+@if (loading()) {
+  <p class="empty" role="status">Loading profile…</p>
+} @else if (student(); as s) {
+  <div class="stack">
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+
+    <!-- Details -->
+    <section class="card" aria-labelledby="details-title">
+      <div class="card-head">
+        <h2 class="card-title" id="details-title">Details</h2>
+        @if (canWrite && panel() !== 'student') {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="editStudent(s)">Edit</button>
+        }
+      </div>
+      @if (panel() === 'student') {
+        <form [formGroup]="studentForm" (ngSubmit)="saveStudent(s)" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              First name
+              <input class="input" formControlName="first_name" autocomplete="off" />
+              @if (studentForm.controls.first_name.touched && studentForm.controls.first_name.invalid) {
+                <span class="field-error">First name is required.</span>
+              }
+            </label>
+            <label class="field">
+              Last name
+              <input class="input" formControlName="last_name" autocomplete="off" />
+              @if (studentForm.controls.last_name.touched && studentForm.controls.last_name.invalid) {
+                <span class="field-error">Last name is required.</span>
+              }
+            </label>
+            <label class="field">
+              Gender
+              <select class="input" formControlName="gender">
+                @for (g of genders; track g) {
+                  <option [value]="g">{{ titleCase(g) }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Date of birth
+              <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
+              @if (studentForm.controls.date_of_birth.touched && studentForm.controls.date_of_birth.invalid) {
+                <span class="field-error">Date of birth is required.</span>
+              }
+            </label>
+            <label class="field">
+              Admission date
+              <input class="input" type="date" formControlName="admission_date" />
+              @if (studentForm.controls.admission_date.touched && studentForm.controls.admission_date.invalid) {
+                <span class="field-error">Admission date is required.</span>
+              }
+            </label>
+            <label class="field">
+              Status
+              <select class="input" formControlName="status">
+                @for (st of statuses; track st) {
+                  <option [value]="st">{{ statusLabel(st) }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Previous school
+              <input class="input" formControlName="previous_school" autocomplete="off" />
+            </label>
+            <label class="field">
+              Address
+              <input class="input" formControlName="address" autocomplete="off" />
+            </label>
+          </div>
+          @if (panelError(); as message) {
+            <p class="form-error" role="alert">{{ message }}</p>
+          }
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="busy()">
+              {{ busy() ? 'Saving…' : 'Save changes' }}
+            </button>
+            <button type="button" class="btn btn-ghost" (click)="closePanel()">Cancel</button>
+          </div>
+        </form>
+      } @else {
+        <div class="identity">
+          <span class="avatar big" aria-hidden="true">{{ initials(s.full_name) }}</span>
+          <span
+            class="badge"
+            [class.badge-success]="s.status === 'active'"
+            [class.badge-muted]="s.status !== 'active'"
+          >
+            {{ statusLabel(s.status) }}
+          </span>
+        </div>
+        <dl class="facts">
+          <div><dt>Gender</dt><dd>{{ titleCase(s.gender) }}</dd></div>
+          <div><dt>Date of birth</dt><dd>{{ s.date_of_birth }}</dd></div>
+          <div><dt>Admission date</dt><dd>{{ s.admission_date }}</dd></div>
+          <div><dt>Previous school</dt><dd>{{ s.previous_school || 'Not recorded' }}</dd></div>
+          <div class="wide"><dt>Address</dt><dd>{{ s.address || 'Not recorded' }}</dd></div>
+        </dl>
+      }
+    </section>
+
+    <!-- Guardians -->
+    <section class="card" aria-labelledby="guardians-title">
+      <div class="card-head">
+        <h2 class="card-title" id="guardians-title">Guardians</h2>
+        @if (canWrite && panel() !== 'guardian-add') {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="addGuardian()">Add guardian</button>
+        }
+      </div>
+
+      @if (panel() === 'guardian-add') {
+        <form class="panel" [formGroup]="guardianForm" (ngSubmit)="saveGuardian(s, null)" novalidate>
+          <ng-container [ngTemplateOutlet]="guardianFields" />
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Add guardian</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+          </div>
+        </form>
+      }
+
+      <ul class="rows">
+        @for (g of s.guardians; track g.id) {
+          <li class="row">
+            <span class="row-main">
+              <strong>{{ g.full_name }}</strong>
+              <span class="row-sub">
+                {{ titleCase(g.relation) }} · {{ g.phone }}@if (g.email) { · {{ g.email }} }
+              </span>
+            </span>
+            @if (g.is_primary) {
+              <span class="badge badge-success">Primary</span>
+            }
+            @if (g.has_login) {
+              <span class="badge">Has login</span>
+            }
+            @if (canWrite) {
+              <span class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="editGuardian(g)">Edit</button>
+                @if (!g.is_primary) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="makePrimary(g)">
+                    Make primary
+                  </button>
+                }
+                @if (g.has_login) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="removeGuardianLogin(g)">
+                    Remove login
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="startGuardianLogin(g)">
+                    Create parent login
+                  </button>
+                }
+                @if (s.guardians.length > 1) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="removeGuardian(g)">
+                    Remove
+                  </button>
+                }
+              </span>
+            }
+
+            @if (panel() === 'guardian-edit-' + g.id) {
+              <form class="panel" [formGroup]="guardianForm" (ngSubmit)="saveGuardian(s, g)" novalidate>
+                <ng-container [ngTemplateOutlet]="guardianFields" />
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Save</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+                </div>
+              </form>
+            }
+            @if (panel() === 'guardian-login-' + g.id) {
+              <form class="panel" [formGroup]="loginForm" (ngSubmit)="saveGuardianLogin(g)" novalidate>
+                <ng-container [ngTemplateOutlet]="loginFields" />
+                <p class="hint">
+                  Creates a parent login, or links an existing parent account with this email.
+                </p>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Create login</button>
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+                </div>
+              </form>
+            }
+          </li>
+        } @empty {
+          <li class="empty">No guardians recorded.</li>
+        }
+      </ul>
+    </section>
+
+    <!-- Enrolment -->
+    <section class="card" aria-labelledby="enrol-title">
+      <div class="card-head">
+        <h2 class="card-title" id="enrol-title">Enrolment</h2>
+        @if (canWrite && panel() !== 'enrol') {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="startEnrol(s)">Change class</button>
+        }
+      </div>
+
+      @if (panel() === 'enrol') {
+        <form class="panel" [formGroup]="enrolForm" (ngSubmit)="saveEnrol(s)" novalidate>
+          <div class="form-grid">
+            <label class="field">
+              Academic year
+              <select class="input" formControlName="academic_year_id">
+                <option [value]="0" disabled>Select year</option>
+                @for (y of years(); track y.id) {
+                  <option [value]="y.id">{{ y.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Class
+              <select class="input" formControlName="class_id">
+                <option [value]="0" disabled>Select class</option>
+                @for (c of classOptions(); track c.id) {
+                  <option [value]="c.id">{{ c.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Section
+              <select class="input" formControlName="section_id">
+                <option [value]="0">No section</option>
+                @for (sec of sectionOptions(); track sec.id) {
+                  <option [value]="sec.id">{{ sec.name }}</option>
+                }
+              </select>
+            </label>
+            <label class="field">
+              Roll number (optional)
+              <input class="input" type="number" min="1" formControlName="roll_no" />
+              <span class="hint">Assigned automatically when a section is chosen and this is blank.</span>
+            </label>
+          </div>
+          @if (panelError(); as message) {
+            <p class="form-error" role="alert">{{ message }}</p>
+          }
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Save enrolment</button>
+            <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+          </div>
+        </form>
+      }
+
+      @if (s.current_enrollment; as e) {
+        <p class="current">
+          <strong>Current:</strong> {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
+          @if (e.roll_no !== null) { · Roll {{ e.roll_no }} } · {{ e.academic_year_name }}
+        </p>
+      } @else {
+        <p class="empty">Not enrolled in a class.</p>
+      }
+
+      @if (s.enrollments.length > 1) {
+        <h3 class="sub-title">History</h3>
+        <ul class="rows">
+          @for (e of s.enrollments; track e.id) {
+            <li class="row">
+              <span class="row-main">
+                <span>{{ e.academic_year_name }}</span>
+                <span class="row-sub">
+                  {{ e.class_name }}@if (e.section_name) { - {{ e.section_name }} }
+                  @if (e.roll_no !== null) { · Roll {{ e.roll_no }} }
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <!-- Student login -->
+    @if (canWrite) {
+      <section class="card" aria-labelledby="login-title">
+        <h2 class="card-title" id="login-title">Student login</h2>
+        @if (s.user_id !== null) {
+          <p><span class="badge">Has login</span></p>
+        } @else if (panel() === 'login') {
+          <form class="panel" [formGroup]="loginForm" (ngSubmit)="saveStudentLogin(s)" novalidate>
+            <ng-container [ngTemplateOutlet]="loginFields" />
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="busy()">Create login</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="closePanel()">Cancel</button>
+            </div>
+          </form>
+        } @else {
+          <p class="empty">This student has no login yet.</p>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="startStudentLogin()">
+            Create student login
+          </button>
+        }
+      </section>
+    }
+  </div>
+} @else {
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+}
+
+<ng-template #guardianFields>
+  <div class="form-grid">
+    <label class="field">
+      Full name
+      <input class="input" [formControl]="guardianForm.controls.full_name" autocomplete="off" />
+      @if (guardianForm.controls.full_name.touched && guardianForm.controls.full_name.invalid) {
+        <span class="field-error">Name is required.</span>
+      }
+    </label>
+    <label class="field">
+      Relation
+      <select class="input" [formControl]="guardianForm.controls.relation">
+        @for (r of relations; track r) {
+          <option [value]="r">{{ titleCase(r) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      Phone
+      <input class="input" type="tel" [formControl]="guardianForm.controls.phone" autocomplete="off" />
+      @if (guardianForm.controls.phone.touched && guardianForm.controls.phone.invalid) {
+        <span class="field-error">Use 7 to 20 digits, spaces, + or -.</span>
+      }
+    </label>
+    <label class="field">
+      Email (optional)
+      <input class="input" type="email" [formControl]="guardianForm.controls.email" autocomplete="off" />
+      @if (guardianForm.controls.email.touched && guardianForm.controls.email.invalid) {
+        <span class="field-error">Enter a valid email address.</span>
+      }
+    </label>
+  </div>
+  <label class="check">
+    <input type="checkbox" [formControl]="guardianForm.controls.is_primary" /> Primary contact
+  </label>
+  @if (panelError(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+</ng-template>
+
+<ng-template #loginFields>
+  <div class="form-grid">
+    <label class="field">
+      Email
+      <input class="input" type="email" [formControl]="loginForm.controls.email" autocomplete="off" />
+      @if (loginForm.controls.email.touched && loginForm.controls.email.invalid) {
+        <span class="field-error">Enter a valid email address.</span>
+      }
+    </label>
+    <label class="field">
+      Temporary password
+      <input
+        class="input"
+        type="password"
+        [formControl]="loginForm.controls.password"
+        autocomplete="new-password"
+      />
+      @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
+        <span class="field-error">Use at least 8 characters.</span>
+      }
+    </label>
+  </div>
+  @if (panelError(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+</ng-template>
