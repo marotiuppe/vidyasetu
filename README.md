@@ -1,42 +1,11 @@
-# Rani-Laxmibai-High-School: School Management System
+# Vidyasetu: School Management System
 
-A responsive, installable (PWA) web application to run the daily work of **Rani-Laxmibai-High-School**, Yeshwant Nagar, Nanded, Maharashtra.
+A responsive, installable (PWA) web application to run the daily work of a school: admissions, attendance, fees, exams and notices. It supports many schools, and each school can have many branches (for example a primary and a secondary section with their own timings and management).
 
 - **Developer:** Maroti Uppe
-- **Status:** Planning. Repository setup and project instructions are in place; no application code yet.
+- **Status:** Early development. Login, schools, branches, users, academic years, classes and sections are working.
 - **Claude Code instructions:** see [CLAUDE.md](CLAUDE.md)
-
-## About the school
-
-| | |
-|---|---|
-| Name | Rani-Laxmibai-High-School (Rani Laxmibai H.S.) |
-| Location | Yeshwant Nagar / Ganesh Nagar, Nanded, Maharashtra, 431602 / 431605 |
-| Map | https://www.mappls.com/y5abcv (about 19.1712 N, 77.2968 E) |
-| Established | 1987 (per public listing) |
-| Management | Private aided (per public listing) |
-| Classes | 1st to 10th, split into two branches (below) |
-| Medium | Marathi (per public listing); the app supports English and Marathi |
-| Board | CBSE rules are the app default. Public listings say State Board, so **confirm with the school**. |
-| Academic year | Starts in April |
-| UDISE code | 27151703405 |
-| Library | About 630 books (per listing) |
-
-Sources used (public, user-generated, may be outdated; verify with the school):
-[schools.org.in](https://schools.org.in/nanded/27151703405/rani-laxmibai-h-s-yeshwant-nagar.html),
-[Mappls](https://www.mappls.com/y5abcv),
-[JustDial](https://www.justdial.com/Nanded/Rani-Laxmibai-High-School-Ganesh-Nager-Yeshwantnagar-Nanded/9999P2462-2462-161117224624-R1E2_BZDET) and
-[Facebook group](https://www.facebook.com/groups/1124408375654979/).
-JustDial and Facebook could not be read automatically, so their details still need to be added by hand.
-
-### Two branches
-
-The school runs two branches with **separate timings and separate management**. The system keeps their data apart. Timings and management will be entered later through the app.
-
-| Branch | Classes | Timings | Management |
-|---|---|---|---|
-| Primary | 1 to 5 | *to be filled* | *to be filled* |
-| Secondary | 6 to 10 | *to be filled* | *to be filled* |
+- **Per-school notes:** details about individual schools are kept in [docs/](docs/), not in this README.
 
 ## Goals
 
@@ -93,6 +62,7 @@ Configure them in `.env` (copy `.env.example`, which will be added with the back
 SMS/
 ├─ backend/    FastAPI app, migrations
 ├─ frontend/   Angular PWA
+├─ docs/       Per-school notes and other documentation
 ├─ render.yaml Render deployment blueprint
 ├─ .env.example
 ├─ CLAUDE.md
@@ -126,7 +96,7 @@ For production, `ng build` output is served by FastAPI, so one Render web servic
 ## Roadmap
 
 1. [x] Project instructions (`CLAUDE.md`) and README
-2. [ ] Confirm school details later: board, branch timings, management, fee heads, grading scheme
+2. [ ] Confirm per-school details later: board, branch timings, management, fee heads, grading scheme
 3. [x] Scaffold backend (FastAPI) and frontend (Angular), add `.env.example` and `render.yaml`
 4. [ ] Auth, roles, multi-tenancy. Done: login/refresh/logout, schools, branches, users, Angular login and route guards, PWA (installable), academic years, classes and sections with a School setup page. Left: audit log, PostgreSQL row-level security, custom app icons (the PWA icons are Angular's defaults).
 5. [ ] Students and attendance
@@ -141,4 +111,4 @@ For production, `ng build` output is served by FastAPI, so one Render web servic
 
 ## License
 
-To be decided by the owner.
+MIT. See [LICENSE](LICENSE).
