@@ -34,3 +34,9 @@
   background: var(--success-bg);
   border-radius: 6px;
 }
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

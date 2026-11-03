@@ -3,7 +3,14 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from app.core.deps import CurrentUser, DbSession, require_roles
 from app.modules.users import service
 from app.modules.users.models import Role
-from app.modules.users.schemas import PasswordReset, UserCreate, UserOut, UserUpdate
+from app.modules.users.schemas import (
+    PasswordReset,
+    UserCreate,
+    UserImportRequest,
+    UserImportResult,
+    UserOut,
+    UserUpdate,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -35,6 +42,13 @@ async def list_users(
 )
 async def create_user(data: UserCreate, db: DbSession, actor: CurrentUser) -> UserOut:
     return UserOut.model_validate(await service.create_user(db, actor, data))
+
+
+@router.post("/import", response_model=UserImportResult, dependencies=[Depends(_managers)])
+async def import_users(
+    data: UserImportRequest, db: DbSession, actor: CurrentUser
+) -> UserImportResult:
+    return await service.import_users(db, actor, data)
 
 
 @router.get("/{user_id}", response_model=UserOut, dependencies=[Depends(_managers)])

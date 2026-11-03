@@ -1,21 +1,5 @@
 import { InvoiceStatus, PaymentMethod } from '../../core/api/fees.api';
 
-const METHODS: Record<PaymentMethod, string> = {
-  cash: 'Cash',
-  upi: 'UPI',
-  card: 'Card',
-  bank: 'Bank transfer',
-  cheque: 'Cheque',
-  online: 'Online',
-};
-
-const STATUSES: Record<InvoiceStatus, string> = {
-  unpaid: 'Unpaid',
-  partial: 'Partly paid',
-  paid: 'Paid',
-  cancelled: 'Cancelled',
-};
-
 /** Translation lookup, as `I18n.t` (pass `i18n.t` so the label follows the language). */
 export type Translate = (key: string) => string;
 
@@ -34,14 +18,6 @@ const STATUS_KEYS: Record<InvoiceStatus, string> = {
   paid: 'fees.setup.status.paid',
   cancelled: 'fees.setup.status.cancelled',
 };
-
-export function methodLabel(method: PaymentMethod): string {
-  return METHODS[method] ?? method;
-}
-
-export function invoiceStatusLabel(status: InvoiceStatus): string {
-  return STATUSES[status] ?? status;
-}
 
 /** Translated payment method label. */
 export function methodText(method: PaymentMethod, t: Translate): string {
@@ -85,7 +61,7 @@ export function monthStartIso(): string {
 
 /** "Class 5 - A" style label. */
 export function classSection(className: string | null, sectionName: string | null): string {
-  if (!className) return 'Not enrolled';
+  if (!className) return '';
   return sectionName ? `${className} - ${sectionName}` : className;
 }
 

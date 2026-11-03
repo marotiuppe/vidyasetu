@@ -1,0 +1,86 @@
+<div class="global-search" [class.mobile-open]="mobileOpen()">
+  <button
+    type="button"
+    class="icon-btn search-toggle"
+    [attr.aria-label]="i18n.t('search.open')"
+    [attr.aria-expanded]="mobileOpen()"
+    [attr.aria-controls]="inputId"
+    (click)="toggleMobile()"
+  >
+    <sms-icon name="search" [size]="17" />
+  </button>
+
+  <div class="search" (focusout)="onFocusOut($event)">
+    <sms-icon name="search" [size]="15" />
+    <input
+      #input
+      type="search"
+      role="combobox"
+      [id]="inputId"
+      autocomplete="off"
+      spellcheck="false"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="showPanel()"
+      [attr.aria-controls]="listboxId"
+      [attr.aria-activedescendant]="activeOptionId()"
+      [attr.aria-label]="i18n.t('search.aria')"
+      [placeholder]="i18n.t('search.placeholder')"
+      [value]="query()"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)"
+      (focus)="open.set(query().trim().length > 0)"
+    />
+
+    @if (open() && (showPanel() || tooShort())) {
+      <div class="results" (mousedown)="$event.preventDefault()">
+        @if (tooShort()) {
+          <p class="results-status">{{ i18n.t('search.minChars') }}</p>
+        }
+        @if (showPanel()) {
+          @if (loading() && count() === 0) {
+            <p class="results-status" aria-hidden="true">{{ i18n.t('search.loading') }}</p>
+          }
+          @if (error(); as message) {
+            <p class="results-status results-error">{{ message }}</p>
+          }
+          @if (showEmpty()) {
+            <p class="results-status">{{ i18n.t('search.none') }}</p>
+          }
+          <div
+            [id]="listboxId"
+            role="listbox"
+            class="listbox"
+            [attr.aria-label]="i18n.t('search.results')"
+            [hidden]="count() === 0"
+          >
+            @for (group of view(); track group.type) {
+              <div role="group" class="group" [attr.aria-label]="group.label">
+                <p class="group-label" aria-hidden="true">{{ group.label }}</p>
+                @for (hit of group.items; track hit.item.id) {
+                  <div
+                    role="option"
+                    tabindex="-1"
+                    class="result"
+                    [id]="optionId(hit.index)"
+                    [class.active]="hit.index === active()"
+                    [attr.aria-selected]="hit.index === active()"
+                    (click)="choose(hit.item)"
+                    (keydown.enter)="choose(hit.item)"
+                    (mouseenter)="active.set(hit.index)"
+                  >
+                    <span class="result-title">{{ hit.item.title }}</span>
+                    @if (hit.item.subtitle) {
+                      <span class="result-sub">{{ hit.item.subtitle }}</span>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="sr-only" role="status" aria-live="polite">{{ announcement() }}</p>
+</div>

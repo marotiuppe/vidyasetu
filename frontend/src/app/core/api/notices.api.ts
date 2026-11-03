@@ -7,12 +7,13 @@ const API = '/api/v1/notices';
 export type NoticeCategory = 'general' | 'academic' | 'event' | 'holiday' | 'urgent';
 export type NoticeTargetType = 'school' | 'branch' | 'class' | 'section';
 
-export const NOTICE_CATEGORIES: { value: NoticeCategory; label: string }[] = [
-  { value: 'general', label: 'General' },
-  { value: 'academic', label: 'Academic' },
-  { value: 'event', label: 'Event' },
-  { value: 'holiday', label: 'Holiday' },
-  { value: 'urgent', label: 'Urgent' },
+/** Notice categories in the order the forms show them (names come from `CATEGORY_KEYS`). */
+export const NOTICE_CATEGORIES: { value: NoticeCategory }[] = [
+  { value: 'general' },
+  { value: 'academic' },
+  { value: 'event' },
+  { value: 'holiday' },
+  { value: 'urgent' },
 ];
 
 export interface NoticeAuthor {

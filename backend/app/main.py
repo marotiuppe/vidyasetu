@@ -41,6 +41,7 @@ from app.modules.promotion.router import router as promotion_router
 from app.modules.public.router import router as public_router
 from app.modules.public.router import site_router as public_site_router
 from app.modules.schools.router import router as schools_router
+from app.modules.search.router import router as search_router
 from app.modules.settings.router import router as settings_router
 from app.modules.students.router import parents_router
 from app.modules.students.router import router as students_router
@@ -170,6 +171,7 @@ api.include_router(fees_tools_router)
 api.include_router(admissions_router)
 api.include_router(admissions_public_router)
 api.include_router(promotion_router)
+api.include_router(search_router)
 api.include_router(settings_router)
 api.include_router(audit_router)
 api.include_router(consent_router)

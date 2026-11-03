@@ -47,8 +47,8 @@
         {{
           i18n.t('ops.hol.rangeText', {
             label: rangeLabel(r.year),
-            from: formatDate(r.from),
-            to: formatDate(r.to),
+            from: dateText(r.from),
+            to: dateText(r.to),
           })
         }}
       </p>
@@ -73,7 +73,7 @@
             <li class="row">
               <div class="row-main">
                 <strong>{{ h.name }}</strong>
-                <span class="row-sub">{{ formatDate(h.date) }}</span>
+                <span class="row-sub">{{ dateText(h.date) }}</span>
               </div>
               <span class="badge" [class.badge-muted]="h.branch_id !== null">{{
                 h.scopeLabel

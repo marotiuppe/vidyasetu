@@ -25,6 +25,8 @@ from app.modules.fees.schemas import (
     PaymentOut,
     PaymentPage,
     ReverseRequest,
+    StructureImportRequest,
+    StructureImportResult,
     StructureItemOut,
     StructureReplace,
     StudentFees,
@@ -83,6 +85,15 @@ async def get_structure(
     class_id: int | None = None,
 ) -> list[StructureItemOut]:
     return await service.list_structure(db, actor, academic_year_id, class_id)
+
+
+@router.post(
+    "/fees/structure/import", response_model=StructureImportResult, dependencies=[_managers]
+)
+async def import_structure(
+    data: StructureImportRequest, db: DbSession, actor: CurrentUser
+) -> StructureImportResult:
+    return await service.import_structure(db, actor, data)
 
 
 @router.put("/fees/structure", response_model=list[StructureItemOut], dependencies=[_managers])

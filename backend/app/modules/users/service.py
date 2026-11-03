@@ -1,11 +1,13 @@
 from fastapi import HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import ColumnElement
 
-from app.core.errors import IdentityInUse
-from app.core.password_policy import enforce_password
+from app.core.errors import ApiError, IdentityInUse
+from app.core.password_policy import enforce_password, random_password
+from app.core.schema_types import ImportRowError, RowRejected, validation_message
 from app.core.security import hash_password
 from app.core.tenant import scope_users
 from app.modules.audit import service as audit
@@ -15,7 +17,13 @@ from app.modules.branches.models import Branch
 from app.modules.settings import service as settings_service
 from app.modules.users.identity import suggest_username
 from app.modules.users.models import BRANCH_ROLES, Role, User
-from app.modules.users.schemas import UserCreate, UserUpdate
+from app.modules.users.schemas import (
+    ImportCredential,
+    UserCreate,
+    UserImportRequest,
+    UserImportResult,
+    UserUpdate,
+)
 
 IDENTITY_TAKEN_CODE = "identity_taken"
 
@@ -112,7 +120,11 @@ async def derive_unique_username(db: AsyncSession, email: str) -> str:
     return candidate
 
 
-async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
+async def build_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
+    """Check the rules for a new account and add it to the session (no commit, no audit).
+
+    Shared by the single-account form and the bulk import, so both apply the same rules.
+    """
     if data.role not in CREATABLE.get(actor.role, set()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not allowed to create this role")
     school_id: int | None
@@ -165,11 +177,16 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
         must_change_password=await settings_service.force_password_change(db, school_id),
     )
     db.add(user)
+    return user
+
+
+async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
+    user = await build_user(db, actor, data)
     try:
         await db.flush()
         await audit.record(
             db, actor, "user.created", "user", user.id,
-            detail={"role": user.role.value}, school_id=school_id, branch_id=branch_id,
+            detail={"role": user.role.value}, school_id=user.school_id, branch_id=user.branch_id,
         )
         await db.commit()
     except IntegrityError:
@@ -178,6 +195,86 @@ async def create_user(db: AsyncSession, actor: User, data: UserCreate) -> User:
             "Username, email or mobile number already in use", IDENTITY_TAKEN_CODE
         ) from None
     return user
+
+
+def _import_role(value: object) -> Role:
+    try:
+        return Role(str(value or "").strip().lower())
+    except ValueError:
+        raise RowRejected("Unknown role") from None
+
+
+async def import_users(db: AsyncSession, actor: User, data: UserImportRequest) -> UserImportResult:
+    """Bulk staff accounts from rows. Each row goes through `build_user`, the same rules as the
+    single form, inside its own savepoint. Credentials are returned once and never stored or
+    audited; the audit row holds counts only."""
+    school_id = data.school_id if actor.role == Role.SUPER_ADMIN else actor.school_id
+    min_length = await settings_service.password_min_length(db, school_id)
+    creatable = CREATABLE.get(actor.role, set())
+    # A dry run works inside one savepoint that is rolled back at the end, so duplicates inside the
+    # file are caught exactly as in a real import.
+    savepoint = await db.begin_nested() if data.dry_run else None
+    created = 0
+    errors: list[ImportRowError] = []
+    credentials: list[ImportCredential] = []
+    for number, row in enumerate(data.rows, start=1):
+        try:
+            role = _import_role(row.get("role"))
+            if role not in creatable:
+                raise RowRejected("Not allowed to create this role")
+            username = str(row.get("username") or "").strip()
+            full_name = str(row.get("full_name") or "").strip()
+            password = random_password(username, full_name, min_length=min_length)
+            payload = UserCreate.model_validate(
+                {
+                    "username": row.get("username"),
+                    "full_name": row.get("full_name"),
+                    "role": role,
+                    "email": row.get("email"),
+                    "phone": row.get("mobile"),
+                    "password": password,
+                    "school_id": data.school_id,
+                    "branch_id": data.branch_id,
+                }
+            )
+            async with db.begin_nested():
+                user = await build_user(db, actor, payload)
+                await db.flush()
+            created += 1
+            credentials.append(
+                ImportCredential(
+                    username=user.username,
+                    full_name=user.full_name,
+                    role=user.role,
+                    temporary_password=password,
+                )
+            )
+        except ValidationError as exc:
+            errors.append(ImportRowError(row=number, message=validation_message(exc)))
+        except RowRejected as exc:
+            errors.append(ImportRowError(row=number, message=str(exc)))
+        except IntegrityError:
+            errors.append(
+                ImportRowError(
+                    row=number, message="Username, email or mobile number already in use"
+                )
+            )
+        except (HTTPException, ApiError, IdentityInUse) as exc:
+            errors.append(ImportRowError(row=number, message=str(exc.detail)))
+    if savepoint is not None:
+        await savepoint.rollback()
+        return UserImportResult(
+            created=0, would_create=created, failed=len(errors), errors=errors, credentials=[]
+        )
+    await audit.record(
+        db, actor, "user.imported", "user", None,
+        detail={"created": created, "failed": len(errors)},
+        school_id=school_id, branch_id=actor.branch_id,
+    )
+    await db.commit()
+    return UserImportResult(
+        created=created, failed=len(errors), errors=errors, credentials=credentials
+    )
 
 
 async def _get_manageable(db: AsyncSession, actor: User, user_id: int) -> User:

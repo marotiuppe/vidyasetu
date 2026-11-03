@@ -1,0 +1,33 @@
+.options {
+  margin: 12px 0;
+}
+
+.summary,
+.result {
+  margin: 12px 0 8px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 650;
+  color: var(--muted);
+}

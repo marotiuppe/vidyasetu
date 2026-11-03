@@ -10,6 +10,7 @@ import { EN_PUBLIC } from './en.public';
 import { EN_ADMISSIONS } from './en.admissions';
 import { EN_PROMOTION } from './en.promotion';
 import { EN_FEES_TOOLS } from './en.fees-tools';
+import { EN_TOOLS } from './en.tools';
 
 /** English UI strings for the Settings area. English is the fallback for every language. */
 export const EN: Record<string, string> = {
@@ -25,6 +26,7 @@ export const EN: Record<string, string> = {
   ...EN_ADMISSIONS,
   ...EN_PROMOTION,
   ...EN_FEES_TOOLS,
+  ...EN_TOOLS,
   'nav.settings': 'Settings',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

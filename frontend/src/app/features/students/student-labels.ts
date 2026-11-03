@@ -1,16 +1,5 @@
 import { StudentStatus } from '../../core/api/students.api';
 
-const STATUS_LABELS: Record<StudentStatus, string> = {
-  active: 'Active',
-  left: 'Left',
-  transferred: 'Transferred',
-  passed_out: 'Passed out',
-};
-
-export function statusLabel(status: StudentStatus): string {
-  return STATUS_LABELS[status];
-}
-
 /** Translation key for a student status (English text: `students.list.status.<status>`). */
 export function statusKey(status: StudentStatus): string {
   return `students.list.status.${status}`;

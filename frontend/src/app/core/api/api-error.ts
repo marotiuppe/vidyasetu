@@ -18,6 +18,11 @@ const CODE_KEYS: Record<string, string> = {
   undo_blocked: 'promotion.error.undoBlocked',
 };
 
+/** Translated text for a client-side error key; English only if the translator is not registered yet. */
+function textFor(key: string, english: string): string {
+  return translate !== null ? translate(key) : english;
+}
+
 /** Turn a backend error ({ detail: string | [{ msg }], code? }) into a message for the user. */
 export function apiErrorMessage(err: unknown): string {
   if (err instanceof HttpErrorResponse) {
@@ -32,11 +37,12 @@ export function apiErrorMessage(err: unknown): string {
         .filter((m): m is string => typeof m === 'string');
       if (msgs.length) return msgs.join(' ');
     }
-    if (err.status === 0) return 'Cannot reach the server. Check your connection.';
-    if (err.status === 403) return 'You are not allowed to do this.';
-    if (err.status === 404) return 'Not found.';
+    if (err.status === 0)
+      return textFor('error.network', 'Cannot reach the server. Check your connection.');
+    if (err.status === 403) return textFor('error.forbidden', 'You are not allowed to do this.');
+    if (err.status === 404) return textFor('error.notFound', 'Not found.');
   }
-  return 'Something went wrong. Please try again.';
+  return textFor('error.generic', 'Something went wrong. Please try again.');
 }
 
 /** Field-level messages from a 422 response (`detail: [{ loc: ['body', 'field'], msg }]`), keyed by field name. */

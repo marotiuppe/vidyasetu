@@ -12,6 +12,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.core.schema_types import ImportRowError
 from app.modules.students.models import Gender, GuardianRelation, StudentStatus
 from app.modules.users.identity import normalize_username
 
@@ -303,16 +304,15 @@ class ImportRow(BaseModel):
 class ImportRequest(BaseModel):
     branch_id: int | None = None
     academic_year_id: int | None = None
+    # Validate every row exactly as a real import would, then write nothing.
+    dry_run: bool = False
     rows: list[dict[str, Any]] = Field(min_length=1, max_length=500)
-
-
-class ImportRowError(BaseModel):
-    row: int
-    message: str
 
 
 class ImportResult(BaseModel):
     created: int
+    # Rows a real import would create (dry run only; 0 otherwise).
+    would_create: int = 0
     failed: int
     errors: list[ImportRowError]
 

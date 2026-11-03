@@ -1,7 +1,6 @@
 import csv
 import io
 import re
-import secrets
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -15,7 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.core.errors import ApiError, IdentityInUse
-from app.core.password_policy import enforce_password, password_problem
+from app.core.password_policy import enforce_password, password_problem, random_password
+from app.core.schema_types import ImportRowError, validation_message
 from app.core.security import hash_password
 from app.core.tenant import scope_branches, scope_students
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
@@ -43,7 +43,6 @@ from app.modules.students.schemas import (
     ImportRequest,
     ImportResult,
     ImportRow,
-    ImportRowError,
     LoginCreate,
     NewGuardian,
     ParentChild,
@@ -609,31 +608,6 @@ _PATTERN_NOTE = (
     "Password follows the pattern name+initial@DOB; the student must change it at first sign-in"
 )
 _LINKED_NOTE = "Existing parent login linked; its password is unchanged"
-_PW_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"  # no I or O
-_PW_LOWER = "abcdefghijkmnopqrstuvwxyz"  # no l
-_PW_DIGIT = "23456789"  # no 0 or 1
-_PW_SYMBOL = "@#$%&*"
-_PW_ALL = _PW_UPPER + _PW_LOWER + _PW_DIGIT + _PW_SYMBOL
-_PW_LENGTH = 12
-
-
-def _random_password(username: str, full_name: str) -> str:
-    """A 12-character random password that passes the password policy."""
-    rng = secrets.SystemRandom()
-    while True:
-        chars = [
-            secrets.choice(_PW_UPPER),
-            secrets.choice(_PW_LOWER),
-            secrets.choice(_PW_DIGIT),
-            secrets.choice(_PW_SYMBOL),
-        ]
-        chars += [secrets.choice(_PW_ALL) for _ in range(_PW_LENGTH - len(chars))]
-        rng.shuffle(chars)
-        password = "".join(chars)
-        if password_problem(password, username=username, full_name=full_name) is None:
-            return password
-
-
 def _first_word_stem(text: str, fallback: str) -> str:
     """Lower-case letters and digits of the first word; the fallback when no letter is left."""
     words = text.split()
@@ -737,7 +711,7 @@ async def _guardian_login(
         guardian.user_id = parent.id
         return _linked_credential(parent)
     username = await _parent_username(db, guardian.full_name, guardian.phone)
-    password = _random_password(username, guardian.full_name)
+    password = random_password(username, guardian.full_name)
     user = User(
         school_id=student.school_id,
         branch_id=None,
@@ -775,7 +749,7 @@ async def _student_login(db: AsyncSession, student: Student) -> CredentialOut:
     if password_problem(pattern, username=username, full_name=full_name) is None:
         password, note = pattern, _PATTERN_NOTE
     else:
-        password, note = _random_password(username, full_name), None
+        password, note = random_password(username, full_name), None
     # The date-of-birth pattern is guessable, so it always has to be replaced at first sign-in.
     forced = password == pattern or await settings_service.force_password_change(
         db, student.school_id
@@ -1224,15 +1198,6 @@ async def create_student_login(
 # ---- import ----
 
 
-def _validation_message(exc: ValidationError) -> str:
-    parts = []
-    for err in exc.errors():
-        loc = ".".join(str(p) for p in err["loc"])
-        msg = err["msg"].removeprefix("Value error, ")
-        parts.append(f"{loc}: {msg}" if loc else msg)
-    return "; ".join(parts)
-
-
 def _row_enrollment(
     row: ImportRow,
     year: AcademicYear | None,
@@ -1283,6 +1248,9 @@ async def import_students(db: AsyncSession, actor: User, data: ImportRequest) ->
 
     created = 0
     errors: list[ImportRowError] = []
+    # A dry run works inside one savepoint that is rolled back at the end, so duplicates inside the
+    # file are caught exactly as in a real import.
+    savepoint = await db.begin_nested() if data.dry_run else None
     for number, raw in enumerate(data.rows, start=1):
         try:
             row = ImportRow.model_validate(raw)
@@ -1308,9 +1276,13 @@ async def import_students(db: AsyncSession, actor: User, data: ImportRequest) ->
             await _insert_student(db, branch, fields, [guardian], enrollment)
             created += 1
         except ValidationError as exc:
-            errors.append(ImportRowError(row=number, message=_validation_message(exc)))
+            errors.append(ImportRowError(row=number, message=validation_message(exc)))
         except HTTPException as exc:
             errors.append(ImportRowError(row=number, message=str(exc.detail)))
+    if savepoint is not None:
+        would_create = created
+        await savepoint.rollback()
+        return ImportResult(created=0, would_create=would_create, failed=len(errors), errors=errors)
     await audit.record(
         db, actor, "student.imported", "student", None,
         detail={"created": created, "failed": len(errors)},

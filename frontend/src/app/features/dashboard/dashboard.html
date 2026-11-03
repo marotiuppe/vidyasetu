@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">{{ i18n.t('app.dash.welcome', { name: firstName() }) }}</h1>
-    <p class="page-subtitle">{{ today }} · {{ i18n.t('app.dash.subtitle') }}</p>
+    <p class="page-subtitle">{{ today() }} · {{ i18n.t('app.dash.subtitle') }}</p>
   </div>
   @if (yearName(); as year) {
     <span class="year"

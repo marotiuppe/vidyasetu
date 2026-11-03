@@ -3,16 +3,21 @@
     <h1 class="page-title">{{ i18n.t('admin.users.title') }}</h1>
     <p class="page-subtitle">{{ i18n.t('admin.users.subtitle') }}</p>
   </div>
-  @if (creatableRoles().length) {
-    <button
-      type="button"
-      class="btn btn-primary"
-      [attr.aria-expanded]="showForm()"
-      (click)="toggleForm()"
-    >
-      {{ showForm() ? i18n.t('admin.users.close') : i18n.t('admin.users.new') }}
-    </button>
-  }
+  <div class="page-actions">
+    @if (canImport) {
+      <a class="btn btn-ghost" routerLink="/users/import">{{ i18n.t('users.import.open') }}</a>
+    }
+    @if (creatableRoles().length) {
+      <button
+        type="button"
+        class="btn btn-primary"
+        [attr.aria-expanded]="showForm()"
+        (click)="toggleForm()"
+      >
+        {{ showForm() ? i18n.t('admin.users.close') : i18n.t('admin.users.new') }}
+      </button>
+    }
+  </div>
 </div>
 
 <div class="stack">

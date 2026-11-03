@@ -1,4 +1,5 @@
 import { ImportRow } from '../../core/api/students.api';
+import { headerName } from '../../core/ui/csv';
 
 export const MAX_IMPORT_ROWS = 500;
 
@@ -27,65 +28,6 @@ const REQUIRED = [
   'guardian_phone',
 ];
 
-const EXAMPLE = [
-  'Asha',
-  'Patil',
-  'female',
-  '2015-06-14',
-  '2026-04-01',
-  '',
-  '12 Main Road',
-  'Ravi Patil',
-  '9876543210',
-  'father',
-  'Class 3',
-  'A',
-  '',
-];
-
-/** Minimal RFC 4180 parser: quoted fields, escaped quotes, commas and newlines inside quotes, CRLF, BOM. */
-export function parseCsv(input: string): string[][] {
-  const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (quoted) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          quoted = false;
-        }
-      } else {
-        field += ch;
-      }
-    } else if (ch === '"') {
-      quoted = true;
-    } else if (ch === ',') {
-      row.push(field);
-      field = '';
-    } else if (ch === '\n' || ch === '\r') {
-      if (ch === '\r' && text[i + 1] === '\n') i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = '';
-    } else {
-      field += ch;
-    }
-  }
-  if (field !== '' || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-  return rows;
-}
-
 /** A problem to show, as an i18n key with its parameters (translated by the caller). */
 export interface ImportIssue {
   key: string;
@@ -102,12 +44,7 @@ export function toImportRows(records: string[][]): ParsedImport {
   const [header, ...body] = records;
   if (!header) return { rows: [], error: { key: 'students.form.import.empty' } };
 
-  const names = header.map((h) =>
-    h
-      .trim()
-      .toLowerCase()
-      .replace(/[\s-]+/g, '_'),
-  );
+  const names = header.map(headerName);
   const missing = REQUIRED.filter((r) => !names.includes(r));
   if (missing.length) {
     return {
@@ -131,11 +68,7 @@ export function toImportRows(records: string[][]): ParsedImport {
   return { rows, error: null };
 }
 
-function cell(value: string): string {
-  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
-
-/** CSV text for the template: header plus one example row. */
-export function templateCsv(): string {
-  return [IMPORT_FIELDS.join(','), EXAMPLE.map(cell).join(',')].join('\r\n') + '\r\n';
+/** Header-only template: the column names, in the order the importer reads them. */
+export function templateRows(): string[][] {
+  return [[...IMPORT_FIELDS]];
 }

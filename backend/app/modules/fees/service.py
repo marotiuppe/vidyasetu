@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
 from fastapi import HTTPException, status
@@ -13,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
+from app.core.schema_types import ImportRowError, RowRejected
 from app.core.tenant import scope_branches, scope_fees, scope_students
 from app.db.base import utcnow
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
@@ -29,6 +31,7 @@ from app.modules.fees.models import (
     PaymentStatus,
 )
 from app.modules.fees.schemas import (
+    MAX_PAISE,
     CancelRequest,
     CollectionOut,
     DayTotal,
@@ -51,6 +54,9 @@ from app.modules.fees.schemas import (
     PaymentPage,
     PaymentTotals,
     ReverseRequest,
+    StructureImportRequest,
+    StructureImportResult,
+    StructureItemIn,
     StructureItemOut,
     StructureReplace,
     StudentFees,
@@ -246,12 +252,15 @@ async def list_structure(
     ]
 
 
-async def replace_structure(
-    db: AsyncSession, actor: User, data: StructureReplace
-) -> list[StructureItemOut]:
-    year = await _get_year(db, actor, data.academic_year_id)
-    cls = await _get_class(db, actor, data.class_id)
-    head_ids = [i.fee_head_id for i in data.items]
+async def _apply_structure(
+    db: AsyncSession,
+    actor: User,
+    year: AcademicYear,
+    cls: SchoolClass,
+    items: list[StructureItemIn],
+) -> None:
+    """Replace one class's structure for one year (no commit, no audit; callers do both)."""
+    head_ids = [i.fee_head_id for i in items]
     if len(set(head_ids)) != len(head_ids):
         raise _unprocessable("Each fee head can appear only once")
     heads = await _heads_by_id(db, actor, set(head_ids))
@@ -273,8 +282,16 @@ async def replace_structure(
             fee_head_id=i.fee_head_id,
             amount_paise=i.amount_paise,
         )
-        for i in data.items
+        for i in items
     )
+
+
+async def replace_structure(
+    db: AsyncSession, actor: User, data: StructureReplace
+) -> list[StructureItemOut]:
+    year = await _get_year(db, actor, data.academic_year_id)
+    cls = await _get_class(db, actor, data.class_id)
+    await _apply_structure(db, actor, year, cls, data.items)
     try:
         await audit.record(
             db, actor, "fee.structure_updated", "class", cls.id,
@@ -286,6 +303,140 @@ async def replace_structure(
         await db.rollback()
         raise _conflict("The fee structure was changed meanwhile, please retry") from None
     return await list_structure(db, actor, year.id, cls.id)
+
+
+def rupees_to_paise(value: object) -> int:
+    """A rupee amount from an import cell, as integer paise. Decimal only, never floats: at most
+    two decimal places, never negative."""
+    if value is None or isinstance(value, bool) or (isinstance(value, str) and not value.strip()):
+        raise RowRejected("Amount is required")
+    if not isinstance(value, int | float | str):
+        raise RowRejected("Amount must be a number of rupees")
+    try:
+        amount = Decimal(str(value).strip().replace(",", ""))
+    except InvalidOperation:
+        raise RowRejected("Amount must be a number of rupees, e.g. 1500 or 1500.50") from None
+    if not amount.is_finite() or amount < 0:
+        raise RowRejected("Amount cannot be negative")
+    paise = amount * 100
+    if paise != paise.to_integral_value():
+        raise RowRejected("Amount can have at most 2 decimal places")
+    if int(paise) > MAX_PAISE:
+        raise RowRejected("Amount is too large")
+    return int(paise)
+
+
+def _import_text(value: object, what: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise RowRejected(f"{what} is required")
+    text = value.strip()
+    if len(text) > 100:
+        raise RowRejected(f"{what} is too long")
+    return text
+
+
+async def import_structure(
+    db: AsyncSession, actor: User, data: StructureImportRequest
+) -> StructureImportResult:
+    """Fee structure from rows (class, fee_head, amount_rupees) for one academic year.
+
+    All or nothing: any bad row and nothing is written. Each class's structure is replaced exactly
+    as the single-class PUT does. A dry run only validates.
+    """
+    school_id = _school_id(actor)
+    branch_id = actor.branch_id if actor.branch_id is not None else data.branch_id
+    if branch_id is None:
+        raise _unprocessable("branch_id required")
+    await _check_branch(db, actor, branch_id)
+    year = await _get_year(db, actor, data.academic_year_id)
+    classes: dict[str, SchoolClass] = {}
+    for c in await db.scalars(
+        scope_fees(select(SchoolClass), SchoolClass, actor).where(
+            SchoolClass.branch_id == branch_id
+        )
+    ):
+        classes.setdefault(c.name.strip().lower(), c)
+    heads: dict[str, FeeHead] = {}
+    for h in await db.scalars(
+        scope_fees(select(FeeHead), FeeHead, actor).where(FeeHead.school_id == school_id)
+    ):
+        heads.setdefault(h.name.strip().lower(), h)
+
+    lines: dict[int, dict[int, int]] = {}  # class id -> fee head id -> paise
+    errors: list[ImportRowError] = []
+    for number, row in enumerate(data.rows, start=1):
+        try:
+            class_name = _import_text(row.get("class"), "Class")
+            head_name = _import_text(row.get("fee_head"), "Fee head")
+            paise = rupees_to_paise(row.get("amount_rupees"))
+            cls = classes.get(class_name.lower())
+            if cls is None:
+                raise RowRejected(f"Class '{class_name}' not found in this branch")
+            head = heads.get(head_name.lower())
+            if head is None:
+                raise RowRejected(f"Fee head '{head_name}' not found")
+            if not head.is_active:
+                raise RowRejected(f"Fee head '{head_name}' is inactive")
+            bucket = lines.setdefault(cls.id, {})
+            if head.id in bucket:
+                raise RowRejected(f"Fee head '{head_name}' appears twice for class '{class_name}'")
+            if len(bucket) >= 30:
+                raise RowRejected(f"Class '{class_name}' has more than 30 fee heads")
+            bucket[head.id] = paise
+        except RowRejected as exc:
+            errors.append(ImportRowError(row=number, message=str(exc)))
+    if errors:
+        return StructureImportResult(
+            dry_run=data.dry_run,
+            updated=0,
+            would_update=0,
+            created=0,
+            would_create=0,
+            failed=len(errors),
+            errors=errors,
+        )
+    line_total = sum(len(v) for v in lines.values())
+    if data.dry_run:
+        return StructureImportResult(
+            dry_run=True,
+            updated=0,
+            would_update=len(lines),
+            created=0,
+            would_create=line_total,
+            failed=0,
+            errors=[],
+        )
+    classes_by_id = {c.id: c for c in classes.values()}
+    try:
+        for class_id, items in lines.items():
+            await _apply_structure(
+                db,
+                actor,
+                year,
+                classes_by_id[class_id],
+                [StructureItemIn(fee_head_id=h, amount_paise=p) for h, p in items.items()],
+            )
+        await audit.record(
+            db, actor, "fee.structure_imported", "class", None,
+            detail={"academic_year_id": year.id, "classes": len(lines), "items": line_total},
+            school_id=school_id, branch_id=branch_id,
+        )
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise _conflict("The fee structure was changed meanwhile, please retry") from None
+    except HTTPException:
+        await db.rollback()
+        raise
+    return StructureImportResult(
+        dry_run=False,
+        updated=len(lines),
+        would_update=0,
+        created=line_total,
+        would_create=0,
+        failed=0,
+        errors=[],
+    )
 
 
 # ---- numbering ----

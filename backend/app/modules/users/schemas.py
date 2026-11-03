@@ -10,6 +10,7 @@ from pydantic import (
     field_validator,
 )
 
+from app.core.schema_types import ImportRowError
 from app.modules.users.identity import normalize_email, normalize_phone, normalize_username
 from app.modules.users.models import Role
 
@@ -88,6 +89,34 @@ class UserUpdate(BaseModel):
     @classmethod
     def _phone(cls, v: str | None) -> str | None:
         return None if v is None else normalize_phone(v)
+
+
+class UserImportRequest(BaseModel):
+    """Bulk staff accounts. Rows: username, full_name, role, email?, mobile? (no passwords: each
+    account gets a generated temporary password, returned once in the result)."""
+
+    # Branch for branch-bound roles when the importer is not tied to one branch.
+    branch_id: int | None = None
+    # Super admin only, as on the single-account form.
+    school_id: int | None = None
+    dry_run: bool = False
+    rows: list[dict[str, Any]] = Field(min_length=1, max_length=500)
+
+
+class ImportCredential(BaseModel):
+    username: str
+    full_name: str
+    role: Role
+    temporary_password: str
+
+
+class UserImportResult(BaseModel):
+    created: int
+    would_create: int = 0
+    failed: int
+    errors: list[ImportRowError]
+    # Only on a real import, returned once: never stored, logged or audited.
+    credentials: list[ImportCredential]
 
 
 class PasswordReset(BaseModel):

@@ -1,9 +1,9 @@
 from datetime import date
-from typing import Annotated, Self
+from typing import Annotated, Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
-from app.core.schema_types import UtcDateTime
+from app.core.schema_types import ImportRowError, UtcDateTime
 from app.modules.fees.models import PaymentMethod, PaymentStatus
 
 MAX_PAISE = 10_000_000_00  # per single amount
@@ -74,6 +74,28 @@ class StructureItemOut(BaseModel):
     fee_head_id: int
     fee_head_name: str
     amount_paise: int
+
+
+class StructureImportRequest(BaseModel):
+    """Rows: class (name in the branch), fee_head (name), amount_rupees (e.g. 1500 or 1500.50)."""
+
+    academic_year_id: int
+    # Required unless the importer is tied to one branch.
+    branch_id: int | None = None
+    dry_run: bool = False
+    rows: list[dict[str, Any]] = Field(min_length=1, max_length=500)
+
+
+class StructureImportResult(BaseModel):
+    dry_run: bool
+    # Classes whose structure was replaced (updated) or would be (would_update).
+    updated: int
+    would_update: int
+    # Fee lines saved (created) or that would be saved (would_create).
+    created: int
+    would_create: int
+    failed: int
+    errors: list[ImportRowError]
 
 
 # ---- invoices ----

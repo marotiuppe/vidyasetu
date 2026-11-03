@@ -1,6 +1,7 @@
 import { ROLE_LABELS } from '../../core/layout/nav';
 import { Role } from '../../core/auth/auth.models';
 import { NoticeCategory } from '../../core/api/notices.api';
+import { localeOf } from '../../core/ui/dates';
 
 export const CATEGORY_LABELS: Record<NoticeCategory, string> = {
   general: 'General',
@@ -50,31 +51,25 @@ export function parseTimestamp(value: string): Date {
   return new Date(/(Z|[+-]\d\d:?\d\d)$/.test(value) ? value : `${value}Z`);
 }
 
-/** "Today", "Yesterday", "3 days ago", otherwise a short date. */
-export function relativeDate(value: string, now = new Date()): string {
-  const d = parseTimestamp(value);
-  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((day(now) - day(d)) / 86_400_000);
-  if (diff <= 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  if (diff < 7) return `${diff} days ago`;
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-/** Translated form of relativeDate: "Today", "Yesterday", "3 days ago", otherwise a short date. */
-export function relativeDateText(value: string, t: Translate, now = new Date()): string {
+/** "Today", "Yesterday", "3 days ago", otherwise a short date in the active language. */
+export function relativeDateText(
+  value: string,
+  t: Translate,
+  lang: string,
+  now = new Date(),
+): string {
   const d = parseTimestamp(value);
   const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((day(now) - day(d)) / 86_400_000);
   if (diff <= 0) return t('ops.rel.today');
   if (diff === 1) return t('ops.rel.yesterday');
   if (diff < 7) return t('ops.rel.daysAgo', { n: diff });
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  return d.toLocaleDateString(localeOf(lang), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export function shortDate(iso: string): string {
+export function shortDate(iso: string, lang: string): string {
   const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-IN', {
+  return new Date(y, m - 1, d).toLocaleDateString(localeOf(lang), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

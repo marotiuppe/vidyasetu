@@ -1,0 +1,127 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('fees.import.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('fees.import.subtitle') }}</p>
+  </div>
+  <a class="btn btn-ghost" routerLink="/fees" [queryParams]="{ tab: 'setup' }">
+    {{ i18n.t('fees.import.back') }}
+  </a>
+</div>
+
+<div class="stack">
+  <section class="card" aria-labelledby="import-title">
+    <h2 class="card-title" id="import-title">{{ i18n.t('fees.import.fileTitle') }}</h2>
+    <p class="hint">{{ i18n.t('fees.import.intro', { max: maxRows }) }}</p>
+    <p class="hint">{{ i18n.t('fees.import.columnsHint', { columns: columns.join(', ') }) }}</p>
+    <p class="hint">{{ i18n.t('fees.import.allOrNothing') }}</p>
+
+    <div class="form-grid options">
+      <label class="field">
+        {{ i18n.t('fees.import.year') }}
+        <select class="input" (change)="onYear($event)">
+          @for (y of lookups.years(); track y.id) {
+            <option [value]="y.id" [selected]="yearId() === y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      @if (canPickBranch) {
+        <label class="field">
+          {{ i18n.t('fees.import.branch') }}
+          <select class="input" (change)="onBranch($event)">
+            <option value="0">{{ i18n.t('fees.import.branchNone') }}</option>
+            @for (b of lookups.branches(); track b.id) {
+              <option [value]="b.id">{{ b.name }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+
+    <sms-import-file
+      [templateRows]="templateRows"
+      templateName="fee-structure-template.csv"
+      (loaded)="onLoaded($event)"
+      (cleared)="onCleared()"
+    />
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+
+    @if (rows().length) {
+      <p class="summary" role="status">
+        {{ i18n.t('fees.import.summary', { count: rows().length, file: fileName() ?? '' }) }}
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ i18n.t('fees.import.col.class') }}</th>
+              <th scope="col">{{ i18n.t('fees.import.col.feeHead') }}</th>
+              <th scope="col">{{ i18n.t('fees.import.col.amount') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of preview(); track $index) {
+              <tr>
+                <td>{{ r.class }}</td>
+                <td>{{ r.fee_head }}</td>
+                <td>{{ r.amount_rupees }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    @if (checked(); as check) {
+      <p class="result" role="status">
+        {{
+          i18n.t('fees.import.checkedSummary', {
+            would: wouldChange(check),
+            failed: check.failed,
+          })
+        }}
+      </p>
+      <sms-import-report
+        [errors]="check.errors"
+        fileBase="fee-structure-import"
+        [describe]="describe"
+      />
+    }
+
+    @if (result(); as res) {
+      @if (res.failed > 0) {
+        <p class="form-error" role="alert">
+          {{ i18n.t('fees.import.notSaved', { failed: res.failed }) }}
+        </p>
+      } @else {
+        <p class="result" role="status">
+          {{ i18n.t('fees.import.doneSummary', { count: changed(res) }) }}
+        </p>
+      }
+      <sms-import-report
+        [errors]="res.errors"
+        fileBase="fee-structure-import"
+        [describe]="describe"
+      />
+    }
+
+    @if (blocked()) {
+      <p class="form-error" role="alert">{{ i18n.t('fees.import.blocked') }}</p>
+    }
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-ghost" [disabled]="!canCheck()" (click)="check()">
+        {{ checking() ? i18n.t('fees.import.checking') : i18n.t('fees.import.check') }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="!canImport()" (click)="submit()">
+        {{
+          submitting()
+            ? i18n.t('fees.import.importing')
+            : i18n.t('fees.import.button', { count: rows().length })
+        }}
+      </button>
+    </div>
+  </section>
+</div>

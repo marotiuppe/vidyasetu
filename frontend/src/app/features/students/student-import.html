@@ -1,11 +1,6 @@
 <section class="card" aria-labelledby="import-title">
   <h2 class="card-title" id="import-title">{{ i18n.t('students.form.import.title') }}</h2>
-  <p class="hint">
-    {{ i18n.t('students.form.import.intro', { max: maxRows }) }}
-    <button type="button" class="link" (click)="downloadTemplate()">
-      {{ i18n.t('students.form.import.downloadTemplate') }}
-    </button>
-  </p>
+  <p class="hint">{{ i18n.t('students.form.import.intro', { max: maxRows }) }}</p>
 
   <div class="form-grid options">
     @if (canPickBranch()) {
@@ -27,11 +22,14 @@
         }
       </select>
     </label>
-    <label class="field">
-      {{ i18n.t('students.form.import.csvFile') }}
-      <input class="input" type="file" accept=".csv,text/csv" (change)="onFile($event)" />
-    </label>
   </div>
+
+  <sms-import-file
+    [templateRows]="templateRows"
+    templateName="students-template.csv"
+    (loaded)="onLoaded($event)"
+    (cleared)="onCleared()"
+  />
 
   @if (error(); as message) {
     <p class="form-error" role="alert">{{ message }}</p>
@@ -43,13 +41,13 @@
       <table>
         <thead>
           <tr>
-            <th>{{ i18n.t('students.form.firstName') }}</th>
-            <th>{{ i18n.t('students.form.lastName') }}</th>
-            <th>{{ i18n.t('students.form.gender') }}</th>
-            <th>{{ i18n.t('students.form.dob') }}</th>
-            <th>{{ i18n.t('students.form.import.guardian') }}</th>
-            <th>{{ i18n.t('students.form.import.phone') }}</th>
-            <th>{{ i18n.t('students.form.import.class') }}</th>
+            <th scope="col">{{ i18n.t('students.form.firstName') }}</th>
+            <th scope="col">{{ i18n.t('students.form.lastName') }}</th>
+            <th scope="col">{{ i18n.t('students.form.gender') }}</th>
+            <th scope="col">{{ i18n.t('students.form.dob') }}</th>
+            <th scope="col">{{ i18n.t('students.form.import.guardian') }}</th>
+            <th scope="col">{{ i18n.t('students.form.import.phone') }}</th>
+            <th scope="col">{{ i18n.t('students.form.import.class') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -69,25 +67,32 @@
     </div>
   }
 
+  @if (checked(); as check) {
+    <p class="result" role="status">
+      {{
+        i18n.t('students.form.import.checkedSummary', {
+          would: check.would_create ?? 0,
+          failed: check.failed,
+        })
+      }}
+    </p>
+    <sms-import-report [errors]="check.errors" fileBase="students-import" [describe]="describe" />
+  }
+
   @if (result(); as res) {
-    <div class="result" role="status">
-      <p>
-        <strong>{{ res.created }}</strong> {{ i18n.t('students.form.import.createdWord') }},
-        <strong>{{ res.failed }}</strong> {{ i18n.t('students.form.import.failedWord') }}.
-      </p>
-      @if (res.errors.length) {
-        <ul class="errors">
-          @for (er of res.errors; track $index) {
-            <li>
-              {{ i18n.t('students.form.import.rowError', { row: er.row, message: er.message }) }}
-            </li>
-          }
-        </ul>
-      }
-    </div>
+    <p class="result" role="status">
+      <strong>{{ res.created }}</strong> {{ i18n.t('students.form.import.createdWord') }},
+      <strong>{{ res.failed }}</strong> {{ i18n.t('students.form.import.failedWord') }}.
+    </p>
+    <sms-import-report [errors]="res.errors" fileBase="students-import" [describe]="describe" />
   }
 
   <div class="form-actions">
+    <button type="button" class="btn btn-ghost" [disabled]="!canCheck()" (click)="check()">
+      {{
+        checking() ? i18n.t('students.form.import.checking') : i18n.t('students.form.import.check')
+      }}
+    </button>
     <button type="button" class="btn btn-primary" [disabled]="!canSend()" (click)="submit()">
       {{
         submitting()

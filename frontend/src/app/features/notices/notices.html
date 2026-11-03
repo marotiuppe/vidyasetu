@@ -117,7 +117,7 @@
                 {{ n.author.full_name }} · {{ roleName(n.author.role) }} ·
                 {{ when(n.created_at) }}
                 @if (n.expires_on) {
-                  · {{ i18n.t('ops.notice.until', { date: shortDate(n.expires_on) }) }}
+                  · {{ i18n.t('ops.notice.until', { date: shortDate(n.expires_on, i18n.lang()) }) }}
                 }
               </p>
               <p class="body" [class.clamp]="isLong(n) && !isOpen(n)">{{ n.body }}</p>

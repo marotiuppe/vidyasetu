@@ -1,0 +1,24 @@
+.import-file {
+  display: grid;
+  gap: 8px;
+}
+
+.file-input {
+  padding: 8px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.actions .hint {
+  margin: 0;
+}
+
+.actions .btn {
+  gap: 6px;
+}

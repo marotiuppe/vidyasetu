@@ -3,6 +3,11 @@
   <p class="hint">
     {{ i18n.t('fees.setup.structure.hint') }}
   </p>
+  <p>
+    <a class="btn btn-ghost btn-sm" routerLink="/fees/import">
+      {{ i18n.t('fees.import.open') }}
+    </a>
+  </p>
 
   <form class="stack" (ngSubmit)="save()" [formGroup]="picker">
     <div class="toolbar">

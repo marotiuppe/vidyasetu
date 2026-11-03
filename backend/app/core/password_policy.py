@@ -4,6 +4,7 @@ Old passwords keep working at sign-in; the policy applies only when a password i
 """
 
 import re
+import secrets
 
 from app.core.errors import ApiError
 
@@ -114,3 +115,35 @@ def enforce_password(
     )
     if problem is not None:
         raise ApiError(422, problem, WEAK_CODE)
+
+
+# Characters for generated temporary passwords (no look-alikes: I, O, l, 0, 1).
+_GEN_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+_GEN_LOWER = "abcdefghijkmnopqrstuvwxyz"
+_GEN_DIGIT = "23456789"
+_GEN_SYMBOL = "@#$%&*"
+_GEN_ALL = _GEN_UPPER + _GEN_LOWER + _GEN_DIGIT + _GEN_SYMBOL
+GENERATED_LENGTH = 12
+
+
+def random_password(
+    username: str, full_name: str, *, length: int = GENERATED_LENGTH, min_length: int = 0
+) -> str:
+    """A random temporary password that passes the password policy.
+
+    `length` is the default size; `min_length` is the school's minimum (the larger one wins).
+    """
+    size = max(length, min_length, MIN_LENGTH)
+    rng = secrets.SystemRandom()
+    while True:
+        chars = [
+            secrets.choice(_GEN_UPPER),
+            secrets.choice(_GEN_LOWER),
+            secrets.choice(_GEN_DIGIT),
+            secrets.choice(_GEN_SYMBOL),
+        ]
+        chars += [secrets.choice(_GEN_ALL) for _ in range(size - len(chars))]
+        rng.shuffle(chars)
+        password = "".join(chars)
+        if password_problem(password, username=username, full_name=full_name) is None:
+            return password

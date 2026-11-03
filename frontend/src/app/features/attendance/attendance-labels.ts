@@ -1,25 +1,19 @@
 import { StaffMark } from '../../core/api/attendance.api';
+import { localeOf } from '../../core/ui/dates';
 
 export const STUDENT_MARKS = [
-  { value: 'present', label: 'Present' },
-  { value: 'absent', label: 'Absent' },
-  { value: 'leave', label: 'Leave' },
+  { value: 'present' },
+  { value: 'absent' },
+  { value: 'leave' },
 ] as const;
 
-export const STAFF_MARKS = [...STUDENT_MARKS, { value: 'half_day', label: 'Half day' }] as const;
+export const STAFF_MARKS = [...STUDENT_MARKS, { value: 'half_day' }] as const;
 
 export const MARK_CLASS: Record<StaffMark, string> = {
   present: 'st-present',
   absent: 'st-absent',
   leave: 'st-leave',
   half_day: 'st-half',
-};
-
-export const MARK_LABEL: Record<StaffMark, string> = {
-  present: 'Present',
-  absent: 'Absent',
-  leave: 'Leave',
-  half_day: 'Half day',
 };
 
 /** Translation key for each mark; resolve with i18n.t at render time. */
@@ -46,8 +40,8 @@ export function parseIso(value: string): Date {
   return new Date(y, m - 1, d);
 }
 
-export function formatDate(value: string): string {
-  return parseIso(value).toLocaleDateString('en-IN', {
+export function formatDate(value: string, lang = 'en'): string {
+  return parseIso(value).toLocaleDateString(localeOf(lang), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

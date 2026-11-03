@@ -8,6 +8,7 @@ import { apiErrorMessage } from '../../core/api/api-error';
 import { AttendanceApi, Holiday } from '../../core/api/attendance.api';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18n } from '../../core/i18n/i18n';
+import { localeOf } from '../../core/ui/dates';
 import { Icon } from '../../core/ui/icon';
 import { formatDate, isoDate, parseIso } from './attendance-labels';
 
@@ -47,13 +48,14 @@ export class Holidays {
   });
 
   protected readonly groups = computed(() => {
+    const locale = localeOf(this.i18n.lang());
     const names = new Map(this.branches().map((b) => [b.id, b.name]));
     const out: { key: string; label: string; items: (Holiday & { scopeLabel: string })[] }[] = [];
     for (const h of [...this.holidays()].sort((a, b) => a.date.localeCompare(b.date))) {
       const key = h.date.slice(0, 7);
       let group = out.find((g) => g.key === key);
       if (!group) {
-        const label = parseIso(h.date).toLocaleDateString('en-IN', {
+        const label = parseIso(h.date).toLocaleDateString(locale, {
           month: 'long',
           year: 'numeric',
         });
@@ -155,8 +157,15 @@ export class Holidays {
     });
   }
 
+  protected dateText(value: string): string {
+    return formatDate(value, this.i18n.lang());
+  }
+
   protected remove(h: Holiday): void {
-    const prompt = this.i18n.t('ops.hol.deleteConfirm', { name: h.name, date: formatDate(h.date) });
+    const prompt = this.i18n.t('ops.hol.deleteConfirm', {
+      name: h.name,
+      date: this.dateText(h.date),
+    });
     if (!window.confirm(prompt)) return;
     this.error.set(null);
     this.notice.set(null);

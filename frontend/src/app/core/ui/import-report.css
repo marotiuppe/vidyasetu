@@ -1,0 +1,64 @@
+.report {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.report-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+  color: var(--danger);
+}
+
+.table-wrap {
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  position: sticky;
+  top: 0;
+  font-weight: 650;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.problem {
+  overflow-wrap: anywhere;
+  color: var(--danger);
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.report-actions .btn {
+  gap: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

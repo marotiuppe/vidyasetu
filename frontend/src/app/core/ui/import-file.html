@@ -1,0 +1,24 @@
+<div class="import-file">
+  <label class="field">
+    {{ i18n.t('import.file.label') }}
+    <input
+      class="input file-input"
+      type="file"
+      accept=".csv,text/csv"
+      [attr.aria-describedby]="'import-file-hint-' + templateName()"
+      (change)="onFile($event)"
+    />
+  </label>
+  <div class="actions">
+    <p class="hint" [id]="'import-file-hint-' + templateName()">
+      {{ i18n.t('import.file.hint') }}
+    </p>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="downloadTemplate()">
+      <sms-icon name="download" [size]="14" />
+      {{ i18n.t('import.file.template') }}
+    </button>
+  </div>
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+</div>

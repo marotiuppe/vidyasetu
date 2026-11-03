@@ -1,0 +1,42 @@
+@if (count() > 0) {
+  <section class="report" [attr.aria-labelledby]="'report-title-' + fileBase()">
+    <h3 class="report-title" [id]="'report-title-' + fileBase()">
+      {{
+        i18n.t(count() === 1 ? 'import.report.count.one' : 'import.report.count.other', {
+          count: count(),
+        })
+      }}
+    </h3>
+    <div class="table-wrap">
+      <table>
+        <caption class="sr-only">
+          {{
+            i18n.t('import.report.table')
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ i18n.t('import.report.row') }}</th>
+            <th scope="col">{{ i18n.t('import.report.record') }}</th>
+            <th scope="col">{{ i18n.t('import.report.problem') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of errors(); track $index) {
+            <tr>
+              <td>{{ e.row }}</td>
+              <td>{{ label(e.row) }}</td>
+              <td class="problem">{{ e.message }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="report-actions">
+      <button type="button" class="btn btn-ghost btn-sm" (click)="download()">
+        <sms-icon name="download" [size]="14" />
+        {{ i18n.t('import.report.download') }}
+      </button>
+    </div>
+  </section>
+}

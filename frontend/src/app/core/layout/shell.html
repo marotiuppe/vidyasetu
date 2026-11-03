@@ -105,15 +105,7 @@
 
       <div class="spacer"></div>
 
-      <label class="search" [title]="i18n.t('app.shell.searchSoon')">
-        <sms-icon name="search" [size]="15" />
-        <input
-          type="search"
-          [placeholder]="i18n.t('app.shell.searchPlaceholder')"
-          disabled
-          [attr.aria-label]="i18n.t('app.shell.searchAria')"
-        />
-      </label>
+      <sms-global-search />
 
       <span class="divider"></span>
 

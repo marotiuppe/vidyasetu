@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Params, Router } from '@angular/router';
+import { Params, Router, RouterLink } from '@angular/router';
 import { catchError, filter, of, switchMap, take, tap } from 'rxjs';
 
 import { apiErrorMessage } from '../../core/api/api-error';
@@ -17,7 +17,7 @@ import { FeeLookups } from './fee-lookups';
 /** Edit the fee heads and amounts for one class and academic year. Save replaces the structure. */
 @Component({
   selector: 'sms-fee-structure',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule, Icon, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fee-structure.html',
 })

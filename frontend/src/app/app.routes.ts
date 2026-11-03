@@ -230,6 +230,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/fees/reminders-page').then((m) => m.RemindersPage),
       },
       {
+        path: 'fees/import',
+        data: { title: 'Import fee structure', titleKey: 'fees.import.crumb' },
+        canActivate: [roleGuard(...FEE_MANAGER_ROLES), moduleGuard('fees')],
+        loadComponent: () => import('./features/fees/fee-import').then((m) => m.FeeImport),
+      },
+      {
         path: 'setup',
         data: { title: 'School setup', titleKey: 'app.nav.setup' },
         canActivate: [roleGuard('school_owner', 'management', 'headmaster')],
@@ -259,6 +265,12 @@ export const routes: Routes = [
         data: { title: 'Users', titleKey: 'app.nav.users' },
         canActivate: [roleGuard('super_admin', 'school_owner', 'management', 'headmaster')],
         loadComponent: () => import('./features/users/users').then((m) => m.Users),
+      },
+      {
+        path: 'users/import',
+        data: { title: 'Import users', titleKey: 'users.import.crumb' },
+        canActivate: [roleGuard('school_owner', 'management', 'headmaster')],
+        loadComponent: () => import('./features/users/users-import').then((m) => m.UsersImport),
       },
       {
         path: 'settings',

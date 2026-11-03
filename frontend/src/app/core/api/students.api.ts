@@ -2,6 +2,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
+import { ImportRowError } from './imports.api';
+
 const API = '/api/v1';
 
 export type Gender = 'male' | 'female' | 'other';
@@ -202,9 +204,12 @@ export interface ImportRow {
 }
 
 export interface ImportResult {
+  /** Students created (always 0 on a dry run). */
   created: number;
+  /** Students a real import would create (dry run only). */
+  would_create?: number;
   failed: number;
-  errors: { row: number; message: string }[];
+  errors: ImportRowError[];
 }
 
 function filterParams(f: StudentFilters): HttpParams {
@@ -286,9 +291,11 @@ export class StudentsApi {
     return this.http.put<IdentifiersView>(`${API}/students/${id}/identifiers`, body);
   }
 
+  /** With `dry_run` the file is checked exactly as a real import would be, and nothing is saved. */
   importRows(body: {
     branch_id?: number | null;
     academic_year_id?: number | null;
+    dry_run?: boolean;
     rows: ImportRow[];
   }): Observable<ImportResult> {
     return this.http.post<ImportResult>(`${API}/students/import`, body);

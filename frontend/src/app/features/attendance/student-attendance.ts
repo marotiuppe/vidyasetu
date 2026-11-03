@@ -5,6 +5,7 @@ import { catchError, of, switchMap, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { AttendanceApi, StudentAttendanceReport, StudentMark } from '../../core/api/attendance.api';
 import { I18n } from '../../core/i18n/i18n';
+import { localeOf } from '../../core/ui/dates';
 import { Icon } from '../../core/ui/icon';
 import { MARK_CLASS, MARK_KEY, isoDate } from './attendance-labels';
 
@@ -59,7 +60,7 @@ export class StudentAttendance {
   protected readonly error = signal<string | null>(null);
 
   protected readonly monthLabel = computed(() =>
-    this.month().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+    this.month().toLocaleDateString(localeOf(this.i18n.lang()), { month: 'long', year: 'numeric' }),
   );
   protected readonly isCurrentMonth = computed(() => {
     const m = this.month();
@@ -72,6 +73,7 @@ export class StudentAttendance {
 
   protected readonly cells = computed<Cell[]>(() => {
     const m = this.month();
+    const locale = localeOf(this.i18n.lang());
     const records = new Map((this.report()?.records ?? []).map((r) => [r.date, r.status]));
     const days = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
     const out: Cell[] = [];
@@ -80,7 +82,7 @@ export class StudentAttendance {
       const date = isoDate(d);
       const status = records.get(date) ?? null;
       const sunday = d.getDay() === 0;
-      const text = d.toLocaleDateString('en-IN', {
+      const text = d.toLocaleDateString(locale, {
         weekday: 'long',
         day: 'numeric',
         month: 'long',

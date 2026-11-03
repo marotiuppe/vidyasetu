@@ -20,6 +20,7 @@ import { I18n } from '../i18n/i18n';
 import { LegalLinks } from '../legal/legal-links';
 import { SiteNotice } from './site-notice';
 import { Icon } from '../ui/icon';
+import { GlobalSearch } from './global-search';
 import { NAV_ITEMS, ROLE_LABEL_KEYS } from './nav';
 
 const PRODUCT_NAME = 'Vidyasetu';
@@ -27,7 +28,7 @@ const NOTICE_POLL_MS = 120_000;
 
 @Component({
   selector: 'sms-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LegalLinks, SiteNotice],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, LegalLinks, SiteNotice, GlobalSearch],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.html',
   styleUrl: './shell.css',

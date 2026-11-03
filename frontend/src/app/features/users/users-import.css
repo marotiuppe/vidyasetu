@@ -1,0 +1,63 @@
+.options {
+  margin: 12px 0;
+}
+
+.summary,
+.result {
+  margin: 12px 0 8px;
+}
+
+code {
+  font-size: 0.75rem;
+  padding: 1px 5px;
+  color: var(--text);
+  background: var(--surface-tint);
+  border-radius: 5px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.warning {
+  margin: 8px 0 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-radius: var(--radius-md);
+}
+
+.secret {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.form-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

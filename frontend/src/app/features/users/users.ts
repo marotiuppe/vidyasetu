@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import {
   AbstractControl,
   FormControl,
@@ -39,7 +40,7 @@ const BRANCH_LEVEL_CREATORS: Role[] = ['teacher', 'accountant', 'clerk', 'studen
 
 @Component({
   selector: 'sms-users',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './users.html',
   styleUrl: './users.css',
@@ -54,6 +55,9 @@ export class Users {
   /** Only a school owner or platform admin may switch a user's two-factor off. */
   protected readonly canResetMfa = this.auth.hasRole('super_admin', 'school_owner');
   protected readonly confirmMfaId = signal<number | null>(null);
+
+  /** Bulk import is for school owners and branch heads (the import page has no school picker). */
+  protected readonly canImport = this.auth.hasRole('school_owner', 'management', 'headmaster');
 
   protected readonly allRoles = ALL_ROLES;
   protected readonly minLength = PASSWORD_MIN_LENGTH;

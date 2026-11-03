@@ -7,8 +7,9 @@ import { Notice, NoticesApi } from '../../core/api/notices.api';
 import { SchoolService } from '../../core/api/school.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18n } from '../../core/i18n/i18n';
+import { localeOf } from '../../core/ui/dates';
 import { Icon, IconName } from '../../core/ui/icon';
-import { relativeDate } from '../notices/notice-labels';
+import { relativeDateText } from '../notices/notice-labels';
 
 interface Stat {
   label: string;
@@ -31,17 +32,21 @@ export class Dashboard {
   protected readonly i18n = inject(I18n);
 
   protected readonly firstName = computed(() => this.auth.user()?.full_name.split(' ')[0] ?? '');
-  protected readonly today = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  protected readonly today = computed(() =>
+    new Date().toLocaleDateString(localeOf(this.i18n.lang()), {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
+  );
 
   private readonly noticesApi = inject(NoticesApi);
   protected readonly showNotices = !this.auth.hasRole('super_admin');
   protected readonly latest = signal<Notice[] | null>(null);
-  protected readonly relativeDate = relativeDate;
+  protected relativeDate(value: string): string {
+    return relativeDateText(value, this.i18n.t, this.i18n.lang());
+  }
 
   private readonly branches = signal<number | null>(null);
   private readonly classes = signal<number | null>(null);

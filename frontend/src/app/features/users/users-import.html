@@ -1,0 +1,169 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('users.import.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('users.import.subtitle') }}</p>
+  </div>
+  <a class="btn btn-ghost" routerLink="/users">{{ i18n.t('users.import.back') }}</a>
+</div>
+
+<div class="stack">
+  @if (!credentials().length) {
+    <section class="card" aria-labelledby="import-title">
+      <h2 class="card-title" id="import-title">{{ i18n.t('users.import.fileTitle') }}</h2>
+      <p class="hint">{{ i18n.t('users.import.intro', { max: maxRows }) }}</p>
+      <p class="hint">
+        {{ i18n.t('users.import.columnsHint', { columns: columns.join(', ') }) }}
+      </p>
+      <p class="hint">
+        {{ i18n.t('users.import.rolesHint') }}
+        @for (r of roles(); track r; let last = $last) {
+          <code>{{ r }}</code
+          >{{ last ? '' : ', ' }}
+        }
+      </p>
+
+      <div class="form-grid options">
+        @if (canPickBranch()) {
+          <label class="field">
+            {{ i18n.t('users.import.branch') }}
+            <select class="input" (change)="onBranch($event)">
+              <option value="0">{{ i18n.t('users.import.branchNone') }}</option>
+              @for (b of branchChoices(); track b.id) {
+                <option [value]="b.id">{{ b.name }}</option>
+              }
+            </select>
+            <span class="hint">{{ i18n.t('users.import.branchHint') }}</span>
+          </label>
+        }
+      </div>
+
+      <sms-import-file
+        [templateRows]="templateRows"
+        templateName="users-template.csv"
+        (loaded)="onLoaded($event)"
+        (cleared)="onCleared()"
+      />
+
+      @if (error(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+
+      @if (rows().length) {
+        <p class="summary" role="status">
+          {{ i18n.t('users.import.summary', { count: rows().length, file: fileName() ?? '' }) }}
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{{ i18n.t('users.import.col.username') }}</th>
+                <th scope="col">{{ i18n.t('users.import.col.fullName') }}</th>
+                <th scope="col">{{ i18n.t('users.import.col.role') }}</th>
+                <th scope="col">{{ i18n.t('users.import.col.email') }}</th>
+                <th scope="col">{{ i18n.t('users.import.col.mobile') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of preview(); track $index) {
+                <tr>
+                  <td>{{ r.username }}</td>
+                  <td>{{ r.full_name }}</td>
+                  <td>{{ r.role }}</td>
+                  <td>{{ r.email }}</td>
+                  <td>{{ r.mobile }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (checked(); as check) {
+        <p class="result" role="status">
+          {{
+            i18n.t('users.import.checkedSummary', {
+              would: check.would_create ?? 0,
+              failed: check.failed,
+            })
+          }}
+        </p>
+        <sms-import-report [errors]="check.errors" fileBase="users-import" [describe]="describe" />
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" [disabled]="!canCheck()" (click)="check()">
+          {{ checking() ? i18n.t('users.import.checking') : i18n.t('users.import.check') }}
+        </button>
+        <button type="button" class="btn btn-primary" [disabled]="!canImport()" (click)="submit()">
+          {{
+            submitting()
+              ? i18n.t('users.import.importing')
+              : i18n.t('users.import.button', { count: rows().length })
+          }}
+        </button>
+      </div>
+    </section>
+  }
+
+  @if (result(); as res) {
+    <section class="card" aria-labelledby="import-done">
+      <h2 class="card-title" id="import-done">{{ i18n.t('users.import.doneTitle') }}</h2>
+      <p class="result" role="status">
+        <strong>{{ res.created ?? 0 }}</strong> {{ i18n.t('users.import.createdWord') }},
+        <strong>{{ res.failed }}</strong> {{ i18n.t('import.failedWord') }}.
+      </p>
+      <sms-import-report [errors]="res.errors" fileBase="users-import" [describe]="describe" />
+    </section>
+  }
+
+  @if (credentials().length) {
+    <section class="card print-area" aria-labelledby="cred-title">
+      <h2 class="card-title" id="cred-title">{{ i18n.t('users.import.cred.title') }}</h2>
+      <p class="warning" role="alert">{{ i18n.t('users.import.cred.warning') }}</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ i18n.t('users.import.cred.name') }}</th>
+              <th scope="col">{{ i18n.t('users.import.cred.username') }}</th>
+              <th scope="col">{{ i18n.t('users.import.cred.role') }}</th>
+              <th scope="col">{{ i18n.t('users.import.cred.password') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of credentials(); track c.username) {
+              <tr>
+                <td>{{ c.full_name }}</td>
+                <td>{{ c.username }}</td>
+                <td>{{ roleName(c.role) }}</td>
+                <td class="secret">{{ c.temporary_password }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (copyState() !== 'idle') {
+        <p class="hint" role="status">
+          {{
+            i18n.t(
+              copyState() === 'ok' ? 'users.import.cred.copied' : 'users.import.cred.copyFailed'
+            )
+          }}
+        </p>
+      }
+      <div class="form-actions no-print">
+        <button type="button" class="btn btn-ghost" (click)="copyCredentials()">
+          <sms-icon name="copy" [size]="14" />
+          {{ i18n.t('users.import.cred.copy') }}
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="print()">
+          <sms-icon name="print" [size]="14" />
+          {{ i18n.t('users.import.cred.print') }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="dismissCredentials()">
+          {{ i18n.t('users.import.cred.done') }}
+        </button>
+      </div>
+    </section>
+  }
+</div>

@@ -170,8 +170,8 @@ export const MR_ADMISSIONS: Record<string, string> = {
   'students.ids.title': 'शासकीय ओळख क्रमांक',
   'students.ids.help':
     'आधार क्रमांक कधीही साठवला जात नाही. फक्त नाव, जन्मतारीख आणि लिंग कार्डाशी जुळले का, एवढीच नोंद केली जाते.',
-  'students.ids.pen': 'PEN',
-  'students.ids.apaar': 'APAAR ID',
+  'students.ids.pen': 'कायम शैक्षणिक क्रमांक (PEN)',
+  'students.ids.apaar': 'APAAR ओळख क्रमांक',
   'students.ids.apaarConsent': 'APAAR संमती',
   'students.ids.aadhaar': 'आधार तपशील',
   'students.ids.consent.unset': 'विचारले नाही',

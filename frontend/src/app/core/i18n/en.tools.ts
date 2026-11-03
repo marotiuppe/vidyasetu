@@ -1,0 +1,125 @@
+/** English strings for global search, the CSV import screens and shared client-side errors. */
+export const EN_TOOLS: Record<string, string> = {
+  // Global search (top bar)
+  'search.placeholder': 'Search students, invoices, notices…',
+  'search.aria': 'Search the portal',
+  'search.open': 'Open search',
+  'search.results': 'Search results',
+  'search.minChars': 'Type at least 2 characters to search.',
+  'search.loading': 'Searching…',
+  'search.none': 'No results',
+  'search.count.one': '1 result',
+  'search.count.other': '{count} results',
+  'search.group.students': 'Students',
+  'search.group.guardians': 'Parents and guardians',
+  'search.group.receipts': 'Receipts',
+  'search.group.invoices': 'Invoices',
+  'search.group.notices': 'Notices',
+  'search.group.admissions': 'Admissions',
+
+  // Shared CSV import pieces
+  'import.file.label': 'CSV file',
+  'import.file.hint': 'Save your sheet as CSV (UTF-8). The first row must hold the column names.',
+  'import.file.template': 'Download template (headers only)',
+  'import.file.tooLarge': 'The file is larger than 2 MB. Split it into smaller files.',
+  'import.file.unreadable': 'The file could not be read. Check that it is a CSV file.',
+  'import.file.empty': 'The file is empty.',
+  'import.file.missing': 'Missing required column(s): {columns}.',
+  'import.file.noRows': 'The file has no data rows.',
+  'import.report.count.one': '1 row has a problem.',
+  'import.report.count.other': '{count} rows have problems.',
+  'import.report.table': 'Rows with problems',
+  'import.report.row': 'Row',
+  'import.report.record': 'Record',
+  'import.report.problem': 'Problem',
+  'import.report.download': 'Download error report (CSV)',
+  'import.failedWord': 'failed',
+
+  // Student import: dry run
+  'students.form.import.check': 'Check file (dry run)',
+  'students.form.import.checking': 'Checking…',
+  'students.form.import.checkedSummary':
+    'Check complete: {would} students would be created and {failed} rows have problems. Nothing has been saved.',
+
+  // Staff accounts import
+  'users.import.crumb': 'Import users',
+  'users.import.open': 'Import from CSV',
+  'users.import.back': 'Back to users',
+  'users.import.title': 'Import users from CSV',
+  'users.import.subtitle': 'Create staff, parent and student sign-ins from a file.',
+  'users.import.fileTitle': 'Choose the file',
+  'users.import.intro':
+    'Up to {max} accounts at a time. Each new user gets a temporary password and must change it at the first sign-in.',
+  'users.import.columnsHint': 'Columns: {columns}. The first three are required.',
+  'users.import.rolesHint': 'Role codes you can use (type them exactly):',
+  'users.import.branch': 'Branch for branch-level roles',
+  'users.import.branchNone': 'Choose a branch…',
+  'users.import.branchHint': 'Needed when the file has roles tied to a branch.',
+  'users.import.tooMany': 'The file has {count} rows. Import at most {max} at a time.',
+  'users.import.summary': '{count} rows in {file}.',
+  'users.import.col.username': 'Username',
+  'users.import.col.fullName': 'Full name',
+  'users.import.col.role': 'Role',
+  'users.import.col.email': 'Email',
+  'users.import.col.mobile': 'Mobile',
+  'users.import.checkedSummary':
+    'Check complete: {would} accounts would be created and {failed} rows have problems. Nothing has been saved.',
+  'users.import.createdWord': 'created',
+  'users.import.doneTitle': 'Import result',
+  'users.import.check': 'Check file (dry run)',
+  'users.import.checking': 'Checking…',
+  'users.import.importing': 'Importing…',
+  'users.import.button': 'Import {count} accounts',
+  'users.import.cred.title': 'Temporary sign-in details',
+  'users.import.cred.warning':
+    'These passwords are shown only once and are not stored anywhere. Copy or print them now and give each person their details. Each user must change the password at the first sign-in.',
+  'users.import.cred.name': 'Name',
+  'users.import.cred.username': 'Username',
+  'users.import.cred.role': 'Role',
+  'users.import.cred.password': 'Temporary password',
+  'users.import.cred.copy': 'Copy all',
+  'users.import.cred.copied': 'Copied to the clipboard.',
+  'users.import.cred.copyFailed': 'Could not copy. Use Print instead.',
+  'users.import.cred.print': 'Print',
+  'users.import.cred.done': 'I have saved them',
+
+  // Fee structure import
+  'fees.import.crumb': 'Import fee structure',
+  'fees.import.open': 'Import from CSV',
+  'fees.import.back': 'Back to fee setup',
+  'fees.import.title': 'Import fee structure from CSV',
+  'fees.import.subtitle': 'Set fee heads and amounts for many classes at once.',
+  'fees.import.fileTitle': 'Choose the file',
+  'fees.import.intro':
+    'Up to {max} rows at a time. Amounts are in rupees, with at most two decimal places.',
+  'fees.import.columnsHint':
+    'Columns: {columns}. Class and fee head names must match the names used in this school.',
+  'fees.import.allOrNothing':
+    'Each class in the file gets the fee heads listed for it, replacing its current structure for the chosen year. The file is saved only when every row is valid.',
+  'fees.import.year': 'Academic year',
+  'fees.import.branch': 'Branch',
+  'fees.import.branchNone': 'Choose a branch…',
+  'fees.import.tooMany': 'The file has {count} rows. Import at most {max} at a time.',
+  'fees.import.summary': '{count} rows in {file}.',
+  'fees.import.col.class': 'Class',
+  'fees.import.col.feeHead': 'Fee head',
+  'fees.import.col.amount': 'Amount (₹)',
+  'fees.import.checkedSummary':
+    'Check complete: {would} amounts would change and {failed} rows have problems.',
+  'fees.import.doneSummary': '{count} amounts saved.',
+  'fees.import.notSaved': 'Nothing was saved. {failed} rows have problems.',
+  'fees.import.blocked':
+    'Fix the rows listed above, then check the file again. Nothing is saved while any row has a problem.',
+  'fees.import.check': 'Check file (dry run)',
+  'fees.import.checking': 'Checking…',
+  'fees.import.importing': 'Importing…',
+  'fees.import.button': 'Import {count} rows',
+
+  // Shared client-side errors (shown when the server gives no clear message)
+  'error.network': 'Cannot reach the server. Check your connection.',
+  'error.forbidden': 'You are not allowed to do this.',
+  'error.notFound': 'Not found.',
+  'error.generic': 'Something went wrong. Please try again.',
+
+  'admin.code.placeholder': 'short-code',
+};

@@ -274,23 +274,6 @@
   display: none;
 }
 
-.search {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  color: var(--faint);
-}
-
-.search input {
-  width: 170px;
-  padding: 8px 0;
-  font-size: 0.7rem;
-  color: inherit;
-  background: none;
-  border: 0;
-  outline: none;
-}
-
 .divider {
   width: 1px;
   height: 29px;
@@ -444,7 +427,6 @@
     gap: 12px;
   }
 
-  .search,
   .user-text,
   .crumb-root,
   .divider {

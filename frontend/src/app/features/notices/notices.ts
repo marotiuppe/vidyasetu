@@ -110,7 +110,7 @@ export class Notices {
   }
 
   protected when(value: string): string {
-    return relativeDateText(value, this.i18n.t);
+    return relativeDateText(value, this.i18n.t, this.i18n.lang());
   }
 
   protected isLong(n: Notice): boolean {

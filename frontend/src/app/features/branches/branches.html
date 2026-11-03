@@ -51,7 +51,7 @@
               class="input"
               formControlName="code"
               autocomplete="off"
-              placeholder="short-code"
+              [placeholder]="i18n.t('admin.code.placeholder')"
             />
             @if (form.controls.code.touched && form.controls.code.invalid) {
               <span class="field-error">{{ i18n.t('admin.branches.codeError') }}</span>
