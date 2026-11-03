@@ -40,9 +40,21 @@
           <option value="class">{{ i18n.t('fees.setup.generate.wholeClass') }}</option>
           <option value="section">{{ i18n.t('fees.setup.generate.oneSection') }}</option>
           <option value="students">{{ i18n.t('fees.setup.generate.selected') }}</option>
+          <option value="branch">{{ i18n.t('fees.tools.generate.wholeBranch') }}</option>
         </select>
       </label>
-      @if (target() !== 'students') {
+      @if (target() === 'branch' && canPickBranch) {
+        <label class="field">
+          {{ i18n.t('fees.tools.generate.branch') }}
+          <select class="input" formControlName="branchId">
+            <option [ngValue]="0">{{ i18n.t('fees.tools.generate.allBranches') }}</option>
+            @for (b of lookups.branches(); track b.id) {
+              <option [ngValue]="b.id">{{ b.name }}</option>
+            }
+          </select>
+        </label>
+      }
+      @if (isClassTarget()) {
         <label class="field">
           {{ i18n.t('fees.setup.common.class') }}
           <select
@@ -70,7 +82,17 @@
       }
     </div>
 
-    @if (target() !== 'students' && structure().length) {
+    @if (target() === 'branch') {
+      <p class="hint">
+        {{
+          canPickBranch
+            ? i18n.t('fees.tools.generate.wholeBranchHint')
+            : i18n.t('fees.tools.generate.yourBranch')
+        }}
+      </p>
+    }
+
+    @if (isClassTarget() && structure().length) {
       <fieldset class="panel">
         <legend class="hint">{{ i18n.t('fees.setup.generate.headsLegend') }}</legend>
         @for (i of structure(); track i.id) {
@@ -134,6 +156,11 @@
           })
         }}
       </p>
+      @if (r.discounts_applied > 0) {
+        <p class="notice" role="status">
+          {{ i18n.t('fees.tools.generate.discounts', { count: r.discounts_applied }) }}
+        </p>
+      }
     }
     <div class="form-actions">
       <button type="submit" class="btn btn-primary" [disabled]="busy()">

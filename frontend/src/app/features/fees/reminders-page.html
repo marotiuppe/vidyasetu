@@ -1,0 +1,282 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('fees.tools.reminders.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('fees.tools.reminders.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-fee-tools-nav />
+
+<div class="stack">
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="notice" role="status">{{ message }}</p>
+  }
+
+  @if (activeRow(); as row) {
+    <section class="card" aria-labelledby="reminder-text-title">
+      <div class="card-head">
+        <h2 class="card-title" id="reminder-text-title">
+          {{ i18n.t('fees.tools.reminders.textTitle') }}
+        </h2>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="closeText()">
+          {{ i18n.t('fees.tools.reminders.close') }}
+        </button>
+      </div>
+      <p class="hint">{{ i18n.t('fees.tools.reminders.textHint') }}</p>
+      <label class="field">
+        <span class="row-sub">{{
+          i18n.t('fees.tools.reminders.textFor', { name: row.student_name })
+        }}</span>
+        <textarea class="input reminder-text" readonly rows="4" [value]="activeText()"></textarea>
+      </label>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="copyActive()">
+          {{ i18n.t('fees.tools.reminders.copyText') }}
+        </button>
+        @if (canMark) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="marking()"
+            (click)="markOne(row)"
+          >
+            {{ i18n.t('fees.tools.reminders.markOne') }}
+          </button>
+        }
+      </div>
+    </section>
+  }
+
+  <section class="card" aria-labelledby="reminder-list-title">
+    <div class="card-head">
+      <h2 class="card-title" id="reminder-list-title">
+        {{ i18n.t('fees.tools.reminders.title') }}
+      </h2>
+      <span class="header-actions">
+        <button
+          type="button"
+          class="btn btn-ghost"
+          [disabled]="exporting() || invalid()"
+          (click)="exportCsv()"
+        >
+          <sms-icon name="download" [size]="16" />
+          {{
+            exporting()
+              ? i18n.t('fees.tools.reminders.exporting')
+              : i18n.t('fees.tools.reminders.export')
+          }}
+        </button>
+      </span>
+    </div>
+
+    <div class="toolbar" role="search">
+      <label class="field">
+        {{ i18n.t('fees.daily.academicYear') }}
+        <select class="input" (change)="onSelect('yearId', $event)">
+          <option value="0" [selected]="filters().yearId === 0">
+            {{ i18n.t('fees.daily.allYears') }}
+          </option>
+          @for (y of lookups.years(); track y.id) {
+            <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        {{ i18n.t('fees.daily.class') }}
+        <select class="input" (change)="onSelect('classId', $event)">
+          <option value="0" [selected]="filters().classId === 0">
+            {{ i18n.t('fees.daily.allClasses') }}
+          </option>
+          @for (c of lookups.classes(); track c.id) {
+            <option [value]="c.id" [selected]="filters().classId === c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        {{ i18n.t('fees.tools.reminders.minBalance') }}
+        <input
+          class="input"
+          type="text"
+          inputmode="decimal"
+          autocomplete="off"
+          [value]="filters().minBalance"
+          [attr.aria-invalid]="minBalanceInvalid()"
+          (input)="onText('minBalance', $event)"
+        />
+        @if (minBalanceInvalid()) {
+          <span class="field-error" role="alert">
+            {{ i18n.t('fees.tools.reminders.minBalanceInvalid') }}
+          </span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('fees.tools.reminders.daysBefore') }}
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          [value]="filters().days"
+          [attr.aria-invalid]="daysInvalid()"
+          (input)="onText('days', $event)"
+        />
+        <span class="hint" id="days-hint">{{ i18n.t('fees.tools.reminders.daysHint') }}</span>
+        @if (daysInvalid()) {
+          <span class="field-error" role="alert">{{
+            i18n.t('fees.tools.reminders.daysInvalid')
+          }}</span>
+        }
+      </label>
+      <label class="check">
+        <input type="checkbox" [checked]="filters().overdueOnly" (change)="onOverdue($event)" />
+        {{ i18n.t('fees.tools.reminders.overdueOnly') }}
+      </label>
+    </div>
+
+    <div class="save-bar">
+      <label class="check">
+        <input
+          type="checkbox"
+          [checked]="allOnPage()"
+          [disabled]="pageIds().length === 0"
+          (change)="toggleAll(checkedOf($event))"
+        />
+        {{ i18n.t('fees.tools.reminders.selectAll') }}
+      </label>
+      <span class="row-actions">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="selected().length === 0"
+          (click)="copySelected()"
+        >
+          {{ i18n.t('fees.tools.reminders.copySelected', { count: selected().length }) }}
+        </button>
+        @if (canMark) {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="selected().length === 0 || marking()"
+            (click)="markSelected()"
+          >
+            {{
+              marking()
+                ? i18n.t('fees.tools.reminders.marking')
+                : i18n.t('fees.tools.reminders.markSelected', { count: selected().length })
+            }}
+          </button>
+        }
+      </span>
+    </div>
+    @if (selected().length > markLimit) {
+      <p class="row-sub" role="status">{{ i18n.t('fees.tools.reminders.limit') }}</p>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('fees.tools.reminders.loading') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (r of data()?.items ?? []; track r.student_id) {
+          <li class="row">
+            <span class="check-cell">
+              <input
+                type="checkbox"
+                [checked]="isSelected(r.student_id)"
+                [attr.aria-label]="
+                  i18n.t('fees.tools.reminders.selectOne', { name: r.student_name })
+                "
+                (change)="toggleOne(r.student_id, checkedOf($event))"
+              />
+            </span>
+            <span class="row-main">
+              <span>{{ r.student_name }}</span>
+              <span class="row-sub">
+                {{ classText(r) }} · {{ i18n.t('fees.daily.admissionNo', { no: r.admission_no }) }}
+              </span>
+            </span>
+            <span class="row-main cell">
+              @if (r.guardian_name) {
+                <span>{{ r.guardian_name }}</span>
+                <span class="row-sub">{{ r.guardian_phone }}</span>
+              } @else {
+                <span class="row-sub">{{ i18n.t('fees.tools.reminders.noGuardian') }}</span>
+              }
+            </span>
+            <span class="money">
+              <span class="amount">{{
+                i18n.t('fees.tools.reminders.balance', { amount: money(r.balance_paise) })
+              }}</span>
+              @if (r.overdue_paise > 0) {
+                <span class="row-sub">{{
+                  i18n.t('fees.tools.reminders.overdue', { amount: money(r.overdue_paise) })
+                }}</span>
+              }
+              @if (r.oldest_due_date) {
+                <span class="row-sub">{{
+                  i18n.t('fees.tools.reminders.oldest', { date: dateText(r.oldest_due_date) })
+                }}</span>
+              }
+            </span>
+            <span class="money">
+              @if (r.last_reminded_at) {
+                <span class="row-sub">{{
+                  i18n.t('fees.tools.reminders.lastReminded', {
+                    date: dateText(r.last_reminded_at),
+                  })
+                }}</span>
+                <span class="row-sub">{{
+                  i18n.t('fees.tools.reminders.count', { count: r.reminder_count })
+                }}</span>
+              } @else {
+                <span class="row-sub">{{ i18n.t('fees.tools.reminders.never') }}</span>
+              }
+            </span>
+            <span class="row-actions">
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="i18n.t('fees.tools.reminders.textFor', { name: r.student_name })"
+                (click)="showText(r)"
+              >
+                {{ i18n.t('fees.tools.reminders.copyText') }}
+              </button>
+            </span>
+          </li>
+        } @empty {
+          <li class="empty">{{ i18n.t('fees.tools.reminders.none') }}</li>
+        }
+      </ul>
+
+      @if (total() > 0) {
+        <nav class="pager" [attr.aria-label]="i18n.t('fees.daily.invoices.pagination')">
+          <span>
+            {{
+              i18n.t('fees.daily.invoices.pageRange', { from: from(), to: to(), total: total() })
+            }}
+          </span>
+          <span class="row-actions">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="page() <= 1"
+              (click)="prev()"
+            >
+              {{ i18n.t('fees.daily.invoices.previous') }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="to() >= total()"
+              (click)="next()"
+            >
+              {{ i18n.t('fees.daily.invoices.next') }}
+            </button>
+          </span>
+        </nav>
+      }
+    }
+  </section>
+</div>

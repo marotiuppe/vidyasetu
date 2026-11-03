@@ -43,12 +43,18 @@ export interface GenerateInput {
   section_id?: number;
   student_ids?: number[];
   fee_head_ids?: number[];
+  /** Every active student of the year in scope. Use with `branch_id` (school owner) or alone (branch roles). */
+  all_students?: boolean;
+  /** School owner only: the branch for `all_students`. Omit for the whole school. */
+  branch_id?: number;
 }
 
 export interface GenerateResult {
   created: number;
   skipped_existing: number;
   skipped_no_structure: number;
+  /** Invoices that received a concession or sibling discount at generation time. */
+  discounts_applied: number;
 }
 
 export interface Invoice {

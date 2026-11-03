@@ -18,6 +18,7 @@ from app.db.base import utcnow
 from app.modules.academics.models import AcademicYear, SchoolClass, Section
 from app.modules.audit import service as audit
 from app.modules.branches.models import Branch
+from app.modules.fees import discounts
 from app.modules.fees.models import (
     FeeHead,
     FeeStructureItem,
@@ -550,6 +551,9 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
     if wanted_heads and len(await _heads_by_id(db, actor, wanted_heads)) != len(wanted_heads):
         raise _not_found("Fee head")
 
+    if data.branch_id is not None:
+        await _check_branch(db, actor, data.branch_id)
+
     ids = set(data.student_ids or [])
     if ids:
         in_scope = set(
@@ -566,6 +570,8 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
         stmt = stmt.where(Student.id.in_(ids))
     else:
         stmt = stmt.where(Student.status == StudentStatus.ACTIVE)
+    if data.branch_id is not None:
+        stmt = stmt.where(Student.branch_id == data.branch_id)
     if data.class_id is not None:
         stmt = stmt.where(Enrollment.class_id == data.class_id)
     if data.section_id is not None:
@@ -621,6 +627,21 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
 
         number_year = today().year
         seq = await _next_invoice_seq(db, school_id, number_year)
+        # Concessions and sibling discounts are fixed here, at generation time only.
+        concessions = await discounts.load_concessions(
+            db, school_id, year.id, [t[0] for t in targets]
+        )
+        sibling_pct = await settings_service.get_int(
+            db, "fees.sibling_discount_percent", school_id=school_id
+        )
+        sibling_from = await settings_service.get_int(
+            db, "fees.sibling_discount_from_child", school_id=school_id
+        )
+        positions = (
+            await discounts.sibling_positions(db, school_id, year.id, [t[0] for t in targets])
+            if sibling_pct > 0
+            else {}
+        )
         pending: list[tuple[Invoice, list[tuple[int, int, str]]]] = []
         for sid, bid, cid in targets:
             if sid in existing:
@@ -630,6 +651,15 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
             else:
                 items = by_class[cid]
                 seq += 1
+                discount, reason = discounts.compute_discount(
+                    items,
+                    concessions.get(sid, []),
+                    sibling_pct,
+                    sibling_from,
+                    positions.get(sid),
+                )
+                if discount > 0:
+                    result.discounts_applied += 1
                 inv = Invoice(
                     school_id=school_id,
                     branch_id=bid,
@@ -639,7 +669,8 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
                     title=data.title,
                     due_date=data.due_date,
                     gross_paise=sum(i[1] for i in items),
-                    discount_paise=0,
+                    discount_paise=discount,
+                    discount_reason=reason,
                     status_cancelled=False,
                     created_by=actor.id,
                 )
@@ -660,6 +691,8 @@ async def generate_invoices(db: AsyncSession, actor: User, data: GenerateRequest
                     "created": len(pending),
                     "skipped_existing": result.skipped_existing,
                     "skipped_no_structure": result.skipped_no_structure,
+                    "discounts_applied": result.discounts_applied,
+                    "whole_branch": data.all_students,
                 },
             )
         await db.commit()

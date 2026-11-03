@@ -1,0 +1,109 @@
+<section class="card" aria-labelledby="concession-form-title">
+  <h2 class="card-title" id="concession-form-title">
+    {{ i18n.t('fees.tools.concessions.formTitle') }}
+  </h2>
+
+  <div class="stack">
+    @if (student(); as s) {
+      <div class="panel row">
+        <span class="row-main">
+          <span>{{ i18n.t('fees.tools.concessions.chosenStudent') }}: {{ s.full_name }}</span>
+          <span class="row-sub">{{
+            i18n.t('fees.setup.picker.admissionNo', { no: s.admission_no })
+          }}</span>
+        </span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="student.set(null)">
+          {{ i18n.t('fees.tools.concessions.changeStudent') }}
+        </button>
+      </div>
+    } @else {
+      <sms-student-picker
+        [actionLabel]="i18n.t('fees.tools.concessions.findStudent')"
+        (picked)="pickStudent($event)"
+      />
+    }
+
+    <form class="stack" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('fees.tools.concessions.year') }}
+          <select class="input" formControlName="yearId">
+            <option [ngValue]="0">{{ i18n.t('fees.setup.common.chooseYear') }}</option>
+            @for (y of lookups.years(); track y.id) {
+              <option [ngValue]="y.id">{{ y.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('fees.tools.concessions.name') }}
+          <input
+            class="input"
+            type="text"
+            maxlength="100"
+            autocomplete="off"
+            [attr.placeholder]="i18n.t('fees.tools.concessions.namePlaceholder')"
+            formControlName="name"
+          />
+        </label>
+        <label class="field">
+          {{ i18n.t('fees.tools.concessions.kind') }}
+          <select class="input" formControlName="kind">
+            <option value="percent">{{ i18n.t('fees.tools.concessions.kindPercent') }}</option>
+            <option value="fixed">{{ i18n.t('fees.tools.concessions.kindFixed') }}</option>
+          </select>
+        </label>
+        <label class="field">
+          {{
+            i18n.t(
+              form.controls.kind.value === 'percent'
+                ? 'fees.tools.concessions.valuePercent'
+                : 'fees.tools.concessions.valueFixed'
+            )
+          }}
+          <input
+            class="input"
+            type="text"
+            inputmode="decimal"
+            autocomplete="off"
+            formControlName="value"
+          />
+        </label>
+        <label class="field">
+          {{ i18n.t('fees.tools.concessions.head') }}
+          <select class="input" formControlName="headId">
+            <option [ngValue]="0">{{ i18n.t('fees.tools.concessions.headAll') }}</option>
+            @for (h of heads(); track h.id) {
+              <option [ngValue]="h.id">{{ h.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('fees.tools.concessions.reason') }}
+          <input
+            class="input"
+            type="text"
+            maxlength="200"
+            autocomplete="off"
+            formControlName="reason"
+          />
+        </label>
+      </div>
+
+      @if (error(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+      @if (notice(); as message) {
+        <p class="notice" role="status">{{ message }}</p>
+      }
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="busy()">
+          {{
+            busy()
+              ? i18n.t('fees.tools.concessions.saving')
+              : i18n.t('fees.tools.concessions.submit')
+          }}
+        </button>
+      </div>
+    </form>
+  </div>
+</section>

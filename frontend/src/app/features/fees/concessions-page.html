@@ -1,0 +1,151 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('fees.tools.concessions.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('fees.tools.concessions.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-fee-tools-nav />
+
+<div class="stack">
+  @if (canManage) {
+    <sms-concession-form (created)="created()" />
+  }
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="concession-list-title">
+    <h2 class="card-title" id="concession-list-title">
+      {{ i18n.t('fees.tools.concessions.listTitle') }}
+    </h2>
+
+    <div class="toolbar" role="search">
+      <label class="field">
+        {{ i18n.t('fees.tools.concessions.filterYear') }}
+        <select class="input" (change)="onYear($event)">
+          <option value="0" [selected]="filters().yearId === 0">
+            {{ i18n.t('fees.daily.allYears') }}
+          </option>
+          @for (y of lookups.years(); track y.id) {
+            <option [value]="y.id" [selected]="filters().yearId === y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+      <div class="field">
+        <span>{{ i18n.t('fees.tools.concessions.filterStudent') }}</span>
+        @if (filters().student; as s) {
+          <span class="row-actions">
+            <span>{{ s.full_name }}</span>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [attr.aria-label]="i18n.t('fees.tools.concessions.clearStudent')"
+              (click)="clearStudent()"
+            >
+              <sms-icon name="close" [size]="14" />
+            </button>
+          </span>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [attr.aria-expanded]="pickerOpen()"
+            (click)="togglePicker()"
+          >
+            {{ i18n.t('fees.tools.concessions.allStudents') }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (pickerOpen()) {
+      <div class="panel">
+        <sms-student-picker
+          [actionLabel]="i18n.t('fees.setup.picker.select')"
+          (picked)="pickStudent($event)"
+        />
+      </div>
+    }
+
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('fees.tools.concessions.loading') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (c of data()?.items ?? []; track c.id) {
+          <li class="row">
+            <span class="row-main">
+              <span>{{ c.name }}</span>
+              <span class="row-sub">
+                {{ c.student_name }} · {{ classText(c.class_name, c.section_name) }} ·
+                {{ i18n.t('fees.daily.admissionNo', { no: c.admission_no }) }}
+              </span>
+              @if (c.reason) {
+                <span class="row-sub">{{ c.reason }}</span>
+              }
+            </span>
+            <span class="money">
+              <span class="amount">{{ valueText(c) }}</span>
+              <span class="row-sub">
+                {{ c.fee_head_name ?? i18n.t('fees.tools.concessions.headAll') }}
+              </span>
+            </span>
+            <span class="badge" [class.badge-success]="c.active" [class.badge-muted]="!c.active">
+              {{
+                c.active
+                  ? i18n.t('fees.tools.concessions.active')
+                  : i18n.t('fees.tools.concessions.inactive')
+              }}
+            </span>
+            @if (canManage) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [disabled]="togglingId() === c.id"
+                [attr.aria-label]="toggleAria(c)"
+                (click)="toggle(c)"
+              >
+                {{
+                  c.active
+                    ? i18n.t('fees.tools.concessions.deactivate')
+                    : i18n.t('fees.tools.concessions.reactivate')
+                }}
+              </button>
+            }
+          </li>
+        } @empty {
+          <li class="empty">{{ i18n.t('fees.tools.concessions.none') }}</li>
+        }
+      </ul>
+
+      @if (total() > 0) {
+        <nav class="pager" [attr.aria-label]="i18n.t('fees.tools.concessions.pagination')">
+          <span>
+            {{
+              i18n.t('fees.daily.invoices.pageRange', { from: from(), to: to(), total: total() })
+            }}
+          </span>
+          <span class="row-actions">
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="page() <= 1"
+              (click)="prev()"
+            >
+              {{ i18n.t('fees.daily.invoices.previous') }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [disabled]="to() >= total()"
+              (click)="next()"
+            >
+              {{ i18n.t('fees.daily.invoices.next') }}
+            </button>
+          </span>
+        </nav>
+      }
+    }
+  </section>
+</div>

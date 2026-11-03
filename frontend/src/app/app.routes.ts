@@ -10,6 +10,8 @@ import {
 } from './core/auth/auth.guard';
 import {
   ADMISSION_ROLES,
+  FEE_MANAGER_ROLES,
+  FEE_VIEW_ROLES,
   PRIVACY_ADMIN_ROLES,
   PROMOTION_ROLES,
   STUDENT_WRITER_ROLES,
@@ -207,6 +209,25 @@ export const routes: Routes = [
           moduleGuard('fees'),
         ],
         loadComponent: () => import('./features/fees/fees').then((m) => m.Fees),
+      },
+      {
+        path: 'fees/concessions',
+        data: { title: 'Concessions', titleKey: 'fees.tools.nav.concessions' },
+        canActivate: [roleGuard(...FEE_VIEW_ROLES), moduleGuard('fees')],
+        loadComponent: () =>
+          import('./features/fees/concessions-page').then((m) => m.ConcessionsPage),
+      },
+      {
+        path: 'fees/late-fees',
+        data: { title: 'Late fees', titleKey: 'fees.tools.nav.lateFees' },
+        canActivate: [roleGuard(...FEE_MANAGER_ROLES), moduleGuard('fees')],
+        loadComponent: () => import('./features/fees/late-fees-page').then((m) => m.LateFeesPage),
+      },
+      {
+        path: 'fees/reminders',
+        data: { title: 'Fee reminders', titleKey: 'fees.tools.nav.reminders' },
+        canActivate: [roleGuard(...FEE_VIEW_ROLES), moduleGuard('fees')],
+        loadComponent: () => import('./features/fees/reminders-page').then((m) => m.RemindersPage),
       },
       {
         path: 'setup',

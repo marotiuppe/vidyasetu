@@ -7,6 +7,10 @@
   </div>
 </div>
 
+@if (!selfService && tabs.length > 0) {
+  <sms-fee-tools-nav />
+}
+
 @if (tabs.length > 1) {
   <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('fees.setup.sections')">
     @for (t of tabs; track t.id) {

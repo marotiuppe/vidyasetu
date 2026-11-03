@@ -13,13 +13,14 @@ import { catchError, of, switchMap, tap } from 'rxjs';
 import { apiErrorMessage } from '../../core/api/api-error';
 import { FeesApi, GenerateInput, GenerateResult, StructureItem } from '../../core/api/fees.api';
 import { Student } from '../../core/api/students.api';
+import { AuthService } from '../../core/auth/auth.service';
 import { I18n } from '../../core/i18n/i18n';
 import { Icon } from '../../core/ui/icon';
 import { formatPaise } from '../../core/ui/money';
 import { FeeLookups } from './fee-lookups';
 import { StudentPicker } from './student-picker';
 
-type Target = 'class' | 'section' | 'students';
+type Target = 'class' | 'section' | 'students' | 'branch';
 
 /** Bulk-create invoices from the fee structure for a class, a section or chosen students. */
 @Component({
@@ -30,6 +31,7 @@ type Target = 'class' | 'section' | 'students';
 })
 export class InvoiceGenerate {
   private readonly api = inject(FeesApi);
+  private readonly auth = inject(AuthService);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly lookups = inject(FeeLookups);
   protected readonly i18n = inject(I18n);
@@ -38,6 +40,8 @@ export class InvoiceGenerate {
   readonly closed = output<void>();
 
   protected readonly money = formatPaise;
+  /** Branch-level roles always work in their own branch; only the school owner picks one. */
+  protected readonly canPickBranch = this.auth.user()?.branch_id == null;
 
   protected readonly form = this.fb.group({
     yearId: [this.lookups.currentYearId()],
@@ -46,6 +50,7 @@ export class InvoiceGenerate {
     target: ['class' as Target],
     classId: [0],
     sectionId: [0],
+    branchId: [0],
   });
   private readonly values = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -63,8 +68,14 @@ export class InvoiceGenerate {
     this.lookups.sectionsOf(Number(this.values().classId)),
   );
   protected readonly studentIds = computed(() => this.students().map((s) => s.id));
+  /** Fee heads and the class and section pickers only apply to a class or section. */
+  protected readonly isClassTarget = computed(() => {
+    const t = this.target();
+    return t === 'class' || t === 'section';
+  });
 
   constructor() {
+    if (this.canPickBranch) this.lookups.loadBranches();
     toObservable(
       computed(() => ({
         y: Number(this.values().yearId),
@@ -78,7 +89,7 @@ export class InvoiceGenerate {
           this.unchecked.set([]);
         }),
         switchMap((s) =>
-          s.t !== 'students' && s.y && s.c
+          (s.t === 'class' || s.t === 'section') && s.y && s.c
             ? this.api.structure(s.y, s.c).pipe(catchError(() => of([] as StructureItem[])))
             : of([] as StructureItem[]),
         ),
@@ -115,7 +126,10 @@ export class InvoiceGenerate {
     if (!v.dueDate) return this.error.set(this.i18n.t('fees.setup.common.chooseDue'));
 
     const body: GenerateInput = { academic_year_id: v.yearId, title, due_date: v.dueDate };
-    if (v.target === 'students') {
+    if (v.target === 'branch') {
+      body.all_students = true;
+      if (this.canPickBranch && v.branchId) body.branch_id = v.branchId;
+    } else if (v.target === 'students') {
       if (!this.students().length)
         return this.error.set(this.i18n.t('fees.setup.generate.addStudent'));
       body.student_ids = this.studentIds();

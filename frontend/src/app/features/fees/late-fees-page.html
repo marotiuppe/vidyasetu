@@ -1,0 +1,132 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('fees.tools.late.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('fees.tools.late.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-fee-tools-nav />
+
+<div class="stack">
+  @if (off()) {
+    <section class="card" aria-labelledby="late-off-title">
+      <h2 class="card-title" id="late-off-title">{{ i18n.t('fees.tools.late.offTitle') }}</h2>
+      <p class="row-sub">{{ i18n.t('fees.tools.late.offBody') }}</p>
+      <div class="form-actions">
+        <a class="btn btn-ghost" routerLink="/settings">{{
+          i18n.t('fees.tools.late.openSettings')
+        }}</a>
+      </div>
+    </section>
+  } @else if (ruleLines().length) {
+    <section class="card" aria-labelledby="late-rule-title">
+      <h2 class="card-title" id="late-rule-title">{{ i18n.t('fees.tools.late.ruleTitle') }}</h2>
+      <ul class="stat-strip">
+        @for (line of ruleLines(); track $index) {
+          <li class="badge">{{ line }}</li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="card" aria-labelledby="late-find-title">
+    <h2 class="card-title" id="late-find-title">{{ i18n.t('fees.tools.late.find') }}</h2>
+    <div class="toolbar">
+      <label class="field">
+        {{ i18n.t('fees.tools.late.year') }}
+        <select class="input" (change)="onYear($event)">
+          @for (y of lookups.years(); track y.id) {
+            <option [value]="y.id" [selected]="yearId() === y.id">{{ y.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn btn-ghost"
+        [disabled]="off() || finding() || !yearId()"
+        (click)="find()"
+      >
+        {{ finding() ? i18n.t('fees.tools.late.finding') : i18n.t('fees.tools.late.find') }}
+      </button>
+    </div>
+
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    @if (notice(); as message) {
+      <p class="notice" role="status">{{ message }}</p>
+    }
+
+    @if (candidates(); as list) {
+      @if (list.length === 0) {
+        <p class="empty" role="status">{{ i18n.t('fees.tools.late.none') }}</p>
+      } @else {
+        <label class="check">
+          <input
+            type="checkbox"
+            [checked]="allSelected()"
+            (change)="toggleAll(checkedOf($event))"
+          />
+          {{ i18n.t('fees.tools.late.selectAll') }}
+        </label>
+        <ul class="rows">
+          @for (c of list; track c.invoice_id) {
+            <li class="row">
+              <label class="check">
+                <input
+                  type="checkbox"
+                  [checked]="isSelected(c.invoice_id)"
+                  [attr.aria-label]="i18n.t('fees.tools.late.selectOne', { no: c.invoice_no })"
+                  (change)="toggleOne(c.invoice_id, checkedOf($event))"
+                />
+              </label>
+              <span class="row-main">
+                <span>{{ c.invoice_no }} · {{ c.student_name }}</span>
+                <span class="row-sub">
+                  {{ classText(c) }} ·
+                  {{ i18n.t('fees.daily.admissionNo', { no: c.admission_no }) }}
+                </span>
+              </span>
+              <span class="money">
+                <span class="row-sub">{{
+                  i18n.t('fees.tools.late.due', { date: c.due_date })
+                }}</span>
+                <span class="row-sub">
+                  {{ i18n.t('fees.tools.late.balance', { amount: money(c.balance_paise) }) }}
+                </span>
+                <span class="amount">
+                  {{ i18n.t('fees.tools.late.fee', { amount: money(c.late_fee_paise) }) }}
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+
+        <div class="save-bar">
+          <span class="row-sub">
+            {{
+              i18n.t('fees.tools.late.summary', {
+                amount: money(chosenTotal()),
+                count: selected().length,
+              })
+            }}
+          </span>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="applying() || selected().length === 0"
+            (click)="apply()"
+          >
+            {{
+              applying()
+                ? i18n.t('fees.tools.late.applying')
+                : i18n.t('fees.tools.late.apply', { count: selected().length })
+            }}
+          </button>
+        </div>
+      }
+    }
+  </section>
+</div>

@@ -10,6 +10,7 @@ import { FeeCollection } from './fee-collection';
 import { FeeDues } from './fee-dues';
 import { FeeInvoices } from './fee-invoices';
 import { FeeSetup } from './fee-setup';
+import { FeeToolsNav } from './fee-tools-nav';
 import { MyFees } from './my-fees';
 
 type TabId = 'invoices' | 'dues' | 'collection' | 'setup' | 'my';
@@ -21,7 +22,7 @@ interface Tab {
 
 @Component({
   selector: 'sms-fees',
-  imports: [FeeInvoices, FeeDues, FeeCollection, FeeSetup, MyFees],
+  imports: [FeeInvoices, FeeDues, FeeCollection, FeeSetup, MyFees, FeeToolsNav],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fees.html',
 })

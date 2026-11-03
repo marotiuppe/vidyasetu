@@ -10,12 +10,13 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, TimestampMixin
+from app.db.base import Base, TimestampMixin, utcnow
 
 # All money is stored as integer paise (never floats).
 
@@ -149,3 +150,59 @@ class Payment(TimestampMixin, Base):
     reversed_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
     reversed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     received_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+
+class ConcessionKind(enum.StrEnum):
+    PERCENT = "percent"  # value in basis points (2500 = 25%)
+    FIXED = "fixed"  # value in paise
+
+
+class FeeConcession(TimestampMixin, Base):
+    """A scholarship or concession for one student in one academic year.
+
+    Applied only when invoices are generated (never retroactively). `fee_head_id` None means the
+    whole invoice; otherwise only that head's lines are discounted.
+    """
+
+    __tablename__ = "fee_concessions"
+    __table_args__ = (
+        UniqueConstraint("student_id", "academic_year_id", "name"),
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
+        ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
+        ForeignKeyConstraint(["fee_head_id", "school_id"], ["fee_heads.id", "fee_heads.school_id"]),
+        Index("ix_fee_concessions_school_student", "school_id", "student_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = mapped_column(ForeignKey("schools.id"), index=True)
+    branch_id: Mapped[int] = mapped_column(index=True)
+    student_id: Mapped[int] = mapped_column()
+    academic_year_id: Mapped[int] = mapped_column(ForeignKey("academic_years.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    kind: Mapped[ConcessionKind] = mapped_column(_enum(ConcessionKind))
+    value: Mapped[int] = mapped_column(BigInteger)
+    fee_head_id: Mapped[int | None] = mapped_column(Integer)
+    reason: Mapped[str | None] = mapped_column(String(200))
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+
+class FeeReminder(Base):
+    """A record that a family was reminded about dues. Nothing is sent by the app yet (manual)."""
+
+    __tablename__ = "fee_reminders"
+    __table_args__ = (
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
+        ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
+        ForeignKeyConstraint(["invoice_id", "student_id"], ["invoices.id", "invoices.student_id"]),
+        Index("ix_fee_reminders_school_student", "school_id", "student_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    school_id: Mapped[int] = mapped_column(ForeignKey("schools.id"), index=True)
+    branch_id: Mapped[int] = mapped_column(index=True)
+    student_id: Mapped[int] = mapped_column()
+    invoice_id: Mapped[int | None] = mapped_column(Integer)
+    channel: Mapped[str] = mapped_column(String(20), default="manual")
+    created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

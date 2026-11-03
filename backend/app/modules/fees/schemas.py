@@ -87,11 +87,22 @@ class GenerateRequest(BaseModel):
     section_id: int | None = None
     student_ids: Annotated[list[int], Field(max_length=1000)] | None = None
     fee_head_ids: Annotated[list[int], Field(max_length=100)] | None = None
+    # Whole branch: every active student enrolled in the year. Owners may name a branch (or leave
+    # it out for the whole school); branch-level staff always get their own branch.
+    branch_id: int | None = None
+    all_students: bool = False
 
     @model_validator(mode="after")
-    def _need_target(self) -> Self:
-        if self.class_id is None and self.section_id is None and not self.student_ids:
-            raise ValueError("Provide class_id, section_id or student_ids")
+    def _one_target(self) -> Self:
+        by_class = self.class_id is not None or self.section_id is not None
+        if self.all_students:
+            if by_class or self.student_ids:
+                raise ValueError("Choose either all students or classes, sections or students")
+            return self
+        if self.branch_id is not None:
+            raise ValueError("branch_id can only be used with all_students")
+        if not by_class and not self.student_ids:
+            raise ValueError("Provide class_id, section_id, student_ids or all_students")
         return self
 
 
@@ -99,6 +110,7 @@ class GenerateResult(BaseModel):
     created: int
     skipped_existing: int
     skipped_no_structure: int
+    discounts_applied: int = 0
 
 
 class LineIn(BaseModel):

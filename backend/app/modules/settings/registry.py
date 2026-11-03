@@ -210,6 +210,27 @@ _school("fees.receipt_footer", "text", G, "Receipt footer",
         "Optional line printed at the bottom of receipts.", max_len=150)
 _school("fees.payment_link_enabled", "bool", G, "Payment link",
         "Allow online payment links when a payment gateway is connected.", True)
+_school("fees.sibling_discount_percent", "int", G, "Sibling discount (%)",
+        "Percentage off the fees of each sibling from the position below onward. 0 means off.",
+        0, min=0, max=100)
+_school("fees.sibling_discount_from_child", "int", G, "Sibling discount from child no.",
+        "Position of the first child who gets the sibling discount (2 means the second and "
+        "later children).", 2, min=2, max=6)
+_school("fees.late_fee_type", "choice", G, "Late fee type",
+        "How late fees are worked out. None switches late fees off.", "none",
+        choices=("none", "flat", "percent"))
+_school("fees.late_fee_amount", "int", G, "Late fee amount",
+        "Flat late fee in paise, or the percentage in basis points (2500 = 25%) when the type "
+        "is percent.", 0, min=0, max=1_000_000_000)
+_school("fees.late_fee_grace_days", "int", G, "Late fee grace (days)",
+        "Days after the due date before a late fee is charged.", 0, min=0, max=90)
+_school("fees.late_fee_max_paise", "int", G, "Late fee cap (paise)",
+        "Most a single late fee can be, in paise. 0 means no cap.", 0, min=0,
+        max=1_000_000_000)
+_school("fees.reminder_template", "text", G, "Reminder text",
+        "Text used for fee reminders. Placeholders: {guardian}, {student}, {amount}, {date}.",
+        "Dear {guardian}, fee of {amount} for {student} is due since {date}. Please pay at the "
+        "school office.", max_len=500)
 G = "Year-end promotion"
 _school("promotion.undo_hours", "int", G, "Undo window (hours)",
         "How long after a year-end promotion it can still be undone.", 48,
