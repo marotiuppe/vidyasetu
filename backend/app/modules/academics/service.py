@@ -35,6 +35,8 @@ async def _commit(
     db: AsyncSession, conflict: str, audit_row: Awaitable[None] | None = None
 ) -> None:
     try:
+        if audit_row is not None:
+            await audit_row
         await db.commit()
     except IntegrityError:
         await db.rollback()

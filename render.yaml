@@ -27,6 +27,11 @@ services:
         fromDatabase:
           name: sms-db
           property: connectionString
+      # JSON list of the public host name(s), e.g. ["sms.onrender.com"]. Required in production.
+      - key: TRUSTED_HOSTS
+        sync: false
+      - key: SETTINGS_ENCRYPTION_KEY
+        generateValue: true
       - key: ALLOWED_ORIGINS
         value: '[]'
       # Optional: set once to create the first platform admin, then remove.

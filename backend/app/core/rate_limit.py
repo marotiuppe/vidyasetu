@@ -68,7 +68,7 @@ def rule_for(path: str) -> tuple[str, int] | None:
         return "login", settings.rate_limit_login_per_minute
     if path.startswith("/api/v1/auth/mfa/"):
         return "mfa", settings.rate_limit_mfa_per_minute
-    if path == "/api/v1/me/export" or (
+    if path in ("/api/v1/me/export", "/api/v1/students/export") or (
         path.startswith("/api/v1/students/") and path.endswith("/export") and path.count("/") == 5
     ):
         return "export", settings.rate_limit_export_per_minute

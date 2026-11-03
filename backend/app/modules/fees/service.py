@@ -845,6 +845,11 @@ async def update_invoice(
         inv.discount_paise = data.discount_paise
     if "discount_reason" in data.model_fields_set:
         inv.discount_reason = _blank_to_none(data.discount_reason)
+    await audit.record(
+        db, actor, "fee.invoice_updated", "invoice", inv.id,
+        detail={"fields": ",".join(sorted(data.model_fields_set))},
+        school_id=inv.school_id, branch_id=inv.branch_id,
+    )
     await db.commit()
     return await _detail_one(db, actor, invoice_id)
 
@@ -859,6 +864,10 @@ async def cancel_invoice(
         raise _conflict("An invoice with received payments cannot be cancelled; reverse them first")
     inv.status_cancelled = True
     inv.cancel_reason = data.reason
+    await audit.record(
+        db, actor, "fee.invoice_cancelled", "invoice", inv.id,
+        school_id=inv.school_id, branch_id=inv.branch_id,
+    )
     await db.commit()
     return await _detail_one(db, actor, invoice_id)
 
@@ -907,6 +916,11 @@ async def record_payment(
         db.add(payment)
         await db.flush()
         pid = payment.id
+        await audit.record(
+            db, actor, "fee.payment_recorded", "payment", pid,
+            detail={"amount_paise": data.amount_paise, "method": str(data.method)},
+            school_id=inv.school_id, branch_id=inv.branch_id,
+        )
         await db.commit()
         return pid
 
@@ -939,6 +953,7 @@ async def reverse_payment(
     if result.rowcount == 0:
         await db.rollback()
         raise _conflict("Payment is already reversed")
+    await audit.record(db, actor, "fee.payment_reversed", "payment", payment_id)
     await db.commit()
     return (await _payments_out(db, [Payment.id == payment_id]))[0]
 
