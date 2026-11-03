@@ -210,6 +210,10 @@ _school("fees.receipt_footer", "text", G, "Receipt footer",
         "Optional line printed at the bottom of receipts.", max_len=150)
 _school("fees.payment_link_enabled", "bool", G, "Payment link",
         "Allow online payment links when a payment gateway is connected.", True)
+G = "Year-end promotion"
+_school("promotion.undo_hours", "int", G, "Undo window (hours)",
+        "How long after a year-end promotion it can still be undone.", 48,
+        min=1, max=720)
 G = "Parent and student portal"
 _school("portal.parent_sees_fees", "bool", G, "Parents see fees", "Show fees to parents.", True)
 _school("portal.parent_sees_marks", "bool", G, "Parents see marks", "Show marks to parents.", True)

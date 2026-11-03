@@ -15,6 +15,7 @@ const CODE_KEYS: Record<string, string> = {
   portal_hidden: 'error.portal_hidden',
   attendance_locked: 'error.attendance_locked',
   student_logins_disabled: 'error.student_logins_disabled',
+  undo_blocked: 'promotion.error.undoBlocked',
 };
 
 /** Turn a backend error ({ detail: string | [{ msg }], code? }) into a message for the user. */

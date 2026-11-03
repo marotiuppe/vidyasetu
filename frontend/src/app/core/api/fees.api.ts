@@ -68,6 +68,8 @@ export interface Invoice {
   total_paise: number;
   paid_paise: number;
   balance_paise: number;
+  /** Part of the balance moved to the next year by a year-end promotion (0 when none). */
+  carried_forward_paise?: number;
   status: InvoiceStatus;
   is_overdue: boolean;
 }

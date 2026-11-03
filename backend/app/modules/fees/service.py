@@ -1,7 +1,7 @@
 import csv
 import io
 from collections import defaultdict
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta, timezone
 from typing import Any, cast
@@ -55,6 +55,7 @@ from app.modules.fees.schemas import (
     StudentFees,
     Totals,
 )
+from app.modules.promotion.models import PromotionItem
 from app.modules.schools.models import School, SchoolLogo
 from app.modules.settings import service as settings_service
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
@@ -332,7 +333,9 @@ class _Money:
         )
         self.paid = func.coalesce(self.paid_sq.c.paid, 0)
         self.total = Invoice.gross_paise - Invoice.discount_paise
-        self.balance = self.total - self.paid
+        # Part moved to the next year by a promotion is no longer billed here.
+        self.billed = self.total - Invoice.carried_forward_paise
+        self.balance = self.billed - self.paid
 
     def base(self, *cols: Any) -> Any:
         return (
@@ -343,10 +346,10 @@ class _Money:
         )
 
 
-def _status(cancelled: bool, total: int, paid: int) -> str:
+def _status(cancelled: bool, balance: int, paid: int) -> str:
     if cancelled:
         return "cancelled"
-    if total - paid <= 0:
+    if balance <= 0:
         return "paid"
     return "partial" if paid > 0 else "unpaid"
 
@@ -371,7 +374,8 @@ def _out(
     day: date,
 ) -> dict[str, Any]:
     total = inv.gross_paise - inv.discount_paise
-    balance = total - paid
+    carried = inv.carried_forward_paise
+    balance = total - carried - paid
     return {
         "id": inv.id,
         "invoice_no": inv.invoice_no,
@@ -387,9 +391,10 @@ def _out(
         "discount_paise": inv.discount_paise,
         "discount_reason": inv.discount_reason,
         "total_paise": total,
+        "carried_forward_paise": carried,
         "paid_paise": paid,
         "balance_paise": balance,
-        "status": _status(inv.status_cancelled, total, paid),
+        "status": _status(inv.status_cancelled, balance, paid),
         "is_overdue": (not inv.status_cancelled) and balance > 0 and inv.due_date < day,
     }
 
@@ -789,7 +794,7 @@ async def list_invoices(
     live = Invoice.status_cancelled.is_(False)
     totals_stmt = scope_fees(
         m.base(
-            func.coalesce(func.sum(case((live, m.total), else_=0)), 0),
+            func.coalesce(func.sum(case((live, m.billed), else_=0)), 0),
             func.coalesce(func.sum(case((live, m.paid), else_=0)), 0),
             func.coalesce(func.sum(case((live, m.balance), else_=0)), 0),
         ).where(*cond),
@@ -840,7 +845,7 @@ async def update_invoice(
         inv.due_date = data.due_date
     if data.discount_paise is not None:
         paid = await _received_total(db, inv.id)
-        if data.discount_paise > inv.gross_paise - paid:
+        if data.discount_paise > inv.gross_paise - paid - inv.carried_forward_paise:
             raise _unprocessable("Discount cannot exceed the amount not yet paid")
         inv.discount_paise = data.discount_paise
     if "discount_reason" in data.model_fields_set:
@@ -860,6 +865,12 @@ async def cancel_invoice(
     inv = await _lock_invoice(db, actor, invoice_id)
     if inv.status_cancelled:
         raise _conflict("Invoice is already cancelled")
+    if inv.carried_forward_paise > 0:
+        raise _conflict("Part of this invoice was carried to next year; undo the promotion first")
+    if await is_carry_over_invoice(db, inv.id):
+        raise _conflict(
+            "This invoice was created by a year-end promotion; undo the promotion first"
+        )
     if await _received_total(db, inv.id) > 0:
         raise _conflict("An invoice with received payments cannot be cancelled; reverse them first")
     inv.status_cancelled = True
@@ -889,7 +900,7 @@ async def record_payment(
         if inv.status_cancelled:
             raise _conflict("Cannot record a payment on a cancelled invoice")
         paid = await _received_total(db, inv.id)
-        balance = inv.gross_paise - inv.discount_paise - paid
+        balance = inv.gross_paise - inv.discount_paise - inv.carried_forward_paise - paid
         if data.amount_paise > balance:
             raise _conflict("Amount exceeds the invoice balance")
         number_year = day.year
@@ -936,6 +947,15 @@ async def reverse_payment(
     )
     if payment is None:
         raise _not_found("Payment")
+    carried = await db.scalar(
+        select(Invoice.carried_forward_paise)
+        .join(Payment, Payment.invoice_id == Invoice.id)
+        .where(Payment.id == payment_id)
+    )
+    if carried:
+        # Reversing here would bring the balance back on an invoice whose dues now sit on the
+        # carry-over invoice too. Undo the promotion first.
+        raise _conflict("Payments on an invoice carried to next year cannot be reversed")
     result = cast(
         CursorResult[Any],
         await db.execute(
@@ -1052,7 +1072,7 @@ async def _dues_rows(
             Section.name,
             Guardian.full_name,
             Guardian.phone,
-            func.sum(m.total),
+            func.sum(m.billed),
             func.sum(m.paid),
             balance_sum,
             func.sum(case((Invoice.due_date < day, m.balance), else_=0)),
@@ -1242,6 +1262,118 @@ async def collection(
     )
 
 
+# ---- year-end promotion support ----
+# Called by modules/promotion inside its own transaction, so nothing here commits.
+
+CARRY_LINE_DESCRIPTION = "Balance brought forward"
+
+
+@dataclass(frozen=True)
+class CarryRow:
+    student_id: int
+    branch_id: int
+    academic_year_id: int
+    title: str
+    due_date: date
+    amount_paise: int
+
+
+async def is_carry_over_invoice(db: AsyncSession, invoice_id: int) -> bool:
+    found = await db.scalar(
+        select(PromotionItem.id).where(PromotionItem.carry_invoice_id == invoice_id).limit(1)
+    )
+    return found is not None
+
+
+async def open_balances(
+    db: AsyncSession, year_id: int, student_ids: Collection[int], *, lock: bool = False
+) -> dict[int, list[tuple[int, int]]]:
+    """Per student: (invoice id, balance) of the non-cancelled invoices of one year that still
+    have a balance. `lock` takes row locks on those invoices for the rest of the transaction."""
+    ids = list(student_ids)
+    if not ids:
+        return {}
+    scope = and_(
+        Invoice.academic_year_id == year_id,
+        Invoice.student_id.in_(ids),
+        Invoice.status_cancelled.is_(False),
+    )
+    if lock:
+        await db.execute(select(Invoice.id).where(scope).with_for_update())
+    m = _Money()
+    out: dict[int, list[tuple[int, int]]] = defaultdict(list)
+    for inv_id, student_id, balance in (
+        await db.execute(m.base(Invoice.id, Invoice.student_id, m.balance).where(scope))
+    ).all():
+        if int(balance) > 0:
+            out[int(student_id)].append((int(inv_id), int(balance)))
+    return dict(out)
+
+
+async def add_carry_over_invoices(
+    db: AsyncSession, actor: User, school_id: int, rows: list[CarryRow]
+) -> list[int]:
+    """One invoice per row, numbered with the normal invoice sequence; returns their ids."""
+    number_year = today().year
+    seq = await _next_invoice_seq(db, school_id, number_year)
+    invoices: list[Invoice] = []
+    for row in rows:
+        seq += 1
+        invoices.append(
+            Invoice(
+                school_id=school_id,
+                branch_id=row.branch_id,
+                student_id=row.student_id,
+                academic_year_id=row.academic_year_id,
+                invoice_no=_invoice_no(number_year, seq),
+                title=row.title,
+                due_date=row.due_date,
+                gross_paise=row.amount_paise,
+                discount_paise=0,
+                status_cancelled=False,
+                created_by=actor.id,
+            )
+        )
+    db.add_all(invoices)
+    await db.flush()
+    db.add_all(
+        InvoiceLine(
+            invoice_id=inv.id,
+            fee_head_id=None,
+            description=CARRY_LINE_DESCRIPTION,
+            amount_paise=row.amount_paise,
+        )
+        for inv, row in zip(invoices, rows, strict=True)
+    )
+    await db.flush()
+    return [inv.id for inv in invoices]
+
+
+async def set_carried_forward(db: AsyncSession, amounts: dict[int, int]) -> None:
+    """Mark how much of each invoice moved to the next year (its balance here becomes zero)."""
+    for invoice_id, amount in amounts.items():
+        await db.execute(
+            update(Invoice).where(Invoice.id == invoice_id).values(carried_forward_paise=amount)
+        )
+
+
+async def release_carried_forward(db: AsyncSession, invoice_ids: Collection[int]) -> None:
+    ids = list(invoice_ids)
+    if ids:
+        await db.execute(
+            update(Invoice).where(Invoice.id.in_(ids)).values(carried_forward_paise=0)
+        )
+
+
+async def remove_invoices(db: AsyncSession, invoice_ids: Collection[int]) -> None:
+    """Delete invoices and their lines. Only for carry-over invoices that nothing paid."""
+    ids = list(invoice_ids)
+    if not ids:
+        return
+    await db.execute(delete(InvoiceLine).where(InvoiceLine.invoice_id.in_(ids)))
+    await db.execute(delete(Invoice).where(Invoice.id.in_(ids)))
+
+
 # ---- student view (staff in scope, linked parent / student) ----
 
 
@@ -1260,7 +1392,7 @@ async def student_fees(db: AsyncSession, actor: User, student_id: int) -> Studen
         student_id=student_id,
         invoices=invoices,
         summary=Totals(
-            billed_paise=sum(i.total_paise for i in invoices),
+            billed_paise=sum(i.total_paise - i.carried_forward_paise for i in invoices),
             paid_paise=sum(i.paid_paise for i in invoices),
             balance_paise=sum(i.balance_paise for i in invoices),
         ),
@@ -1318,7 +1450,7 @@ async def receipt_data(db: AsyncSession, actor: User, payment_id: int) -> dict[s
         "invoice_total_paise": total,
         "amount_paise": payment.amount_paise,
         "paid_so_far_paise": paid,
-        "balance_paise": total - paid,
+        "balance_paise": total - inv.carried_forward_paise - paid,
         "method": payment.method.value,
         "reference": payment.reference,
         "received_by": received_by,

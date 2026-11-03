@@ -1,0 +1,116 @@
+<section class="card" aria-labelledby="promotion-history-title">
+  <h2 class="card-title" id="promotion-history-title">{{ i18n.t('promotion.history.title') }}</h2>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('promotion.history.loading') }}</p>
+  } @else if (batches().length === 0) {
+    <p class="empty" role="status">{{ i18n.t('promotion.history.empty') }}</p>
+  } @else {
+    <ul class="rows">
+      @for (b of batches(); track b.id) {
+        <li class="row history-row">
+          <span class="row-main">
+            <span class="name">{{ formatWhen(b.created_at) }}</span>
+            <ul class="stat-strip" [attr.aria-label]="i18n.t('promotion.history.title')">
+              @for (a of actions; track a) {
+                <li class="badge">{{ i18n.t(actionKey(a)) }} {{ b[a] }}</li>
+              }
+              @if (b.carried_invoices > 0) {
+                <li class="badge">
+                  {{ i18n.t('promotion.history.carriedItem', { amount: money(b.carried_paise) }) }}
+                </li>
+              }
+            </ul>
+
+            @if (expanded() === b.id) {
+              @if (details()[b.id]; as detail) {
+                <ul class="detail-list">
+                  @for (item of detail.items; track item.student_id) {
+                    <li class="row-sub">
+                      {{
+                        i18n.t('promotion.history.item', {
+                          name: item.name,
+                          action: i18n.t(actionKey(item.action)),
+                          from: item.from_class || i18n.t('promotion.none'),
+                          to: item.to_class || i18n.t('promotion.none'),
+                        })
+                      }}
+                      @if (item.carried_paise > 0) {
+                        ·
+                        {{
+                          i18n.t('promotion.history.carriedItem', {
+                            amount: money(item.carried_paise),
+                          })
+                        }}
+                      }
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <span class="row-sub" role="status">
+                  {{ i18n.t('promotion.history.detailsLoading') }}
+                </span>
+              }
+            }
+          </span>
+
+          <span class="history-actions">
+            <span class="badge" [class]="stateBadge(b)">{{ stateText(b) }}</span>
+            <button
+              type="button"
+              class="btn btn-ghost btn-sm"
+              [attr.aria-expanded]="expanded() === b.id"
+              (click)="toggle(b)"
+            >
+              {{
+                expanded() === b.id
+                  ? i18n.t('promotion.history.hideDetails')
+                  : i18n.t('promotion.history.details')
+              }}
+            </button>
+            @if (canUndo(b)) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [disabled]="undoingId() === b.id"
+                (click)="undo(b)"
+              >
+                {{
+                  undoingId() === b.id
+                    ? i18n.t('promotion.history.undoing')
+                    : i18n.t('promotion.history.undo')
+                }}
+              </button>
+            }
+          </span>
+        </li>
+      }
+    </ul>
+
+    <nav class="pager" [attr.aria-label]="i18n.t('promotion.history.title')">
+      <span>{{ i18n.t('promotion.range', { from: from(), to: to(), total: total() }) }}</span>
+      <span class="row-actions">
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="page() <= 1"
+          (click)="prev()"
+        >
+          {{ i18n.t('promotion.prev') }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="to() >= total()"
+          (click)="next()"
+        >
+          {{ i18n.t('promotion.next') }}
+        </button>
+      </span>
+    </nav>
+  }
+</section>

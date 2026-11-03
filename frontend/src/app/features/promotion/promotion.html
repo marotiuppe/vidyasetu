@@ -1,0 +1,207 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('promotion.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('promotion.subtitle') }}</p>
+  </div>
+</div>
+
+<div class="stack">
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (result(); as batch) {
+    <section class="card" aria-labelledby="promotion-result-title" aria-live="polite">
+      <h2 class="card-title" id="promotion-result-title">
+        {{ i18n.t(isUndone(batch) ? 'promotion.result.undoneTitle' : 'promotion.result.title') }}
+      </h2>
+      <ul class="stat-strip">
+        @for (a of actions; track a) {
+          <li class="badge">{{ i18n.t(actionKey(a)) }}: {{ batch[a] }}</li>
+        }
+        @if (batch.carried_invoices > 0) {
+          <li class="badge">
+            {{
+              i18n.t('promotion.result.carried', {
+                amount: money(batch.carried_paise),
+                count: batch.carried_invoices,
+              })
+            }}
+          </li>
+        }
+      </ul>
+
+      @if (isUndone(batch)) {
+        <p class="row-sub">{{ i18n.t('promotion.result.undoneNote') }}</p>
+      } @else if (canUndo(batch)) {
+        <p class="row-sub">
+          {{ i18n.t('promotion.result.undoUntil', { time: formatWhen(batch.undo_until) }) }}
+        </p>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" [disabled]="undoing()" (click)="undo(batch)">
+            {{ undoing() ? i18n.t('promotion.result.undoing') : i18n.t('promotion.result.undo') }}
+          </button>
+        </div>
+      }
+
+      @if (batch.skipped?.length) {
+        <p class="sub-title">{{ i18n.t('promotion.result.skipped') }}</p>
+        <ul class="rows">
+          @for (s of batch.skipped; track s.student_id) {
+            <li class="row-sub">
+              {{
+                i18n.t('promotion.result.skippedRow', {
+                  name: nameOf(s.student_id),
+                  reason: s.reason,
+                })
+              }}
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  <section class="card" aria-labelledby="promotion-setup-title">
+    <h2 class="card-title" id="promotion-setup-title">{{ i18n.t('promotion.setup.title') }}</h2>
+    <form [formGroup]="setup" (ngSubmit)="load()" novalidate>
+      <div class="toolbar">
+        <label class="field">
+          {{ i18n.t('promotion.setup.fromYear') }}
+          <select class="input" formControlName="fromYearId">
+            @for (y of years(); track y.id) {
+              <option [ngValue]="y.id">{{ y.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('promotion.setup.toYear') }}
+          <select class="input" formControlName="toYearId">
+            <option [ngValue]="0">{{ i18n.t('promotion.setup.choose') }}</option>
+            @for (y of toYears(); track y.id) {
+              <option [ngValue]="y.id">{{ y.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('promotion.setup.class') }}
+          <select class="input" formControlName="classId">
+            <option [ngValue]="0">{{ i18n.t('promotion.setup.choose') }}</option>
+            @for (c of classes(); track c.id) {
+              <option [ngValue]="c.id">{{ classLabel(c) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('promotion.setup.section') }}
+          <select class="input" formControlName="sectionId">
+            <option [ngValue]="0">{{ i18n.t('promotion.setup.allSections') }}</option>
+            @for (s of sectionsOfClass(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      @if (years().length > 0 && toYears().length === 0) {
+        <p class="row-sub" role="status">{{ i18n.t('promotion.setup.noNextYear') }}</p>
+      }
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="!canLoad()">
+          {{ loading() ? i18n.t('promotion.setup.loading') : i18n.t('promotion.setup.load') }}
+        </button>
+      </div>
+    </form>
+  </section>
+
+  @if (preview(); as p) {
+    @if (p.truncated) {
+      <p class="row-sub" role="status">
+        {{ i18n.t('promotion.setup.cap', { count: p.candidates.length }) }}
+      </p>
+    }
+    <sms-promotion-table
+      [views]="views()"
+      [rows]="rows"
+      [classOptions]="p.class_options"
+      [sections]="p.sections"
+      [fromClassId]="setupValue().classId"
+      [showBranch]="isOwner"
+    />
+
+    <div class="save-bar">
+      <div class="save-fields" [formGroup]="setup">
+        <label class="check">
+          <input type="checkbox" formControlName="carryOver" />
+          {{ i18n.t('promotion.save.carry') }}
+        </label>
+        @if (setupValue().carryOver) {
+          <label class="field">
+            {{ i18n.t('promotion.save.dueDate') }}
+            <input class="input" type="date" formControlName="dueDate" />
+            @if (!setupValue().dueDate) {
+              <span class="field-error" role="alert">{{ i18n.t('promotion.error.dueDate') }}</span>
+            }
+          </label>
+        }
+        @if (setupValue().carryOver && dues().count > 0) {
+          <span class="row-sub">{{ i18n.t('promotion.save.dues', { count: dues().count }) }}</span>
+        }
+      </div>
+      <div class="save-review">
+        @if (plan().actionable > 0) {
+          <span class="row-sub">
+            {{ i18n.t('promotion.save.count', { count: plan().actionable }) }}
+          </span>
+        } @else {
+          <span class="row-sub">{{ i18n.t('promotion.error.noItems') }}</span>
+        }
+        @if (plan().missingTargets > 0) {
+          <span class="field-error" role="alert">
+            {{ i18n.t('promotion.error.noTargets', { count: plan().missingTargets }) }}
+          </span>
+        }
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="!canReview()"
+          (click)="openReview()"
+        >
+          {{ i18n.t('promotion.save.review') }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <sms-promotion-history [version]="historyVersion()" (undone)="onHistoryUndone($event)" />
+</div>
+
+<dialog #confirm class="confirm" aria-labelledby="promotion-confirm-title">
+  <h2 class="card-title" id="promotion-confirm-title">{{ i18n.t('promotion.confirm.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('promotion.confirm.text', { toYear: toYearName() }) }}</p>
+  <ul class="stat-strip">
+    @for (a of actions; track a) {
+      <li class="badge">{{ i18n.t(actionKey(a)) }}: {{ plan().counts[a] }}</li>
+    }
+  </ul>
+  <p>
+    @if (setupValue().carryOver) {
+      {{
+        i18n.t('promotion.confirm.carryYes', {
+          toYear: toYearName(),
+          date: dateText(setupValue().dueDate),
+        })
+      }}
+    } @else {
+      {{ i18n.t('promotion.confirm.carryNo') }}
+    }
+  </p>
+  <div class="form-actions">
+    <button type="button" class="btn btn-ghost" [disabled]="applying()" (click)="closeReview()">
+      {{ i18n.t('promotion.confirm.cancel') }}
+    </button>
+    <button type="button" class="btn btn-primary" [disabled]="applying()" (click)="apply()">
+      {{ applying() ? i18n.t('promotion.confirm.applying') : i18n.t('promotion.confirm.apply') }}
+    </button>
+  </div>
+</dialog>

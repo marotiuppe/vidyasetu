@@ -1,5 +1,5 @@
 import { Role } from '../auth/auth.models';
-import { ADMISSION_ROLES, PRIVACY_ADMIN_ROLES } from '../auth/permissions';
+import { ADMISSION_ROLES, PRIVACY_ADMIN_ROLES, PROMOTION_ROLES } from '../auth/permissions';
 import { IconName } from '../ui/icon';
 
 export interface NavItem {
@@ -56,6 +56,14 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'idcard',
     roles: ADMISSION_ROLES,
     feature: 'admissions',
+  },
+  {
+    label: 'Year-end promotion',
+    labelKey: 'promotion.nav',
+    path: '/promotion',
+    icon: 'sparkle',
+    roles: PROMOTION_ROLES,
+    feature: 'students',
   },
   {
     label: 'Attendance',

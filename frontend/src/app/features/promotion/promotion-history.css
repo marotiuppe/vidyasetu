@@ -1,0 +1,29 @@
+.name {
+  font-weight: 650;
+  color: var(--text);
+}
+
+.history-row {
+  align-items: flex-start;
+}
+
+.history-row .stat-strip {
+  margin: 6px 0 0;
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.detail-list {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid var(--border);
+  list-style: none;
+}

@@ -81,7 +81,7 @@ class Invoice(TimestampMixin, Base):
         UniqueConstraint("student_id", "academic_year_id", "title"),
         UniqueConstraint("id", "branch_id"),
         UniqueConstraint("id", "student_id"),
-        ForeignKeyConstraint(["student_id", "branch_id"], ["students.id", "students.branch_id"]),
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
         ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
         Index("ix_invoices_school_branch", "school_id", "branch_id"),
     )
@@ -99,6 +99,11 @@ class Invoice(TimestampMixin, Base):
     discount_reason: Mapped[str | None] = mapped_column(String(200))
     status_cancelled: Mapped[bool] = mapped_column(Boolean, default=False)
     cancel_reason: Mapped[str | None] = mapped_column(String(200))
+    # Part of the balance moved to the next academic year by a year-end promotion (see
+    # modules/promotion). It is no longer due here; the carry-over invoice holds it.
+    carried_forward_paise: Mapped[int] = mapped_column(
+        BigInteger, default=0, server_default="0"
+    )
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
 

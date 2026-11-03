@@ -69,6 +69,12 @@
         <dt>{{ i18n.t('fees.daily.label.balance') }}</dt>
         <dd class="amount">{{ money(inv.balance_paise) }}</dd>
       </div>
+      @if ((inv.carried_forward_paise ?? 0) > 0) {
+        <div>
+          <dt>{{ i18n.t('fees.daily.label.carried') }}</dt>
+          <dd class="amount">{{ money(inv.carried_forward_paise ?? 0) }}</dd>
+        </div>
+      }
     </dl>
     @if (inv.discount_reason) {
       <p class="row-sub">

@@ -36,6 +36,7 @@ from app.modules.datarights.router import router as datarights_router
 from app.modules.datarights.router import student_router as datarights_student_router
 from app.modules.fees.router import router as fees_router
 from app.modules.notices.router import router as notices_router
+from app.modules.promotion.router import router as promotion_router
 from app.modules.public.router import router as public_router
 from app.modules.public.router import site_router as public_site_router
 from app.modules.schools.router import router as schools_router
@@ -166,6 +167,7 @@ api.include_router(notices_router)
 api.include_router(fees_router)
 api.include_router(admissions_router)
 api.include_router(admissions_public_router)
+api.include_router(promotion_router)
 api.include_router(settings_router)
 api.include_router(audit_router)
 api.include_router(consent_router)

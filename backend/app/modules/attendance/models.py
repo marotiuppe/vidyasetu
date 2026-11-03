@@ -41,7 +41,7 @@ class AttendanceRecord(TimestampMixin, Base):
         UniqueConstraint("student_id", "date"),
         Index("ix_attendance_records_section_date", "section_id", "date"),
         Index("ix_attendance_records_branch_date", "branch_id", "date"),
-        ForeignKeyConstraint(["student_id", "branch_id"], ["students.id", "students.branch_id"]),
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
         ForeignKeyConstraint(["class_id", "branch_id"], ["classes.id", "classes.branch_id"]),
         ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
     )

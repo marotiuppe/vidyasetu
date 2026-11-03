@@ -1,0 +1,41 @@
+.sub-title {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.save-bar .save-fields,
+.save-bar .save-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.save-bar .save-fields .field {
+  margin: 0;
+}
+
+.save-bar .save-review {
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.confirm {
+  width: min(480px, calc(100vw - 32px));
+  padding: 20px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.confirm::backdrop {
+  background: color-mix(in srgb, var(--text) 40%, transparent);
+}
+
+.confirm .stat-strip {
+  margin: 12px 0;
+}

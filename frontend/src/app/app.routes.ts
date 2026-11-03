@@ -11,6 +11,7 @@ import {
 import {
   ADMISSION_ROLES,
   PRIVACY_ADMIN_ROLES,
+  PROMOTION_ROLES,
   STUDENT_WRITER_ROLES,
 } from './core/auth/permissions';
 import { moduleGuard } from './core/api/module.guard';
@@ -147,6 +148,12 @@ export const routes: Routes = [
         canActivate: [roleGuard(...ADMISSION_ROLES), moduleGuard('admissions')],
         loadComponent: () =>
           import('./features/admissions/admission-detail').then((m) => m.AdmissionDetailPage),
+      },
+      {
+        path: 'promotion',
+        data: { title: 'Year-end promotion', titleKey: 'promotion.nav' },
+        canActivate: [roleGuard(...PROMOTION_ROLES), moduleGuard('students')],
+        loadComponent: () => import('./features/promotion/promotion').then((m) => m.Promotion),
       },
       {
         path: 'attendance',

@@ -490,6 +490,22 @@ async def _apply_enrollment(db: AsyncSession, student: Student, data: Enrollment
     await db.flush()
 
 
+async def enroll_for_year(db: AsyncSession, student: Student, data: EnrollmentIn) -> int:
+    """Set the student's enrolment for one academic year and return its id. Used by year-end
+    promotion, which sets `student.branch_id` first when the class is in another branch. The
+    caller commits."""
+    await _apply_enrollment(db, student, data)
+    enrollment_id = await db.scalar(
+        select(Enrollment.id).where(
+            Enrollment.student_id == student.id,
+            Enrollment.academic_year_id == data.academic_year_id,
+        )
+    )
+    if enrollment_id is None:  # the upsert above always leaves one row
+        raise AssertionError("enrolment missing after upsert")
+    return enrollment_id
+
+
 async def set_enrollment(
     db: AsyncSession, actor: User, student_id: int, data: EnrollmentIn
 ) -> StudentDetail:

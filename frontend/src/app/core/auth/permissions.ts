@@ -37,6 +37,9 @@ export const SETUP_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
 /** Roles that may create a branch (the Branches screen). */
 export const BRANCH_CREATOR_ROLES: Role[] = ['super_admin', 'school_owner'];
 
+/** Year-end promotion: move students to the next year and undo a run (UX only; the backend enforces it). */
+export const PROMOTION_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
+
 /** Roles that read the audit log and handle data-rights requests. */
 export const PRIVACY_ADMIN_ROLES: Role[] = [
   'super_admin',

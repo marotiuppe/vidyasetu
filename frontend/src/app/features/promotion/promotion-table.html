@@ -1,0 +1,96 @@
+<section class="card" aria-labelledby="promotion-table-title">
+  <div class="card-head">
+    <h2 class="card-title" id="promotion-table-title">{{ i18n.t('promotion.table.title') }}</h2>
+    <span class="row-sub">{{ i18n.t('promotion.table.count', { count: views().length }) }}</span>
+  </div>
+
+  @if (views().length === 0) {
+    <p class="empty" role="status">{{ i18n.t('promotion.table.empty') }}</p>
+  } @else {
+    <ul class="rows">
+      @for (view of views(); track view.candidate.student_id; let i = $index) {
+        @let c = view.candidate;
+        @let group = rows().at(i);
+        @let action = group.controls.action.value;
+        <li class="row promo-row" [class.is-locked]="view.locked">
+          <span class="row-main">
+            <span class="name">{{ c.name }}</span>
+            <span class="row-sub">
+              {{ i18n.t('promotion.table.admissionNo', { no: c.admission_no }) }} ·
+              @if (c.roll_no !== null) {
+                {{ i18n.t('promotion.table.rollNo', { no: c.roll_no }) }}
+              } @else {
+                {{ i18n.t('promotion.table.noRoll') }}
+              }
+            </span>
+            <span class="row-sub">
+              {{ i18n.t('promotion.table.from', { class: place(c) || i18n.t('promotion.none') }) }}
+            </span>
+            @if (c.dues_paise > 0) {
+              <span class="row-sub">
+                {{ i18n.t('promotion.table.dues', { amount: money(c.dues_paise) }) }}
+              </span>
+            }
+            @if (view.lockKey) {
+              <span class="row-sub lock-note">{{ i18n.t(view.lockKey) }}</span>
+            }
+          </span>
+
+          <span class="promo-controls">
+            <label class="field">
+              <span class="sr-only">{{ i18n.t('promotion.table.action', { name: c.name }) }}</span>
+              <select
+                class="input"
+                [formControl]="group.controls.action"
+                (change)="resetSection(i)"
+              >
+                @for (a of actions; track a) {
+                  <option [ngValue]="a">{{ i18n.t(actionKey(a)) }}</option>
+                }
+              </select>
+            </label>
+
+            @if (action === 'promoted') {
+              <label class="field">
+                <span class="sr-only">{{
+                  i18n.t('promotion.table.target', { name: c.name })
+                }}</span>
+                <select
+                  class="input"
+                  [formControl]="group.controls.toClassId"
+                  (change)="resetSection(i)"
+                >
+                  <option [ngValue]="0">{{ i18n.t('promotion.table.noClass') }}</option>
+                  @for (o of classOptions(); track o.id) {
+                    <option [ngValue]="o.id">{{ classLabel(o) }}</option>
+                  }
+                </select>
+                @if (missingTarget(i)) {
+                  <span class="field-error">{{ i18n.t('promotion.table.missingTarget') }}</span>
+                }
+              </label>
+            }
+
+            @if (action === 'promoted' || action === 'detained') {
+              <label class="field">
+                <span class="sr-only">{{
+                  i18n.t('promotion.table.section', { name: c.name })
+                }}</span>
+                <select class="input" [formControl]="group.controls.toSectionId">
+                  <option [ngValue]="0">{{ i18n.t('promotion.table.anySection') }}</option>
+                  @for (s of sectionsFor(i); track s.id) {
+                    <option [ngValue]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </label>
+            }
+
+            @if (action === 'detained') {
+              <span class="row-sub">{{ i18n.t('promotion.table.sameClass') }}</span>
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  }
+</section>

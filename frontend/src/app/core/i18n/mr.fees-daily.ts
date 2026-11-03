@@ -46,6 +46,7 @@ export const MR_FEES_DAILY: Record<string, string> = {
   'fees.daily.label.total': 'एकूण',
   'fees.daily.label.paid': 'भरले',
   'fees.daily.label.balance': 'शिल्लक',
+  'fees.daily.label.carried': 'पुढे नेलेले',
   'fees.daily.label.overdue': 'मुदत उलटलेली',
   'fees.daily.amount.billed': 'बिल केलेले {amount}',
   'fees.daily.amount.collected': 'जमा झालेले {amount}',

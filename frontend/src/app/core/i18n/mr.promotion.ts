@@ -1,0 +1,96 @@
+/** Marathi strings for year-end promotion. Missing keys fall back to English. */
+export const MR_PROMOTION: Record<string, string> = {
+  'promotion.nav': 'वार्षिक पदोन्नती',
+  'promotion.title': 'वार्षिक पदोन्नती',
+  'promotion.subtitle':
+    'वर्षाच्या शेवटी विद्यार्थ्यांना पुढील वर्गात न्या, काहींना थांबवा, किंवा त्यांना सोडले, बदली किंवा उत्तीर्ण अशी नोंद करा. न भरलेली थकबाकी नवीन वर्षात पुढे नेता येते.',
+
+  'promotion.setup.title': 'पदोन्नती करायचा वर्ग निवडा',
+  'promotion.setup.fromYear': 'कोणत्या शैक्षणिक वर्षापासून',
+  'promotion.setup.toYear': 'कोणत्या शैक्षणिक वर्षापर्यंत',
+  'promotion.setup.class': 'वर्ग',
+  'promotion.setup.section': 'तुकडी',
+  'promotion.setup.allSections': 'सर्व तुकड्या',
+  'promotion.setup.choose': 'निवडा',
+  'promotion.setup.load': 'विद्यार्थी लोड करा',
+  'promotion.setup.loading': 'विद्यार्थी लोड होत आहेत…',
+  'promotion.setup.noNextYear':
+    'ज्या वर्षावरून पदोन्नती करत आहात त्यानंतर सुरू होणारे शैक्षणिक वर्ष जोडा.',
+  'promotion.setup.cap': 'फक्त पहिले {count} विद्यार्थी दाखवले आहेत.',
+
+  'promotion.table.title': 'विद्यार्थी',
+  'promotion.table.count': '{count} विद्यार्थी',
+  'promotion.table.empty': 'निवडलेल्या वर्षासाठी या वर्गात सक्रिय विद्यार्थी नोंदलेले नाहीत.',
+  'promotion.table.admissionNo': 'प्रवेश क्र. {no}',
+  'promotion.table.rollNo': 'हजेरी क्र. {no}',
+  'promotion.table.noRoll': 'हजेरी क्र. नाही',
+  'promotion.table.from': 'सध्या {class} मध्ये',
+  'promotion.table.dues': 'न भरलेली थकबाकी {amount}',
+  'promotion.table.action': '{name} साठी कृती',
+  'promotion.table.target': '{name} साठी पुढील वर्ग',
+  'promotion.table.section': '{name} साठी तुकडी',
+  'promotion.table.noClass': 'वर्ग निवडा',
+  'promotion.table.anySection': 'कोणतीही तुकडी',
+  'promotion.table.sameClass': 'त्याच वर्गात राहील.',
+  'promotion.table.missingTarget': 'पुढील वर्ग निवडा.',
+
+  'promotion.lock.ownerOnly': 'या विद्यार्थ्याला दुसऱ्या शाखेतील वर्गात फक्त शाळा मालक नेऊ शकतात.',
+  'promotion.lock.alreadyEnrolled': 'नवीन वर्षात आधीच नोंदणी आहे. हा विद्यार्थी वगळला जाईल.',
+
+  'promotion.action.promoted': 'पुढील वर्गात',
+  'promotion.action.detained': 'थांबवले',
+  'promotion.action.left': 'शाळा सोडली',
+  'promotion.action.passed_out': 'उत्तीर्ण',
+  'promotion.action.transferred': 'बदली',
+
+  'promotion.save.carry': 'न भरलेली थकबाकी नवीन वर्षात पुढे न्या',
+  'promotion.save.dueDate': 'पुढे नेलेल्या थकबाकीची देय तारीख',
+  'promotion.save.dues': 'या यादीत {count} विद्यार्थ्यांची थकबाकी आहे.',
+  'promotion.save.count': 'लागू करायचे विद्यार्थी: {count}',
+  'promotion.save.review': 'तपासा आणि लागू करा',
+  'promotion.error.noTargets':
+    'पुढील वर्गात न्यायच्या {count} विद्यार्थ्यांसाठी वर्ग निवडलेला नाही.',
+  'promotion.error.dueDate': 'पुढे नेलेल्या थकबाकीची देय तारीख निवडा.',
+  'promotion.error.noItems': 'किमान एका विद्यार्थ्यासाठी कृती निवडा.',
+
+  'promotion.confirm.title': 'वार्षिक पदोन्नती लागू करायची?',
+  'promotion.confirm.text':
+    'खाली दिलेल्या विद्यार्थ्यांची {toYear} साठी नोंदणी तयार होईल. मर्यादित काळासाठी ही कृती रद्द करता येते.',
+  'promotion.confirm.carryYes':
+    'या यादीतील विद्यार्थ्यांची थकबाकी {toYear} मध्ये, देय तारीख {date}, पुढे नेली जाईल.',
+  'promotion.confirm.carryNo': 'कोणतीही थकबाकी पुढे नेली जाणार नाही.',
+  'promotion.confirm.apply': 'पदोन्नती लागू करा',
+  'promotion.confirm.applying': 'लागू होत आहे…',
+  'promotion.confirm.cancel': 'रद्द करा',
+
+  'promotion.result.title': 'पदोन्नती लागू झाली',
+  'promotion.result.undoneTitle': 'पदोन्नती रद्द झाली',
+  'promotion.result.undoUntil': 'ही कृती {time} पर्यंत रद्द करता येईल.',
+  'promotion.result.undoneNote': 'या कृतीतील नोंदणी काढल्या आणि शिल्लक पूर्ववत केली.',
+  'promotion.result.carried': '{count} देयकांमध्ये {amount} पुढे नेले.',
+  'promotion.result.skipped': 'वगळलेले विद्यार्थी',
+  'promotion.result.skippedRow': '{name}: {reason}',
+  'promotion.result.undo': 'ही पदोन्नती रद्द करा',
+  'promotion.result.undoing': 'रद्द होत आहे…',
+
+  'promotion.history.title': 'मागील पदोन्नती',
+  'promotion.history.loading': 'पदोन्नती लोड होत आहेत…',
+  'promotion.history.empty': 'अजून कोणतीही पदोन्नती लागू केलेली नाही.',
+  'promotion.history.details': 'तपशील',
+  'promotion.history.hideDetails': 'तपशील लपवा',
+  'promotion.history.detailsLoading': 'तपशील लोड होत आहेत…',
+  'promotion.history.undo': 'रद्द करा',
+  'promotion.history.undoing': 'रद्द होत आहे…',
+  'promotion.history.undone': 'रद्द केली',
+  'promotion.history.undoUntil': '{time} पर्यंत रद्द करा',
+  'promotion.history.final': 'अंतिम',
+  'promotion.history.item': '{name} · {action} · {from} → {to}',
+  'promotion.history.carriedItem': 'पुढे नेले {amount}',
+
+  'promotion.prev': 'मागील',
+  'promotion.next': 'पुढील',
+  'promotion.range': '{total} पैकी {from} ते {to}',
+  'promotion.none': 'नाही',
+  'promotion.error.undoBlocked':
+    'ही पदोन्नती आता रद्द करता येत नाही: लागू केल्यानंतर नवीन वर्षातील विद्यार्थ्यांमध्ये बदल झाले आहेत.',
+};

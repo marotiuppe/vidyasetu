@@ -1,0 +1,96 @@
+/** English strings for year-end promotion (school owner, management and headmaster). */
+export const EN_PROMOTION: Record<string, string> = {
+  'promotion.nav': 'Year-end promotion',
+  'promotion.title': 'Year-end promotion',
+  'promotion.subtitle':
+    'Move students up a class at the end of the year, hold some back, or mark them as left, transferred or passed out. Unpaid dues can be carried into the new year.',
+
+  'promotion.setup.title': 'Choose the class to promote',
+  'promotion.setup.fromYear': 'From academic year',
+  'promotion.setup.toYear': 'To academic year',
+  'promotion.setup.class': 'Class',
+  'promotion.setup.section': 'Section',
+  'promotion.setup.allSections': 'All sections',
+  'promotion.setup.choose': 'Choose',
+  'promotion.setup.load': 'Load students',
+  'promotion.setup.loading': 'Loading students…',
+  'promotion.setup.noNextYear':
+    'Add an academic year that starts after the one you are promoting from.',
+  'promotion.setup.cap': 'Only the first {count} students are shown.',
+
+  'promotion.table.title': 'Students',
+  'promotion.table.count': '{count} students',
+  'promotion.table.empty': 'No active students are enrolled in this class for the selected year.',
+  'promotion.table.admissionNo': 'Adm. no. {no}',
+  'promotion.table.rollNo': 'Roll {no}',
+  'promotion.table.noRoll': 'No roll no.',
+  'promotion.table.from': 'Now in {class}',
+  'promotion.table.dues': 'Unpaid dues {amount}',
+  'promotion.table.action': 'Action for {name}',
+  'promotion.table.target': 'Move to class for {name}',
+  'promotion.table.section': 'Section for {name}',
+  'promotion.table.noClass': 'Choose a class',
+  'promotion.table.anySection': 'Any section',
+  'promotion.table.sameClass': 'Stays in the same class.',
+  'promotion.table.missingTarget': 'Choose a class to move to.',
+
+  'promotion.lock.ownerOnly':
+    'Only the school owner can move this student to a class in another branch.',
+  'promotion.lock.alreadyEnrolled': 'Already enrolled in the new year. It will be skipped.',
+
+  'promotion.action.promoted': 'Promote',
+  'promotion.action.detained': 'Detain',
+  'promotion.action.left': 'Left',
+  'promotion.action.passed_out': 'Passed out',
+  'promotion.action.transferred': 'Transferred',
+
+  'promotion.save.carry': 'Carry over unpaid dues into the new year',
+  'promotion.save.dueDate': 'Carry-over due date',
+  'promotion.save.dues': '{count} students with unpaid dues in this list.',
+  'promotion.save.count': 'Students to apply: {count}',
+  'promotion.save.review': 'Review and apply',
+  'promotion.error.noTargets': '{count} students to promote have no class chosen.',
+  'promotion.error.dueDate': 'Choose a due date for the carried-over dues.',
+  'promotion.error.noItems': 'Choose an action for at least one student.',
+
+  'promotion.confirm.title': 'Apply year-end promotion?',
+  'promotion.confirm.text':
+    'This creates enrolments in {toYear} for the students listed below. It can be undone for a limited time.',
+  'promotion.confirm.carryYes':
+    'Unpaid dues of students in this list will be carried into {toYear}, due {date}.',
+  'promotion.confirm.carryNo': 'No dues will be carried over.',
+  'promotion.confirm.apply': 'Apply promotion',
+  'promotion.confirm.applying': 'Applying…',
+  'promotion.confirm.cancel': 'Cancel',
+
+  'promotion.result.title': 'Promotion applied',
+  'promotion.result.undoneTitle': 'Promotion undone',
+  'promotion.result.undoUntil': 'You can undo this until {time}.',
+  'promotion.result.undoneNote': 'The enrolments from this run were removed and balances restored.',
+  'promotion.result.carried': 'Carried over {amount} in {count} invoices.',
+  'promotion.result.skipped': 'Skipped students',
+  'promotion.result.skippedRow': '{name}: {reason}',
+  'promotion.result.undo': 'Undo this promotion',
+  'promotion.result.undoing': 'Undoing…',
+
+  'promotion.history.title': 'Past promotions',
+  'promotion.history.loading': 'Loading promotions…',
+  'promotion.history.empty': 'No promotions have been applied yet.',
+  'promotion.history.details': 'Details',
+  'promotion.history.hideDetails': 'Hide details',
+  'promotion.history.detailsLoading': 'Loading details…',
+  'promotion.history.undo': 'Undo',
+  'promotion.history.undoing': 'Undoing…',
+  'promotion.history.undone': 'Undone',
+  'promotion.history.undoUntil': 'Undo until {time}',
+  'promotion.history.final': 'Final',
+  'promotion.history.item': '{name} · {action} · {from} → {to}',
+  'promotion.history.carriedItem': 'Carried {amount}',
+
+  'promotion.prev': 'Previous',
+  'promotion.next': 'Next',
+  'promotion.range': '{from} to {to} of {total}',
+  'promotion.none': 'None',
+  'promotion.error.undoBlocked':
+    'This promotion can no longer be undone: students in the new year have changed since it was applied.',
+};

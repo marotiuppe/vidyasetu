@@ -62,7 +62,7 @@ class GuardianConsent(Base):
 
     __tablename__ = "guardian_consents"
     __table_args__ = (
-        ForeignKeyConstraint(["student_id", "branch_id"], ["students.id", "students.branch_id"]),
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
         ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
         Index("ix_guardian_consents_student_purpose", "student_id", "purpose", "id"),
     )

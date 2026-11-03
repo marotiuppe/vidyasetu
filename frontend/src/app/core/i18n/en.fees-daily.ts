@@ -48,6 +48,7 @@ export const EN_FEES_DAILY: Record<string, string> = {
   'fees.daily.label.total': 'Total',
   'fees.daily.label.paid': 'Paid',
   'fees.daily.label.balance': 'Balance',
+  'fees.daily.label.carried': 'Carried forward',
   'fees.daily.label.overdue': 'Overdue',
   'fees.daily.amount.billed': 'Billed {amount}',
   'fees.daily.amount.collected': 'Collected {amount}',

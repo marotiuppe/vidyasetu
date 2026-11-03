@@ -122,7 +122,7 @@ class Enrollment(TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("student_id", "academic_year_id"),
         UniqueConstraint("section_id", "academic_year_id", "roll_no"),
-        ForeignKeyConstraint(["student_id", "branch_id"], ["students.id", "students.branch_id"]),
+        ForeignKeyConstraint(["student_id", "school_id"], ["students.id", "students.school_id"]),
         ForeignKeyConstraint(["class_id", "branch_id"], ["classes.id", "classes.branch_id"]),
         ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
     )

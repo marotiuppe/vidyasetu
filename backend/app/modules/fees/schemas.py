@@ -182,6 +182,7 @@ class InvoiceOut(BaseModel):
     discount_paise: int
     discount_reason: str | None
     total_paise: int
+    carried_forward_paise: int = 0
     paid_paise: int
     balance_paise: int
     status: str

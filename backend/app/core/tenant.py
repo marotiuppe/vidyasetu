@@ -3,13 +3,14 @@
 from datetime import date
 from typing import Any
 
-from sqlalchemy import Select, and_, false, or_, select
+from sqlalchemy import Select, and_, exists, false, or_, select
 
 from app.modules.academics.models import AcademicYear
 from app.modules.admissions.models import AdmissionApplication
 from app.modules.attendance.models import Holiday
 from app.modules.branches.models import Branch
 from app.modules.notices.models import Notice, TargetType
+from app.modules.promotion.models import PromotionBatch, PromotionItem
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import Role, User
 
@@ -97,6 +98,26 @@ def scope_students(stmt: AnySelect, user: User) -> AnySelect:
     if user.branch_id is None:
         return stmt.where(false())
     return stmt.where(Student.branch_id == user.branch_id)
+
+
+def scope_promotion_batches(stmt: AnySelect, user: User) -> AnySelect:
+    """Year-end promotion batches: the school owner sees all of the school's; branch-level staff
+    see only batches that moved a student from or to their branch. Others see nothing."""
+    if user.role == Role.SUPER_ADMIN or user.school_id is None:
+        return stmt.where(false())
+    stmt = stmt.where(PromotionBatch.school_id == user.school_id)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    if user.branch_id is None:
+        return stmt.where(false())
+    touched = exists().where(
+        PromotionItem.batch_id == PromotionBatch.id,
+        or_(
+            PromotionItem.from_branch_id == user.branch_id,
+            PromotionItem.to_branch_id == user.branch_id,
+        ),
+    )
+    return stmt.where(touched)
 
 
 def scope_holidays(stmt: AnySelect, user: User) -> AnySelect:

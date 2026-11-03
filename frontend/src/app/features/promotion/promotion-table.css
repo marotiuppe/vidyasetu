@@ -1,0 +1,45 @@
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.promo-row {
+  align-items: flex-start;
+}
+
+.promo-row.is-locked .name {
+  opacity: 0.6;
+}
+
+.lock-note {
+  color: var(--amber);
+}
+
+.promo-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 560px;
+  align-items: end;
+}
+
+.promo-controls > .row-sub {
+  grid-column: 1 / -1;
+}
+
+.promo-controls .field {
+  margin: 0;
+}
+
+.name {
+  font-weight: 650;
+  color: var(--text);
+}
