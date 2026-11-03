@@ -1,0 +1,152 @@
+@if (!hidden()) {
+  <section class="card" aria-labelledby="ids-title">
+    <div class="card-head">
+      <h2 class="card-title" id="ids-title">{{ i18n.t('students.ids.title') }}</h2>
+      @if (view() && !editing()) {
+        <span class="row-actions">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="startEdit()">
+            {{ i18n.t('students.ids.edit') }}
+          </button>
+          @if (canReveal()) {
+            @if (revealed()) {
+              <button type="button" class="btn btn-ghost btn-sm" (click)="hide()">
+                {{ i18n.t('students.ids.hide') }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [disabled]="busy()"
+                (click)="reveal()"
+              >
+                {{ i18n.t('students.ids.reveal') }}
+              </button>
+            }
+          }
+        </span>
+      }
+    </div>
+    <p class="hint">{{ i18n.t('students.ids.help') }}</p>
+
+    <div aria-live="polite">
+      @if (notice(); as message) {
+        <p class="notice" role="status">{{ message }}</p>
+      }
+    </div>
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+
+    @if (view(); as v) {
+      @if (editing()) {
+        <form class="ids-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+          <div class="form-grid">
+            <div class="field">
+              <label for="ids-pen">{{ i18n.t('students.ids.pen') }}</label>
+              <input
+                id="ids-pen"
+                class="input"
+                formControlName="pen"
+                autocomplete="off"
+                maxlength="11"
+                [placeholder]="v.pen_masked ?? ''"
+                [attr.aria-describedby]="'ids-pen-help'"
+              />
+              <span id="ids-pen-help" class="hint">{{ i18n.t('students.ids.keepHint') }}</span>
+              @if (form.controls.pen.touched && form.controls.pen.invalid) {
+                <span class="field-error">{{ i18n.t('students.ids.penInvalid') }}</span>
+              }
+              @if (form.controls.pen.hasError('server')) {
+                <span class="field-error">{{ form.controls.pen.getError('server') }}</span>
+              }
+              @if (v.pen_masked !== null) {
+                <label class="check">
+                  <input type="checkbox" formControlName="remove_pen" />
+                  {{ i18n.t('students.ids.remove') }}
+                </label>
+              }
+            </div>
+
+            <label class="field">
+              {{ i18n.t('students.ids.apaarConsent') }}
+              <select class="input" formControlName="consent">
+                <option value="unset">{{ i18n.t('students.ids.consent.unset') }}</option>
+                <option value="yes">{{ i18n.t('students.ids.consent.yes') }}</option>
+                <option value="no">{{ i18n.t('students.ids.consent.no') }}</option>
+              </select>
+            </label>
+
+            <div class="field">
+              <label for="ids-apaar">{{ i18n.t('students.ids.apaar') }}</label>
+              <input
+                id="ids-apaar"
+                class="input"
+                inputmode="numeric"
+                formControlName="apaar_id"
+                autocomplete="off"
+                maxlength="12"
+                [placeholder]="v.apaar_masked ?? ''"
+                [attr.aria-describedby]="'ids-apaar-help'"
+              />
+              <span id="ids-apaar-help" class="hint">{{ i18n.t('students.ids.keepHint') }}</span>
+              @if (form.controls.apaar_id.touched && form.controls.apaar_id.invalid) {
+                <span class="field-error">{{ i18n.t('students.ids.apaarInvalid') }}</span>
+              }
+              @if (form.controls.apaar_id.hasError('server')) {
+                <span class="field-error">{{ form.controls.apaar_id.getError('server') }}</span>
+              }
+              @if (v.apaar_masked !== null) {
+                <label class="check">
+                  <input type="checkbox" formControlName="remove_apaar" />
+                  {{ i18n.t('students.ids.remove') }}
+                </label>
+              }
+            </div>
+
+            <label class="field">
+              {{ i18n.t('students.ids.aadhaar') }}
+              <select class="input" formControlName="aadhaar">
+                <option value="unset">{{ i18n.t('students.ids.aadhaar.unset') }}</option>
+                <option value="yes">{{ i18n.t('students.ids.aadhaar.yes') }}</option>
+                <option value="no">{{ i18n.t('students.ids.aadhaar.no') }}</option>
+              </select>
+            </label>
+          </div>
+
+          @if (editError(); as message) {
+            <p class="form-error" role="alert">{{ message }}</p>
+          }
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="busy()">
+              {{ busy() ? i18n.t('students.ids.saving') : i18n.t('students.ids.save') }}
+            </button>
+            <button type="button" class="btn btn-ghost" (click)="cancelEdit()">
+              {{ i18n.t('students.ids.cancel') }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        <dl class="facts">
+          <div>
+            <dt>{{ i18n.t('students.ids.pen') }}</dt>
+            <dd>{{ revealed()?.pen ?? v.pen_masked ?? i18n.t('students.ids.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('students.ids.apaar') }}</dt>
+            <dd>{{ revealed()?.apaar_id ?? v.apaar_masked ?? i18n.t('students.ids.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('students.ids.apaarConsent') }}</dt>
+            <dd>{{ consentText(v.apaar_consent) }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('students.ids.aadhaar') }}</dt>
+            <dd>{{ aadhaarText(v.aadhaar_details_match) }}</dd>
+          </div>
+        </dl>
+      }
+    } @else if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('students.ids.loading') }}</p>
+    }
+  </section>
+}

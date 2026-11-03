@@ -1,0 +1,17 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('admissions.new') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admissions.subtitle') }}</p>
+  </div>
+  <a class="btn btn-ghost" routerLink="/admissions">{{ i18n.t('admissions.detail.back') }}</a>
+</div>
+
+<section class="card" aria-labelledby="new-admission-title">
+  <h2 class="card-title" id="new-admission-title">{{ i18n.t('admissions.new') }}</h2>
+  <sms-admission-form
+    [busy]="busy()"
+    [error]="error()"
+    (submitted)="save($event)"
+    (cancelled)="cancel()"
+  />
+</section>

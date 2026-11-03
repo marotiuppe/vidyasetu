@@ -1,0 +1,122 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('admissions.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('admissions.subtitle') }}</p>
+  </div>
+  <div class="header-actions">
+    <a class="btn btn-primary" routerLink="/admissions/new">
+      <sms-icon name="plus" [size]="16" />
+      {{ i18n.t('admissions.new') }}
+    </a>
+  </div>
+</div>
+
+<div class="stack">
+  <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('admissions.status.all')">
+    @for (s of tabs; track s) {
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [attr.aria-selected]="filters().status === s"
+        (click)="setStatus(s)"
+      >
+        {{ i18n.t(s === '' ? 'admissions.status.all' : statusKey(s)) }}
+        <span class="tab-count">{{ countOf(s) }}</span>
+      </button>
+    }
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <section class="card" aria-labelledby="admissions-list-title">
+    <h2 class="card-title" id="admissions-list-title">{{ i18n.t('admissions.title') }}</h2>
+
+    <div class="toolbar" role="search">
+      <label class="field">
+        {{ i18n.t('admissions.search') }}
+        <input
+          class="input"
+          type="search"
+          autocomplete="off"
+          [placeholder]="i18n.t('admissions.searchPlaceholder')"
+          [value]="filters().q"
+          (input)="onSearch($event)"
+        />
+      </label>
+      @if (canPickBranch) {
+        <label class="field">
+          {{ i18n.t('admissions.branch') }}
+          <select class="input" (change)="onBranch($event)">
+            <option value="0" [selected]="filters().branchId === 0">
+              {{ i18n.t('admissions.allBranches') }}
+            </option>
+            @for (b of branches(); track b.id) {
+              <option [value]="b.id" [selected]="filters().branchId === b.id">{{ b.name }}</option>
+            }
+          </select>
+        </label>
+      }
+    </div>
+
+    @if (loading()) {
+      <p class="empty" role="status">{{ i18n.t('admissions.loading') }}</p>
+    } @else if (items().length === 0) {
+      <p class="empty" role="status">{{ i18n.t('admissions.empty') }}</p>
+    } @else {
+      <ul class="rows">
+        @for (a of items(); track a.id) {
+          <li class="row">
+            <span class="row-main">
+              <a class="name" [routerLink]="['/admissions', a.id]">
+                {{ a.first_name }} {{ a.last_name }}
+              </a>
+              <span class="row-sub">
+                {{ a.class_name ?? i18n.t('admissions.noClass') }}
+                @if (canPickBranch) {
+                  · {{ a.branch_name }}
+                }
+                · {{ i18n.t(sourceKey(a.source)) }}
+              </span>
+              <span class="row-sub">
+                {{
+                  i18n.t('admissions.guardianLine', {
+                    name: a.guardian_name,
+                    phone: a.guardian_phone,
+                  })
+                }}
+              </span>
+            </span>
+            <span class="badge" [class]="statusBadge(a.status)">
+              {{ i18n.t(statusKey(a.status)) }}
+            </span>
+          </li>
+        }
+      </ul>
+
+      <nav class="pager" [attr.aria-label]="i18n.t('admissions.title')">
+        <span>{{ i18n.t('admissions.range', { from: from(), to: to(), total: total() }) }}</span>
+        <span class="row-actions">
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="page() <= 1"
+            (click)="prev()"
+          >
+            {{ i18n.t('admissions.prev') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost btn-sm"
+            [disabled]="to() >= total()"
+            (click)="next()"
+          >
+            {{ i18n.t('admissions.next') }}
+          </button>
+        </span>
+      </nav>
+    }
+  </section>
+</div>

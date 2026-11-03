@@ -52,6 +52,15 @@ class Student(TimestampMixin, Base):
         UniqueConstraint("id", "school_id"),
         UniqueConstraint("id", "branch_id"),
         ForeignKeyConstraint(["branch_id", "school_id"], ["branches.id", "branches.school_id"]),
+        # A PEN is unique within a school (only when one is recorded).
+        Index(
+            "uq_students_school_pen",
+            "school_id",
+            "pen",
+            unique=True,
+            sqlite_where=text("pen IS NOT NULL"),
+            postgresql_where=text("pen IS NOT NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -70,6 +79,13 @@ class Student(TimestampMixin, Base):
     previous_school: Mapped[str | None] = mapped_column(String(200))
     # The student's own login (role student).
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), unique=True)
+    # Government identifiers (only when the school enabled students.gov_ids_enabled). The
+    # Aadhaar number is never stored; `aadhaar_details_match` only records that staff checked it.
+    pen: Mapped[str | None] = mapped_column(String(11))
+    apaar_id: Mapped[str | None] = mapped_column(String(12))
+    # None = not asked, True = given, False = refused (then apaar_id is cleared).
+    apaar_consent: Mapped[bool | None] = mapped_column(Boolean)
+    aadhaar_details_match: Mapped[bool | None] = mapped_column(Boolean)
 
 
 class Guardian(TimestampMixin, Base):

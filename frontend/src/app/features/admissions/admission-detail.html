@@ -1,0 +1,329 @@
+<div class="page-header">
+  <div>
+    @if (app(); as a) {
+      <h1 class="page-title">{{ a.first_name }} {{ a.last_name }}</h1>
+      <p class="page-subtitle">{{ i18n.t(sourceKey(a.source)) }} · {{ a.branch_name }}</p>
+    } @else {
+      <h1 class="page-title">{{ i18n.t('admissions.crumb.detail') }}</h1>
+    }
+  </div>
+  <a class="btn btn-ghost" routerLink="/admissions">{{ i18n.t('admissions.detail.back') }}</a>
+</div>
+
+@if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('admissions.detail.loading') }}</p>
+} @else if (notFound()) {
+  <p class="empty" role="alert">{{ i18n.t('admissions.detail.notFound') }}</p>
+} @else if (app(); as a) {
+  <div class="stack">
+    @if (error(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    <div aria-live="polite">
+      @if (notice(); as message) {
+        <p class="notice" role="status">{{ message }}</p>
+      }
+    </div>
+
+    <!-- Status -->
+    <section class="card" aria-labelledby="status-title">
+      <div class="card-head">
+        <h2 class="card-title" id="status-title">{{ i18n.t('admissions.statusTitle') }}</h2>
+        <span class="badge" [class]="statusBadge(a.status)">
+          {{ i18n.t(statusKey(a.status)) }}
+        </span>
+      </div>
+      <p class="hint">{{ i18n.t('admissions.statusHelp') }}</p>
+
+      @if (a.status === 'rejected' && a.rejection_reason) {
+        <p class="hint">
+          <strong>{{ i18n.t('admissions.detail.rejectionReason') }}:</strong>
+          {{ a.rejection_reason }}
+        </p>
+      }
+
+      @if (rejecting()) {
+        <form class="panel" [formGroup]="rejectForm" (ngSubmit)="confirmReject()" novalidate>
+          <label class="field">
+            {{ i18n.t('admissions.reject.reasonLabel') }}
+            <textarea class="input" formControlName="reason" rows="3" maxlength="1000"></textarea>
+            @if (rejectForm.controls.reason.touched && rejectForm.controls.reason.invalid) {
+              <span class="field-error">{{ i18n.t('admissions.reject.reasonRequired') }}</span>
+            }
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="busy()">
+              {{ i18n.t('admissions.reject.confirm') }}
+            </button>
+            <button type="button" class="btn btn-ghost" (click)="cancelReject()">
+              {{ i18n.t('admissions.reject.cancel') }}
+            </button>
+          </div>
+        </form>
+      } @else if (actions().length > 0) {
+        <div class="form-actions">
+          @for (s of actions(); track s) {
+            <button
+              type="button"
+              class="btn"
+              [class.btn-primary]="s === 'admitted'"
+              [class.btn-ghost]="s !== 'admitted'"
+              [disabled]="busy()"
+              (click)="startMove(s)"
+            >
+              {{ i18n.t(actionKey(s)) }}
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Details -->
+    <section class="card" aria-labelledby="details-title">
+      <div class="card-head">
+        <h2 class="card-title" id="details-title">{{ i18n.t('admissions.detail.details') }}</h2>
+        @if (!editing()) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="editing.set(true)">
+            {{ i18n.t('admissions.detail.edit') }}
+          </button>
+        }
+      </div>
+
+      @if (editing()) {
+        <sms-admission-form
+          [app]="a"
+          [busy]="editBusy()"
+          [error]="editError()"
+          (submitted)="saveEdit($event)"
+          (cancelled)="editing.set(false)"
+        />
+      } @else {
+        <dl class="facts">
+          <div>
+            <dt>{{ i18n.t('admissions.detail.branch') }}</dt>
+            <dd>{{ a.branch_name }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.class') }}</dt>
+            <dd>{{ a.class_name ?? i18n.t('admissions.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.academicYear') }}</dt>
+            <dd>{{ yearName(a.academic_year_id) }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.gender') }}</dt>
+            <dd>
+              {{ a.gender ? enumText('gender', a.gender) : i18n.t('admissions.notSet') }}
+            </dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.dob') }}</dt>
+            <dd>{{ dateText(a.date_of_birth) }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.guardian') }}</dt>
+            <dd>
+              {{ a.guardian_name }} ({{ enumText('relation', a.guardian_relation) }}),
+              {{ a.guardian_phone }}
+              @if (a.guardian_email) {
+                , {{ a.guardian_email }}
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.address') }}</dt>
+            <dd>{{ a.address || i18n.t('admissions.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.previousSchool') }}</dt>
+            <dd>{{ a.previous_school || i18n.t('admissions.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.notes') }}</dt>
+            <dd>{{ a.notes || i18n.t('admissions.notSet') }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.received') }}</dt>
+            <dd>{{ dateText(a.created_at) }}</dd>
+          </div>
+          <div>
+            <dt>{{ i18n.t('admissions.detail.updated') }}</dt>
+            <dd>{{ dateText(a.updated_at) }}</dd>
+          </div>
+        </dl>
+      }
+    </section>
+
+    <!-- Documents -->
+    <section class="card" aria-labelledby="docs-title">
+      <h2 class="card-title" id="docs-title">{{ i18n.t('admissions.docs.title') }}</h2>
+      <p class="hint">{{ i18n.t('admissions.docs.help') }}</p>
+
+      @if (docError(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+
+      @if (a.documents.length === 0) {
+        <p class="empty">{{ i18n.t('admissions.docs.empty') }}</p>
+      } @else {
+        <ul class="rows">
+          @for (d of a.documents; track d.id) {
+            <li class="row">
+              <span class="row-main">
+                <span class="name">{{ d.name }}</span>
+                <span class="row-sub">{{ d.content_type }} · {{ sizeText(d.size_bytes) }}</span>
+              </span>
+              <span class="row-actions">
+                <button type="button" class="btn btn-ghost btn-sm" (click)="download(d)">
+                  {{ i18n.t('admissions.docs.download') }}
+                  <span class="sr-only">{{ d.name }}</span>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="remove(d)">
+                  {{ i18n.t('admissions.docs.delete') }}
+                  <span class="sr-only">{{ d.name }}</span>
+                </button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+      <p class="hint">
+        {{ i18n.t('admissions.docs.count', { count: a.documents.length, max: maxDocuments }) }}
+      </p>
+
+      @if (canUpload()) {
+        <form class="panel upload" [formGroup]="docForm" (ngSubmit)="upload()" novalidate>
+          <label class="field">
+            {{ i18n.t('admissions.docs.file') }}
+            <input
+              #fileInput
+              class="input"
+              type="file"
+              [accept]="docTypes"
+              (change)="onFile($event)"
+            />
+          </label>
+          <label class="field">
+            {{ i18n.t('admissions.docs.name') }}
+            <input class="input" formControlName="name" autocomplete="off" maxlength="200" />
+            @if (docForm.controls.name.touched && docForm.controls.name.invalid) {
+              <span class="field-error">{{ i18n.t('admissions.docs.nameRequired') }}</span>
+            }
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="uploading()">
+              {{
+                uploading() ? i18n.t('admissions.docs.uploading') : i18n.t('admissions.docs.upload')
+              }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <!-- Convert to student -->
+    @if ((a.status === 'admitted' && !enrolledId()) || a.status === 'enrolled') {
+      <section class="card" aria-labelledby="convert-title">
+        <h2 class="card-title" id="convert-title">{{ i18n.t('admissions.convert.title') }}</h2>
+
+        @if (a.status === 'enrolled') {
+          <p class="hint">{{ i18n.t('admissions.detail.enrolled') }}</p>
+          @if (studentId(); as sid) {
+            <a class="btn btn-ghost btn-sm" [routerLink]="['/students', sid]">
+              {{ i18n.t('admissions.detail.openProfile') }}
+            </a>
+          }
+        } @else {
+          <p class="hint">{{ i18n.t('admissions.convert.help') }}</p>
+          @if (!canConvert()) {
+            <p class="hint" role="note">{{ i18n.t('admissions.convert.needsDetails') }}</p>
+          }
+          <form class="admission-form" [formGroup]="convertForm" (ngSubmit)="convert()" novalidate>
+            <div class="form-grid">
+              <label class="field">
+                {{ i18n.t('admissions.convert.class') }}
+                <select class="input" formControlName="class_id">
+                  <option [ngValue]="0">{{ i18n.t('admissions.form.classNotChosen') }}</option>
+                  @for (c of convertClasses(); track c.id) {
+                    <option [ngValue]="c.id">{{ c.name }}</option>
+                  }
+                </select>
+                @if (
+                  convertForm.controls.class_id.touched && convertForm.controls.class_id.invalid
+                ) {
+                  <span class="field-error">{{ i18n.t('admissions.convert.classRequired') }}</span>
+                }
+              </label>
+              <label class="field">
+                {{ i18n.t('admissions.convert.section') }}
+                <select class="input" formControlName="section_id">
+                  <option [ngValue]="0">{{ i18n.t('admissions.convert.sectionNone') }}</option>
+                  @for (s of convertSections(); track s.id) {
+                    <option [ngValue]="s.id">{{ s.name }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field">
+                {{ i18n.t('admissions.convert.year') }}
+                <select class="input" formControlName="academic_year_id">
+                  <option [ngValue]="0">{{ i18n.t('admissions.detail.academicYearNone') }}</option>
+                  @for (y of years(); track y.id) {
+                    <option [ngValue]="y.id">{{ y.name }}</option>
+                  }
+                </select>
+                @if (
+                  convertForm.controls.academic_year_id.touched &&
+                  convertForm.controls.academic_year_id.invalid
+                ) {
+                  <span class="field-error">{{ i18n.t('admissions.convert.yearRequired') }}</span>
+                }
+              </label>
+              <label class="field">
+                {{ i18n.t('admissions.convert.admissionNo') }}
+                <input
+                  class="input"
+                  formControlName="admission_no"
+                  autocomplete="off"
+                  maxlength="50"
+                />
+                @if (
+                  convertForm.controls.admission_no.touched &&
+                  convertForm.controls.admission_no.invalid
+                ) {
+                  <span class="field-error">
+                    {{ i18n.t('admissions.convert.admissionNoRequired') }}
+                  </span>
+                }
+              </label>
+              <label class="field">
+                {{ i18n.t('admissions.convert.admissionDate') }}
+                <input class="input" type="date" formControlName="admission_date" [max]="today" />
+              </label>
+            </div>
+            @if (convertError(); as message) {
+              <p class="form-error" role="alert">{{ message }}</p>
+            }
+            <div class="form-actions">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="!canConvert() || converting()"
+              >
+                {{
+                  converting()
+                    ? i18n.t('admissions.convert.converting')
+                    : i18n.t('admissions.convert.submit')
+                }}
+              </button>
+            </div>
+          </form>
+        }
+      </section>
+    }
+
+    @if (credentials(); as list) {
+      <sms-login-details [credentials]="list" (done)="openStudent()" />
+    }
+  </div>
+}

@@ -1,0 +1,142 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--bg);
+}
+
+.apply-wrap {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .apply-wrap {
+    padding: 0 24px;
+  }
+}
+
+.skip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+  padding: 10px 16px;
+  font-weight: 600;
+  color: var(--primary-ink);
+  background: var(--forest);
+  border-radius: var(--radius-sm);
+  transform: translateY(-200%);
+}
+
+.skip:focus-visible {
+  transform: none;
+}
+
+.apply-top {
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.apply-top-row {
+  display: flex;
+  align-items: center;
+  min-height: 64px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.apply-main {
+  flex: 1;
+  padding-top: 24px;
+  padding-bottom: 40px;
+  outline: none;
+}
+
+.apply-head {
+  margin-bottom: 16px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.apply-status {
+  padding: 24px 4px;
+  color: var(--muted);
+}
+
+.apply-card {
+  display: grid;
+  gap: 12px;
+}
+
+.apply-form {
+  gap: 16px;
+}
+
+.group-title {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 44px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.consent input {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--green);
+}
+
+.consent a {
+  color: var(--green);
+}
+
+/* Honeypot: off-screen for people and skipped by keyboard and screen readers. */
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+@media (pointer: coarse), (max-width: 1023px) {
+  .consent input {
+    width: 24px;
+    height: 24px;
+  }
+}

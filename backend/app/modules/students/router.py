@@ -11,6 +11,9 @@ from app.modules.students.schemas import (
     GuardianCreate,
     GuardianOut,
     GuardianUpdate,
+    IdentifiersIn,
+    IdentifiersOut,
+    IdentifiersRevealed,
     ImportRequest,
     ImportResult,
     LoginCreate,
@@ -43,6 +46,22 @@ _exporters = Depends(
         Role.ACCOUNTANT,
     )
 )
+
+
+_id_viewers = Depends(
+    require_roles(
+        Role.SCHOOL_OWNER,
+        Role.MANAGEMENT,
+        Role.HEADMASTER,
+        Role.CLERK,
+        Role.TEACHER,
+        Role.ACCOUNTANT,
+    )
+)
+_id_editors = Depends(
+    require_roles(Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.HEADMASTER, Role.CLERK)
+)
+_id_revealers = Depends(require_roles(Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.HEADMASTER))
 
 
 class _Filters:
@@ -124,6 +143,33 @@ async def update_student(
     student_id: int, data: StudentUpdate, db: DbSession, actor: CurrentUser
 ) -> StudentDetail:
     return await service.update_student(db, actor, student_id, data)
+
+
+@router.get(
+    "/students/{student_id}/identifiers", response_model=IdentifiersOut, dependencies=[_id_viewers]
+)
+async def get_identifiers(student_id: int, db: DbSession, actor: CurrentUser) -> IdentifiersOut:
+    return await service.get_identifiers(db, actor, student_id)
+
+
+@router.get(
+    "/students/{student_id}/identifiers/reveal",
+    response_model=IdentifiersRevealed,
+    dependencies=[_id_revealers],
+)
+async def reveal_identifiers(
+    student_id: int, db: DbSession, actor: CurrentUser
+) -> IdentifiersRevealed:
+    return await service.reveal_identifiers(db, actor, student_id)
+
+
+@router.put(
+    "/students/{student_id}/identifiers", response_model=IdentifiersOut, dependencies=[_id_editors]
+)
+async def update_identifiers(
+    student_id: int, data: IdentifiersIn, db: DbSession, actor: CurrentUser
+) -> IdentifiersOut:
+    return await service.update_identifiers(db, actor, student_id, data)
 
 
 @router.put(

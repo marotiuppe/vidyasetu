@@ -1,0 +1,194 @@
+<a class="skip" href="#apply-main">{{ i18n.t('public.skip') }}</a>
+
+<header class="apply-top">
+  <div class="apply-wrap apply-top-row">
+    <a class="brand" routerLink="/" [attr.aria-label]="i18n.t('public.nav.home')">
+      <img src="brand/logo-mark.svg" alt="" width="36" height="36" />
+      <span>Vidyasetu</span>
+    </a>
+  </div>
+</header>
+
+<main id="apply-main" class="apply-wrap apply-main" tabindex="-1">
+  @if (loading()) {
+    <p class="apply-status" role="status">{{ i18n.t('apply.loading') }}</p>
+  } @else if (loadError(); as message) {
+    <p class="apply-status" role="alert">{{ message }}</p>
+  } @else if (unavailable()) {
+    <section class="card apply-card" aria-labelledby="apply-unavailable">
+      <h1 class="page-title" id="apply-unavailable">{{ i18n.t('apply.title') }}</h1>
+      <p class="hint">{{ i18n.t('apply.unavailable') }}</p>
+    </section>
+  } @else if (reference(); as ref) {
+    <section class="card apply-card" aria-labelledby="apply-done" role="status">
+      <h1 class="page-title" id="apply-done">{{ i18n.t('apply.doneTitle') }}</h1>
+      <p>{{ i18n.t('apply.doneText', { reference: ref }) }}</p>
+      <p class="hint">{{ i18n.t('apply.doneHint') }}</p>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="again()">
+          {{ i18n.t('apply.another') }}
+        </button>
+      </div>
+    </section>
+  } @else if (info(); as data) {
+    <div class="apply-head">
+      <p class="eyebrow">{{ data.school_name }}</p>
+      <h1 class="page-title">{{ i18n.t('apply.title') }}</h1>
+      <p class="page-subtitle">{{ i18n.t('apply.subtitle') }}</p>
+    </div>
+
+    <form class="card apply-card apply-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <h2 class="group-title">{{ i18n.t('apply.student') }}</h2>
+      <div class="form-grid">
+        @if (data.branches.length > 1) {
+          <label class="field">
+            {{ i18n.t('apply.branch') }}
+            <select class="input" formControlName="branch_id" (change)="onBranchChange()">
+              <option [ngValue]="0">{{ i18n.t('apply.selectBranch') }}</option>
+              @for (b of data.branches; track b.id) {
+                <option [ngValue]="b.id">{{ b.name }}</option>
+              }
+            </select>
+            @if (form.controls.branch_id.touched && form.controls.branch_id.invalid) {
+              <span class="field-error">{{ i18n.t('admissions.form.branchRequired') }}</span>
+            }
+          </label>
+        }
+        <label class="field">
+          {{ i18n.t('apply.class') }}
+          <select class="input" formControlName="class_id">
+            <option [ngValue]="0">{{ i18n.t('apply.classAny') }}</option>
+            @for (c of classOptions(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('admissions.form.firstName') }}
+          <input class="input" formControlName="first_name" autocomplete="off" maxlength="100" />
+          @if (form.controls.first_name.touched && form.controls.first_name.invalid) {
+            <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('admissions.form.lastName') }}
+          <input class="input" formControlName="last_name" autocomplete="off" maxlength="100" />
+          @if (form.controls.last_name.touched && form.controls.last_name.invalid) {
+            <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('apply.gender') }}
+          <select class="input" formControlName="gender">
+            <option value="">{{ i18n.t('apply.genderNotGiven') }}</option>
+            @for (g of genders; track g) {
+              <option [value]="g">{{ i18n.t('students.list.gender.' + g) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('apply.dob') }}
+          <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
+        </label>
+        <label class="field">
+          {{ i18n.t('apply.previousSchool') }}
+          <input
+            class="input"
+            formControlName="previous_school"
+            autocomplete="off"
+            maxlength="200"
+          />
+        </label>
+        <label class="field field-wide">
+          {{ i18n.t('apply.address') }}
+          <input class="input" formControlName="address" autocomplete="off" maxlength="500" />
+        </label>
+      </div>
+
+      <h2 class="group-title">{{ i18n.t('apply.guardian') }}</h2>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('admissions.form.guardianName') }}
+          <input
+            class="input"
+            formControlName="guardian_name"
+            autocomplete="name"
+            maxlength="200"
+          />
+          @if (form.controls.guardian_name.touched && form.controls.guardian_name.invalid) {
+            <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('admissions.form.relation') }}
+          <select class="input" formControlName="guardian_relation">
+            @for (r of relations; track r) {
+              <option [value]="r">{{ i18n.t('students.list.relation.' + r) }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('admissions.form.guardianPhone') }}
+          <input
+            class="input"
+            type="tel"
+            formControlName="guardian_phone"
+            autocomplete="tel"
+            maxlength="20"
+          />
+          @if (form.controls.guardian_phone.touched && form.controls.guardian_phone.invalid) {
+            <span class="field-error">
+              {{
+                form.controls.guardian_phone.hasError('required')
+                  ? i18n.t('admissions.form.phoneRequired')
+                  : i18n.t('admissions.form.phoneInvalid')
+              }}
+            </span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('apply.guardianEmail') }}
+          <input
+            class="input"
+            type="email"
+            formControlName="guardian_email"
+            autocomplete="email"
+            maxlength="254"
+          />
+          @if (form.controls.guardian_email.touched && form.controls.guardian_email.invalid) {
+            <span class="field-error">{{ i18n.t('admissions.form.emailInvalid') }}</span>
+          }
+        </label>
+      </div>
+
+      <!-- Honeypot: keep it empty. People cannot see or reach it. -->
+      <div class="hp" aria-hidden="true">
+        <label>
+          {{ i18n.t('apply.honeypot') }}
+          <input type="text" formControlName="website" tabindex="-1" autocomplete="off" />
+        </label>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" formControlName="consent" />
+        <span>
+          {{ i18n.t('apply.consent') }}
+          <a [routerLink]="['/s', code(), 'privacy']">{{ i18n.t('apply.privacyLink') }}</a>
+        </span>
+      </label>
+      @if (form.controls.consent.touched && form.controls.consent.invalid) {
+        <p class="field-error">{{ i18n.t('apply.consentRequired') }}</p>
+      }
+
+      @if (submitError(); as message) {
+        <p class="form-error" role="alert">{{ message }}</p>
+      }
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+          {{ submitting() ? i18n.t('apply.submitting') : i18n.t('apply.submit') }}
+        </button>
+      </div>
+    </form>
+  }
+</main>

@@ -31,7 +31,17 @@ _EVERYONE = frozenset(Role)
 
 DAYS_PATTERN = r"^(mon|tue|wed|thu|fri|sat|sun)(,(mon|tue|wed|thu|fri|sat|sun))*$"
 NOTIFY_CHOICES = ("off", "app", "sms", "whatsapp", "email")
-FEATURES = ("students", "attendance", "notices", "fees", "exams", "timetable", "staff", "extras")
+FEATURES = (
+    "students",
+    "attendance",
+    "notices",
+    "fees",
+    "exams",
+    "timetable",
+    "staff",
+    "extras",
+    "admissions",
+)
 
 
 @dataclass(frozen=True)
@@ -207,6 +217,13 @@ _school("portal.parent_sees_attendance", "bool", G, "Parents see attendance",
         "Show attendance to parents.", True)
 _school("portal.student_logins_enabled", "bool", G, "Student logins",
         "Allow students to have their own logins.", True)
+G = "Students and identifiers"
+_school("students.gov_ids_enabled", "bool", G, "Store PEN and APAAR IDs",
+        "Allow staff to record the PEN and APAAR IDs of students. Aadhaar numbers are never "
+        "stored.", False)
+G = "Admissions"
+_school("admissions.online_form_enabled", "bool", G, "Online admission form",
+        "Let families apply through the public admission form for this school.", False)
 G = "Data"
 _school("data.retention_days", "int", G, "Retention (days)",
         "Days to keep records after a student leaves. 0 means keep until deleted.", 0,

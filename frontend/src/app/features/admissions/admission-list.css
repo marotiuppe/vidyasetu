@@ -1,0 +1,15 @@
+.name {
+  font-weight: 650;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.name:hover {
+  text-decoration: underline;
+}
+
+.tab-count {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}

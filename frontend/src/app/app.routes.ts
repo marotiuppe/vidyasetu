@@ -8,7 +8,11 @@ import {
   publicOnlyMatch,
   roleGuard,
 } from './core/auth/auth.guard';
-import { PRIVACY_ADMIN_ROLES, STUDENT_WRITER_ROLES } from './core/auth/permissions';
+import {
+  ADMISSION_ROLES,
+  PRIVACY_ADMIN_ROLES,
+  STUDENT_WRITER_ROLES,
+} from './core/auth/permissions';
 import { moduleGuard } from './core/api/module.guard';
 
 const LEGAL_CHILDREN: Routes = [
@@ -71,6 +75,12 @@ export const routes: Routes = [
       import('./features/policies/accept-policies').then((m) => m.AcceptPolicies),
   },
   {
+    // Online application form for one school (public, no sign-in, outside the shell).
+    path: 'apply/:code',
+    data: { title: 'Apply for admission' },
+    loadComponent: () => import('./features/admissions/apply-page').then((m) => m.ApplyPage),
+  },
+  {
     // The same pages for one school, reached by its school code (public, no sign-in needed).
     path: 's/:code',
     loadComponent: () => import('./features/legal/legal-layout').then((m) => m.LegalLayout),
@@ -116,6 +126,27 @@ export const routes: Routes = [
         canActivate: [moduleGuard('students')],
         loadComponent: () =>
           import('./features/students/student-profile').then((m) => m.StudentProfile),
+      },
+      {
+        path: 'admissions',
+        data: { title: 'Admissions', titleKey: 'admissions.nav' },
+        canActivate: [roleGuard(...ADMISSION_ROLES), moduleGuard('admissions')],
+        loadComponent: () =>
+          import('./features/admissions/admission-list').then((m) => m.AdmissionList),
+      },
+      {
+        path: 'admissions/new',
+        data: { title: 'New enquiry', titleKey: 'admissions.crumb.new' },
+        canActivate: [roleGuard(...ADMISSION_ROLES), moduleGuard('admissions')],
+        loadComponent: () =>
+          import('./features/admissions/admission-new').then((m) => m.AdmissionNew),
+      },
+      {
+        path: 'admissions/:id',
+        data: { title: 'Application', titleKey: 'admissions.crumb.detail' },
+        canActivate: [roleGuard(...ADMISSION_ROLES), moduleGuard('admissions')],
+        loadComponent: () =>
+          import('./features/admissions/admission-detail').then((m) => m.AdmissionDetailPage),
       },
       {
         path: 'attendance',

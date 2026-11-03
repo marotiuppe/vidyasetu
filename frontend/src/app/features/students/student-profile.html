@@ -426,6 +426,9 @@
           </button>
         }
       </section>
+
+      <!-- Government IDs (shown only when the school has turned the storage on) -->
+      <sms-student-identifiers [studentId]="s.id" [canReveal]="canReveal" />
     }
   </div>
 } @else {

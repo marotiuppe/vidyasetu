@@ -23,6 +23,8 @@ from app.core.middleware import (
 from app.core.security import hash_password
 from app.db.session import SessionLocal
 from app.modules.academics.router import router as academics_router
+from app.modules.admissions.router import public_router as admissions_public_router
+from app.modules.admissions.router import router as admissions_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.mfa_router import router as mfa_router
@@ -162,6 +164,8 @@ api.include_router(parents_router)
 api.include_router(attendance_router)
 api.include_router(notices_router)
 api.include_router(fees_router)
+api.include_router(admissions_router)
+api.include_router(admissions_public_router)
 api.include_router(settings_router)
 api.include_router(audit_router)
 api.include_router(consent_router)

@@ -2,7 +2,7 @@ import csv
 import io
 import re
 import secrets
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
@@ -37,6 +37,9 @@ from app.modules.students.schemas import (
     GuardianCreate,
     GuardianOut,
     GuardianUpdate,
+    IdentifiersIn,
+    IdentifiersOut,
+    IdentifiersRevealed,
     ImportRequest,
     ImportResult,
     ImportRow,
@@ -818,8 +821,18 @@ async def _create_logins(
     return credentials
 
 
-async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> StudentCreated:
-    """Create the student, guardians, enrolment and any requested logins in one transaction."""
+async def create_student(
+    db: AsyncSession,
+    actor: User,
+    data: StudentCreate,
+    *,
+    before_commit: Callable[[Student], Awaitable[None]] | None = None,
+) -> StudentCreated:
+    """Create the student, guardians, enrolment and any requested logins in one transaction.
+
+    `before_commit` lets a caller change its own rows (admission conversion) in the same
+    transaction; it receives the new student and runs before the single commit.
+    """
     branch = await _resolve_branch(db, actor, data.branch_id)
     if data.create_student_login and not await settings_service.student_logins_enabled(
         db, branch.school_id
@@ -843,6 +856,8 @@ async def create_student(db: AsyncSession, actor: User, data: StudentCreate) -> 
             school_id=student.school_id, branch_id=student.branch_id,
             detail={"logins_created": requested},
         )
+        if before_commit is not None:
+            await before_commit(student)
         await db.commit()
     except IntegrityError:
         await db.rollback()
@@ -1287,3 +1302,101 @@ async def import_students(db: AsyncSession, actor: User, data: ImportRequest) ->
     )
     await db.commit()
     return ImportResult(created=created, failed=len(errors), errors=errors)
+
+
+# ---- government identifiers (PEN, APAAR) ----
+
+def mask_identifier(value: str | None) -> str | None:
+    """Only the last three characters are shown, e.g. '********123'."""
+    if value is None:
+        return None
+    return "*" * max(len(value) - 3, 0) + value[-3:]
+
+
+async def _gov_ids_check(db: AsyncSession, school_id: int) -> bool:
+    return await settings_service.get_bool(db, "students.gov_ids_enabled", school_id=school_id)
+
+
+def _gov_ids_disabled() -> ApiError:
+    return ApiError(
+        status.HTTP_409_CONFLICT,
+        "Storing PEN and APAAR IDs is switched off for this school",
+        "gov_ids_disabled",
+    )
+
+
+async def get_identifiers(db: AsyncSession, actor: User, student_id: int) -> IdentifiersOut:
+    """Masked identifiers. When the school has the setting off, nothing is returned."""
+    student = await _get_student(db, actor, student_id)
+    if not await _gov_ids_check(db, student.school_id):
+        return IdentifiersOut(enabled=False)
+    return IdentifiersOut(
+        enabled=True,
+        pen_masked=mask_identifier(student.pen),
+        apaar_masked=mask_identifier(student.apaar_id),
+        apaar_consent=student.apaar_consent,
+        aadhaar_details_match=student.aadhaar_details_match,
+    )
+
+
+async def reveal_identifiers(db: AsyncSession, actor: User, student_id: int) -> IdentifiersRevealed:
+    """Full identifier values. Every reveal is audited, with no values in the audit row."""
+    student = await _get_student(db, actor, student_id)
+    if not await _gov_ids_check(db, student.school_id):
+        raise _gov_ids_disabled()
+    await audit.record(
+        db, actor, "student.identifiers_revealed", "student", student.id,
+        school_id=student.school_id, branch_id=student.branch_id, commit=True,
+    )
+    return IdentifiersRevealed(
+        pen=student.pen,
+        apaar_id=student.apaar_id,
+        apaar_consent=student.apaar_consent,
+        aadhaar_details_match=student.aadhaar_details_match,
+    )
+
+
+async def update_identifiers(
+    db: AsyncSession, actor: User, student_id: int, data: IdentifiersIn
+) -> IdentifiersOut:
+    student = await _get_student(db, actor, student_id)
+    if not await _gov_ids_check(db, student.school_id):
+        raise _gov_ids_disabled()
+    changes = data.model_dump(exclude_unset=True)
+    if "pen" in changes and changes["pen"] is not None:
+        changes["pen"] = changes["pen"].upper()
+    consent = changes.get("apaar_consent", student.apaar_consent)
+    if "apaar_consent" in changes and changes["apaar_consent"] is False:
+        # Refusing consent removes the APAAR ID (unless a value is sent with the refusal).
+        if changes.get("apaar_id") is not None:
+            raise _unprocessable("apaar_id cannot be stored without consent")
+        changes["apaar_id"] = None
+    elif changes.get("apaar_id") is not None and consent is not True:
+        raise _unprocessable("apaar_id can only be stored once APAAR consent is given")
+    if changes.get("pen") is not None:
+        clash = await db.scalar(
+            select(Student.id).where(
+                Student.school_id == student.school_id,
+                Student.pen == changes["pen"],
+                Student.id != student.id,
+            )
+        )
+        if clash is not None:
+            raise ApiError(
+                status.HTTP_409_CONFLICT, "PEN already recorded for another student", "pen_taken"
+            )
+    for field, value in changes.items():
+        setattr(student, field, value)
+    await audit.record(
+        db, actor, "student.identifiers_updated", "student", student.id,
+        detail={"fields": ",".join(sorted(changes))},
+        school_id=student.school_id, branch_id=student.branch_id,
+    )
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise ApiError(
+            status.HTTP_409_CONFLICT, "PEN already recorded for another student", "pen_taken"
+        ) from None
+    return await get_identifiers(db, actor, student_id)

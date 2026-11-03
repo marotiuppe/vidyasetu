@@ -19,6 +19,7 @@ dependencies = [
     "cryptography>=50.0.2",
     "pyotp>=2.10.0",
     "uharfbuzz>=0.57.0",
+    "python-multipart>=0.0.33",
 ]
 
 [dependency-groups]

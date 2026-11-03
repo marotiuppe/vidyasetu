@@ -6,6 +6,7 @@ from typing import Any
 from sqlalchemy import Select, and_, false, or_, select
 
 from app.modules.academics.models import AcademicYear
+from app.modules.admissions.models import AdmissionApplication
 from app.modules.attendance.models import Holiday
 from app.modules.branches.models import Branch
 from app.modules.notices.models import Notice, TargetType
@@ -48,6 +49,19 @@ def scope_fees(stmt: AnySelect, model: Any, user: User) -> AnySelect:
     if user.role in (Role.SUPER_ADMIN, Role.PARENT, Role.STUDENT, Role.TEACHER):
         return stmt.where(false())
     return scope_tenant(stmt, model, user)
+
+
+def scope_admissions(stmt: AnySelect, user: User) -> AnySelect:
+    """Admission applications: the school owner sees the whole school, other staff only their
+    branch. A branch-level user without a branch sees nothing (never the whole school)."""
+    if user.role == Role.SUPER_ADMIN or user.school_id is None:
+        return stmt.where(false())
+    stmt = stmt.where(AdmissionApplication.school_id == user.school_id)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    if user.branch_id is None:
+        return stmt.where(false())
+    return stmt.where(AdmissionApplication.branch_id == user.branch_id)
 
 
 def scope_users(stmt: AnySelect, user: User) -> AnySelect:

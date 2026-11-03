@@ -315,3 +315,48 @@ class ImportResult(BaseModel):
     created: int
     failed: int
     errors: list[ImportRowError]
+
+
+# ---- government identifiers (PEN, APAAR) ----
+
+PenStr = (
+    Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True, min_length=11, max_length=11, pattern=r"^[A-Za-z0-9]{11}$"
+        ),
+    ]
+    | None
+)
+ApaarStr = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=12, max_length=12, pattern=r"^[0-9]{12}$"),
+] | None
+
+
+class IdentifiersOut(BaseModel):
+    """Masked identifiers: only the last 3 characters of each value are shown."""
+
+    enabled: bool
+    pen_masked: str | None = None
+    apaar_masked: str | None = None
+    apaar_consent: bool | None = None
+    aadhaar_details_match: bool | None = None
+
+
+class IdentifiersRevealed(BaseModel):
+    """Full identifier values. Only school owners, management and headmasters may read these."""
+
+    pen: str | None
+    apaar_id: str | None
+    apaar_consent: bool | None
+    aadhaar_details_match: bool | None
+
+
+class IdentifiersIn(BaseModel):
+    """Partial update: fields not sent are left as they are; an explicit null clears a value."""
+
+    pen: PenStr = None
+    apaar_id: ApaarStr = None
+    apaar_consent: bool | None = None
+    aadhaar_details_match: bool | None = None

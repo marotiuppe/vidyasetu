@@ -7,6 +7,7 @@ import { MR_OPS } from './mr.ops';
 import { MR_FEES_DAILY } from './mr.fees-daily';
 import { MR_FEES_SETUP } from './mr.fees-setup';
 import { MR_PUBLIC } from './mr.public';
+import { MR_ADMISSIONS } from './mr.admissions';
 
 /** Marathi UI strings. Missing keys fall back to English. Server setting labels use `settings.<key>`. */
 export const MR: Record<string, string> = {
@@ -19,6 +20,7 @@ export const MR: Record<string, string> = {
   ...MR_FEES_DAILY,
   ...MR_FEES_SETUP,
   ...MR_PUBLIC,
+  ...MR_ADMISSIONS,
   'nav.settings': 'सेटिंग्ज',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

@@ -35,17 +35,25 @@ import {
 import { AuthService } from '../../core/auth/auth.service';
 import { suggestUsername, usernameFormat } from '../../core/auth/identity';
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../../core/auth/password';
-import { canWriteStudents } from '../../core/auth/permissions';
+import { IDENTIFIER_REVEAL_ROLES, canWriteStudents } from '../../core/auth/permissions';
 import { CREATE_NEW, CreateKind, canCreateRecord } from '../../core/create/create-new';
 import { PendingReturn, ReturnStateService } from '../../core/create/return-state.service';
 import { I18n } from '../../core/i18n/i18n';
 import { StudentAttendance } from '../attendance/student-attendance';
 import { StudentConsent } from './student-consent';
+import { StudentIdentifiers } from './student-identifiers';
 import { PHONE_PATTERN, initials, statusKey, todayIso } from './student-labels';
 
 @Component({
   selector: 'sms-student-profile',
-  imports: [ReactiveFormsModule, RouterLink, NgTemplateOutlet, StudentAttendance, StudentConsent],
+  imports: [
+    ReactiveFormsModule,
+    RouterLink,
+    NgTemplateOutlet,
+    StudentAttendance,
+    StudentConsent,
+    StudentIdentifiers,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './student-profile.html',
   styleUrl: './student-profile.css',
@@ -67,6 +75,7 @@ export class StudentProfile {
   protected readonly initials = initials;
   protected readonly today = todayIso();
   protected readonly canWrite = canWriteStudents(this.auth);
+  protected readonly canReveal = this.auth.hasRole(...IDENTIFIER_REVEAL_ROLES);
   /** Students see their own profile but consent is a matter for parents and the school. */
   protected readonly isStudentLogin = this.auth.hasRole('student');
   protected readonly createNew = CREATE_NEW;

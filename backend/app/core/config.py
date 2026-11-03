@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     rate_limit_change_password_per_minute: int = Field(default=10, ge=1)
     rate_limit_mfa_per_minute: int = Field(default=10, ge=1)
     rate_limit_export_per_minute: int = Field(default=5, ge=1)
+    # Public online admission form: per client IP (applications are never shown back).
+    rate_limit_public_apply_per_minute: int = Field(default=10, ge=1)
     rate_limit_api_per_minute: int = Field(default=300, ge=1)
 
     # Optional: create the first platform super admin on startup if no users exist.

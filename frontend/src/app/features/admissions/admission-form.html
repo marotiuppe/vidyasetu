@@ -1,0 +1,150 @@
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate class="admission-form">
+  <h3 class="group-title">{{ i18n.t('admissions.form.sectionApplicant') }}</h3>
+  <div class="form-grid">
+    @if (canPickBranch && !app()) {
+      <label class="field">
+        {{ i18n.t('admissions.form.branch') }}
+        <select class="input" formControlName="branch_id" (change)="onBranchChange()">
+          <option [ngValue]="0">{{ i18n.t('admissions.form.selectBranch') }}</option>
+          @for (b of branches(); track b.id) {
+            <option [ngValue]="b.id">{{ b.name }}</option>
+          }
+        </select>
+        @if (form.controls.branch_id.touched && form.controls.branch_id.invalid) {
+          <span class="field-error">{{ i18n.t('admissions.form.branchRequired') }}</span>
+        }
+      </label>
+    }
+    <label class="field">
+      {{ i18n.t('admissions.form.firstName') }}
+      <input class="input" formControlName="first_name" autocomplete="off" maxlength="100" />
+      @if (form.controls.first_name.touched && form.controls.first_name.invalid) {
+        <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+      }
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.lastName') }}
+      <input class="input" formControlName="last_name" autocomplete="off" maxlength="100" />
+      @if (form.controls.last_name.touched && form.controls.last_name.invalid) {
+        <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+      }
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.gender') }}
+      <select class="input" formControlName="gender">
+        <option value="">{{ i18n.t('admissions.form.genderNotGiven') }}</option>
+        @for (g of genders; track g) {
+          <option [value]="g">{{ i18n.t('students.list.gender.' + g) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.dob') }}
+      <input class="input" type="date" formControlName="date_of_birth" [max]="today" />
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.academicYear') }}
+      <select class="input" formControlName="academic_year_id">
+        <option [ngValue]="0">{{ i18n.t('admissions.detail.academicYearNone') }}</option>
+        @for (y of years(); track y.id) {
+          <option [ngValue]="y.id">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.class') }}
+      <select class="input" formControlName="class_id">
+        <option [ngValue]="0">{{ i18n.t('admissions.form.classNotChosen') }}</option>
+        @for (c of classOptions(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <h3 class="group-title">{{ i18n.t('admissions.form.sectionGuardian') }}</h3>
+  <div class="form-grid">
+    <label class="field">
+      {{ i18n.t('admissions.form.guardianName') }}
+      <input class="input" formControlName="guardian_name" autocomplete="off" maxlength="200" />
+      @if (form.controls.guardian_name.touched && form.controls.guardian_name.invalid) {
+        <span class="field-error">{{ i18n.t('admissions.form.nameRequired') }}</span>
+      }
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.relation') }}
+      <select class="input" formControlName="guardian_relation">
+        @for (r of relations; track r) {
+          <option [value]="r">{{ i18n.t('students.list.relation.' + r) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.guardianPhone') }}
+      <input
+        class="input"
+        type="tel"
+        formControlName="guardian_phone"
+        autocomplete="off"
+        maxlength="20"
+      />
+      @if (form.controls.guardian_phone.touched && form.controls.guardian_phone.invalid) {
+        <span class="field-error">
+          {{
+            form.controls.guardian_phone.hasError('required')
+              ? i18n.t('admissions.form.phoneRequired')
+              : i18n.t('admissions.form.phoneInvalid')
+          }}
+        </span>
+      }
+    </label>
+    <label class="field">
+      {{ i18n.t('admissions.form.guardianEmail') }}
+      <input
+        class="input"
+        type="email"
+        formControlName="guardian_email"
+        autocomplete="off"
+        maxlength="254"
+      />
+      @if (form.controls.guardian_email.touched && form.controls.guardian_email.invalid) {
+        <span class="field-error">{{ i18n.t('admissions.form.emailInvalid') }}</span>
+      }
+    </label>
+  </div>
+
+  <h3 class="group-title">{{ i18n.t('admissions.form.sectionAdmission') }}</h3>
+  <div class="form-grid">
+    <label class="field">
+      {{ i18n.t('admissions.form.previousSchool') }}
+      <input class="input" formControlName="previous_school" autocomplete="off" maxlength="200" />
+    </label>
+    <label class="field field-wide">
+      {{ i18n.t('admissions.form.address') }}
+      <input class="input" formControlName="address" autocomplete="off" />
+    </label>
+    <label class="field field-wide">
+      {{ i18n.t('admissions.form.notes') }}
+      <textarea class="input" formControlName="notes" rows="3"></textarea>
+    </label>
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-primary" [disabled]="busy()">
+      {{
+        busy()
+          ? i18n.t('admissions.form.saving')
+          : app()
+            ? i18n.t('admissions.form.save')
+            : i18n.t('admissions.form.create')
+      }}
+    </button>
+    <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">
+      {{ i18n.t('admissions.form.cancel') }}
+    </button>
+  </div>
+</form>

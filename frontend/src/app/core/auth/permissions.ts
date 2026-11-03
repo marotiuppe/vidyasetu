@@ -9,6 +9,12 @@ export const STUDENT_WRITER_ROLES: Role[] = [
   'clerk',
 ];
 
+/** Admissions desk: enquiries, applications, documents and conversion to a student (UX only). */
+export const ADMISSION_ROLES: Role[] = ['school_owner', 'management', 'headmaster', 'clerk'];
+
+/** Roles that may see the full PEN and APAAR values (UX only; the backend enforces it). */
+export const IDENTIFIER_REVEAL_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
+
 /** Admission, edit, enrolment, guardians, logins and import (UX only; the backend enforces it). */
 export function canWriteStudents(auth: AuthService): boolean {
   return auth.hasRole(...STUDENT_WRITER_ROLES);

@@ -159,6 +159,32 @@ export interface StudentUpdate {
   status?: StudentStatus;
 }
 
+/** Government ID state for one student. Values are masked (last 3 characters only). */
+export interface IdentifiersView {
+  pen_masked: string | null;
+  apaar_masked: string | null;
+  apaar_consent: boolean | null;
+  aadhaar_details_match: boolean | null;
+  /** The school has switched PEN and APAAR storage on. The card is hidden when this is false. */
+  enabled: boolean;
+}
+
+/** Full government ID values. Only returned by the reveal endpoint, for school owner, management and headmaster. */
+export interface IdentifiersReveal {
+  pen: string | null;
+  apaar_id: string | null;
+  apaar_consent: boolean | null;
+  aadhaar_details_match: boolean | null;
+}
+
+/** Omitted keys keep their stored value; null clears the value. */
+export interface IdentifiersUpdate {
+  pen?: string | null;
+  apaar_id?: string | null;
+  apaar_consent?: boolean | null;
+  aadhaar_details_match?: boolean | null;
+}
+
 export interface ImportRow {
   first_name: string;
   last_name: string;
@@ -246,6 +272,18 @@ export class StudentsApi {
 
   createStudentLogin(id: number, body: LoginInput): Observable<StudentDetail> {
     return this.http.post<StudentDetail>(`${API}/students/${id}/login`, body);
+  }
+
+  getIdentifiers(id: number): Observable<IdentifiersView> {
+    return this.http.get<IdentifiersView>(`${API}/students/${id}/identifiers`);
+  }
+
+  revealIdentifiers(id: number): Observable<IdentifiersReveal> {
+    return this.http.get<IdentifiersReveal>(`${API}/students/${id}/identifiers/reveal`);
+  }
+
+  updateIdentifiers(id: number, body: IdentifiersUpdate): Observable<IdentifiersView> {
+    return this.http.put<IdentifiersView>(`${API}/students/${id}/identifiers`, body);
   }
 
   importRows(body: {

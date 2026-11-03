@@ -74,6 +74,8 @@ def rule_for(path: str) -> tuple[str, int] | None:
         return "export", settings.rate_limit_export_per_minute
     if path == "/api/v1/auth/refresh":
         return "refresh", settings.rate_limit_refresh_per_minute
+    if path.startswith("/api/v1/public/schools/") and path.endswith("/applications"):
+        return "public-apply", settings.rate_limit_public_apply_per_minute
     if path == "/api/v1/auth/change-password":
         return "change-password", settings.rate_limit_change_password_per_minute
     return "api", settings.rate_limit_api_per_minute
