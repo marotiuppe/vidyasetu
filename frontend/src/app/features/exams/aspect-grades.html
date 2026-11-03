@@ -1,0 +1,157 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('exams.aspectGrades.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('exams.aspectGrades.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-exams-nav />
+
+<section class="card" aria-labelledby="aspect-pick-title">
+  <h2 class="card-title" id="aspect-pick-title">{{ i18n.t('exams.marks.pick') }}</h2>
+  <div class="toolbar" role="search">
+    <sms-exam-branch-picker />
+    <label class="field">
+      {{ i18n.t('exams.year') }}
+      <select class="input" (change)="pickYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.aspectGrades.term') }}
+      <select class="input" (change)="pickTerm($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (t of terms(); track t.id) {
+          <option [value]="t.id" [selected]="t.id === termId()">{{ t.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.section') }}
+      <select class="input" (change)="pickSection($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (s of sectionList(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === sectionId()">{{ sectionLabel(s) }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  @if (scope.choiceNeeded()) {
+    <p class="notice" role="status">{{ i18n.t('exams.branch.pickFirst') }}</p>
+  }
+</section>
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+} @else if (termId() && sectionId()) {
+  <section class="card" aria-labelledby="aspect-grid-title">
+    <h2 class="card-title" id="aspect-grid-title">{{ i18n.t('exams.aspectGrades.grid') }}</h2>
+
+    @if (!aspects().length) {
+      <p class="empty">{{ i18n.t('exams.aspectGrades.noAspects') }}</p>
+    } @else if (!rows().length) {
+      <p class="empty">{{ i18n.t('exams.aspectGrades.noStudents') }}</p>
+    } @else {
+      <form (ngSubmit)="save()" novalidate>
+        <div class="table-wrap">
+          <table class="exam-table aspect-table" aria-labelledby="aspect-grid-title">
+            <thead>
+              <tr>
+                <th scope="col" class="num">{{ i18n.t('exams.marks.roll') }}</th>
+                <th scope="col">{{ i18n.t('exams.marks.student') }}</th>
+                @for (a of aspects(); track a.id) {
+                  <th scope="col">
+                    {{ a.name }}
+                    <span class="row-sub">{{ aspectSection(a) }}</span>
+                  </th>
+                }
+                <th scope="col" class="wide">{{ i18n.t('exams.aspectGrades.termRemark') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.student_id; let i = $index) {
+                <tr>
+                  <td class="num">{{ row.roll_no ?? '—' }}</td>
+                  <td>{{ row.name }}</td>
+                  @for (a of aspects(); track a.id) {
+                    <td>
+                      <select
+                        class="input cell-select"
+                        [disabled]="!canEnter"
+                        [attr.aria-label]="
+                          i18n.t('exams.aspectGrades.gradeFor', {
+                            name: row.name,
+                            aspect: a.name,
+                          })
+                        "
+                        (change)="setGrade(i, a.id, $event)"
+                      >
+                        <option value="" [selected]="!row.grades[a.id]">—</option>
+                        @for (g of grades; track g) {
+                          <option [value]="g" [selected]="row.grades[a.id] === g">{{ g }}</option>
+                        }
+                      </select>
+                      <details class="cell-remark">
+                        <summary>{{ i18n.t('exams.aspectGrades.remark') }}</summary>
+                        <input
+                          class="input cell-input text"
+                          type="text"
+                          maxlength="200"
+                          autocomplete="off"
+                          [value]="row.remarks[a.id] ?? ''"
+                          [disabled]="!canEnter"
+                          [attr.aria-label]="
+                            i18n.t('exams.aspectGrades.remarkFor', {
+                              name: row.name,
+                              aspect: a.name,
+                            })
+                          "
+                          (change)="setRemark(i, a.id, $event)"
+                        />
+                      </details>
+                    </td>
+                  }
+                  <td class="wide">
+                    <input
+                      class="input cell-input text"
+                      type="text"
+                      maxlength="500"
+                      autocomplete="off"
+                      [value]="row.termRemark"
+                      [disabled]="!canEnter"
+                      [attr.aria-label]="
+                        i18n.t('exams.aspectGrades.termRemarkFor', { name: row.name })
+                      "
+                      (change)="setTermRemark(i, $event)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (canEnter) {
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
+              {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.aspectGrades.save') }}
+            </button>
+            @if (saved()) {
+              <span class="notice" role="status">{{ i18n.t('exams.aspectGrades.saved') }}</span>
+            }
+          </div>
+        } @else {
+          <p class="notice" role="status">{{ i18n.t('exams.marks.readOnly') }}</p>
+        }
+      </form>
+    }
+  </section>
+} @else {
+  <p class="empty">{{ i18n.t('exams.aspectGrades.pickFirst') }}</p>
+}

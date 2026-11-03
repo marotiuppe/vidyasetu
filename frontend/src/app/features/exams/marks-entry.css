@@ -1,0 +1,20 @@
+.marks-table .row-invalid td {
+  background: var(--danger-bg);
+}
+
+.mark-check {
+  width: 22px;
+  height: 22px;
+  margin: 11px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.mark-check:disabled {
+  cursor: not-allowed;
+}
+
+.marks-table .field-error {
+  display: block;
+  margin-top: 4px;
+}

@@ -1,0 +1,51 @@
+<section class="card" aria-labelledby="class-subjects-title">
+  <h2 class="card-title" id="class-subjects-title">{{ i18n.t('exams.classSubjects.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('exams.classSubjects.help') }}</p>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  <label class="field">
+    {{ i18n.t('exams.classSubjects.class') }}
+    <select class="input" (change)="pickClass($event)">
+      <option value="0">{{ i18n.t('exams.choose') }}</option>
+      @for (c of classes(); track c.id) {
+        <option [value]="c.id" [selected]="c.id === classId()">{{ c.name }}</option>
+      }
+    </select>
+  </label>
+
+  @if (!classId()) {
+    <p class="empty">{{ i18n.t('exams.classSubjects.pickClass') }}</p>
+  } @else if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+  } @else if (!subjects().length) {
+    <p class="empty">{{ i18n.t('exams.subjects.empty') }}</p>
+  } @else {
+    <fieldset class="subject-picks">
+      <legend class="sub-title">{{ i18n.t('exams.classSubjects.studies') }}</legend>
+      @for (s of subjects(); track s.id) {
+        <label class="check">
+          <input type="checkbox" [checked]="selected().has(s.id)" (change)="toggle(s.id, $event)" />
+          {{ s.name }}
+          <span class="row-sub"
+            >· {{ kindLabel(s.kind)
+            }}{{ s.active ? '' : ' · ' + i18n.t('exams.subjects.inactive') }}</span
+          >
+        </label>
+      } @empty {
+        <p class="empty">{{ i18n.t('exams.subjects.empty') }}</p>
+      }
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.save') }}
+      </button>
+      @if (saved()) {
+        <span class="notice" role="status">{{ i18n.t('exams.saved') }}</span>
+      }
+    </div>
+  }
+</section>

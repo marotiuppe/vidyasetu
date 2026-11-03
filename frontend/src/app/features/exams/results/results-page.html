@@ -1,0 +1,200 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('exams.results.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('exams.results.subtitle') }}</p>
+  </div>
+  @if (report(); as r) {
+    <button type="button" class="btn btn-ghost" [disabled]="downloading()" (click)="downloadPdf()">
+      <sms-icon name="download" [size]="16" />
+      {{ downloading() ? i18n.t('exams.results.downloading') : i18n.t('exams.results.pdf') }}
+    </button>
+  }
+</div>
+
+<section class="card" aria-labelledby="results-filter-title">
+  <h2 class="card-title" id="results-filter-title">{{ i18n.t('exams.results.choose') }}</h2>
+  <div class="toolbar" role="search">
+    @if (selfService && children().length > 1) {
+      <label class="field">
+        {{ i18n.t('exams.results.child') }}
+        <select class="input" (change)="pickChild($event)">
+          @for (c of children(); track c.id) {
+            <option [value]="c.id" [selected]="c.id === studentId()">{{ c.full_name }}</option>
+          }
+        </select>
+      </label>
+    }
+    <label class="field">
+      {{ i18n.t('exams.year') }}
+      <select class="input" (change)="pickYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    @if (canSeeUnpublished) {
+      <label class="field">
+        {{ i18n.t('exams.results.format') }}
+        <select class="input" (change)="pickFormat($event)">
+          <option value="">{{ i18n.t('exams.results.formatSchool') }}</option>
+          @for (f of formats; track f) {
+            <option [value]="f" [selected]="f === format()">
+              {{ i18n.t('exams.results.format.' + f) }}
+            </option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+  @if (canSeeUnpublished) {
+    <label class="check">
+      <input
+        type="checkbox"
+        [checked]="includeUnpublished()"
+        (change)="toggleUnpublished($event)"
+      />
+      {{ i18n.t('exams.results.includeUnpublished') }}
+    </label>
+  }
+</section>
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (!studentId()) {
+  <p class="empty">
+    {{ i18n.t(selfService ? 'exams.results.noChild' : 'exams.results.staffHint') }}
+  </p>
+} @else if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('exams.results.loading') }}</p>
+} @else if (report(); as r) {
+  <section class="card" aria-labelledby="report-student-title">
+    <h2 class="card-title" id="report-student-title">
+      {{ r.student.name }}
+      <span class="row-sub">· {{ r.academic_year.name }}</span>
+    </h2>
+    <dl class="facts">
+      <div>
+        <dt>{{ i18n.t('exams.results.admissionNo') }}</dt>
+        <dd>{{ r.student.admission_no }}</dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('exams.results.class') }}</dt>
+        <dd>
+          {{ r.student.class_name ?? '—'
+          }}{{ r.student.section_name ? ' ' + r.student.section_name : '' }}
+        </dd>
+      </div>
+      <div>
+        <dt>{{ i18n.t('exams.results.roll') }}</dt>
+        <dd>{{ r.student.roll_no ?? '—' }}</dd>
+      </div>
+      @if (r.attendance; as a) {
+        <div>
+          <dt>{{ i18n.t('exams.results.attendance') }}</dt>
+          <dd>
+            {{ i18n.t('exams.results.attendanceValue', { present: a.present, total: a.total }) }}
+          </dd>
+        </div>
+      }
+    </dl>
+
+    @if (annual(); as a) {
+      <h3 class="sub-title">{{ i18n.t('exams.results.annual') }}</h3>
+      <ul class="stat-strip">
+        <li class="badge">
+          {{ i18n.t('exams.results.termPercent') }}: {{ percentText(a.percent) }}
+        </li>
+        <li class="badge">{{ i18n.t('exams.results.grade') }}: {{ a.grade ?? '—' }}</li>
+        <li class="badge" [class]="resultBadge(a.result)">{{ resultLabel(a.result) }}</li>
+      </ul>
+      @if (a.equal_weights) {
+        <p class="row-sub">{{ i18n.t('exams.results.equalWeights') }}</p>
+      }
+    }
+
+    @if (r.terms.length) {
+      <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('exams.results.terms')">
+        @for (t of r.terms; track t.term_id) {
+          <button
+            type="button"
+            role="tab"
+            class="tab"
+            [id]="'term-tab-' + t.term_id"
+            [attr.aria-selected]="isSelectedTerm(t)"
+            [attr.tabindex]="isSelectedTerm(t) ? 0 : -1"
+            (click)="selectTerm(t.term_id)"
+          >
+            {{ t.name }}
+          </button>
+        }
+      </div>
+    }
+  </section>
+
+  @if (activeTerm(); as term) {
+    <section class="card" [attr.aria-labelledby]="'term-title-' + term.term_id">
+      <div class="card-head">
+        <h2 class="card-title" [id]="'term-title-' + term.term_id">{{ term.name }}</h2>
+        <span class="header-actions">
+          @if (term.rank !== null) {
+            <span class="badge">{{
+              i18n.t('exams.results.rank', { rank: countText(term.rank) })
+            }}</span>
+          }
+          <span class="badge" [class]="resultBadge(term.result)">{{
+            resultLabel(term.result)
+          }}</span>
+        </span>
+      </div>
+
+      <sms-term-result-table [term]="term" />
+
+      @if (term.aspects.length) {
+        <h3 class="sub-title">{{ i18n.t('exams.results.aspects') }}</h3>
+        <div class="table-wrap">
+          <table class="exam-table">
+            <caption class="sr-only">
+              {{
+                i18n.t('exams.results.aspects')
+              }}
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ i18n.t('exams.results.aspect') }}</th>
+                <th scope="col">{{ i18n.t('exams.results.grade') }}</th>
+                <th scope="col">{{ i18n.t('exams.results.remark') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of term.aspects; track a.aspect_id) {
+                <tr>
+                  <th scope="row">{{ a.name }}</th>
+                  <td>{{ a.grade ?? '—' }}</td>
+                  <td>{{ a.remark ?? '' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      @if (term.remark) {
+        <h3 class="sub-title">{{ i18n.t('exams.results.teacherRemark') }}</h3>
+        <p class="remark">{{ term.remark }}</p>
+      }
+    </section>
+  }
+
+  <section class="card" aria-labelledby="progress-title">
+    <h2 class="card-title" id="progress-title">{{ i18n.t('exams.progress.title') }}</h2>
+    @if (progress(); as p) {
+      <sms-progress-chart [data]="p" />
+    } @else {
+      <p class="empty">{{ i18n.t('exams.progress.none') }}</p>
+    }
+  </section>
+} @else {
+  <p class="empty">{{ i18n.t('exams.results.none') }}</p>
+}

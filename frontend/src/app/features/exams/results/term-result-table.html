@@ -1,0 +1,64 @@
+<div class="table-wrap">
+  <table
+    class="exam-table"
+    [attr.aria-label]="i18n.t('exams.results.termTable', { name: term().name })"
+  >
+    <caption class="sr-only">
+      {{
+        i18n.t('exams.results.termTable', { name: term().name })
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col" class="wide">{{ i18n.t('exams.results.subject') }}</th>
+        @for (c of columns(); track c.id) {
+          <th scope="col" class="num">
+            {{ c.name }}
+            <span class="row-sub">/ {{ c.max }}</span>
+          </th>
+        }
+        <th scope="col" class="num">{{ i18n.t('exams.results.termPercent') }}</th>
+        <th scope="col">{{ i18n.t('exams.results.grade') }}</th>
+        <th scope="col">{{ i18n.t('exams.results.result') }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (s of term().subjects; track s.subject_id) {
+        <tr>
+          <th scope="row">
+            {{ s.name }}
+            <span class="row-sub">{{ kindLabel(s) }}</span>
+          </th>
+          @for (c of columns(); track c.id) {
+            <td class="num">{{ markText(examOf(s, c.id)) }}</td>
+          }
+          <td class="num">{{ percentText(s.percent) }}</td>
+          <td>{{ s.grade ?? '—' }}</td>
+          <td>
+            <span class="badge" [class]="resultBadge(s.result)">{{ resultLabel(s.result) }}</span>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td [attr.colspan]="columns().length + 4" class="empty">
+            {{ i18n.t('exams.results.noSubjects') }}
+          </td>
+        </tr>
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row" [attr.colspan]="columns().length + 1">
+          {{ i18n.t('exams.results.termTotal') }}
+        </th>
+        <td class="num">{{ percentText(term().percent) }}</td>
+        <td>{{ term().grade ?? '—' }}</td>
+        <td>
+          <span class="badge" [class]="resultBadge(term().result)">{{
+            resultLabel(term().result)
+          }}</span>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

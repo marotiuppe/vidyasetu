@@ -1,0 +1,96 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('exams.summary.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('exams.summary.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-exams-nav />
+
+<section class="card" aria-labelledby="summary-pick-title">
+  <h2 class="card-title" id="summary-pick-title">{{ i18n.t('exams.marks.pick') }}</h2>
+  <div class="toolbar" role="search">
+    <label class="field">
+      {{ i18n.t('exams.year') }}
+      <select class="input" (change)="pickYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.exam') }}
+      <select class="input" (change)="pickExam($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (e of exams(); track e.id) {
+          <option [value]="e.id" [selected]="e.id === examId()">{{ e.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.section') }}
+      <select class="input" (change)="pickSection($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (s of sectionList(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === sectionId()">{{ sectionLabel(s) }}</option>
+        }
+      </select>
+    </label>
+  </div>
+</section>
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+} @else if (summary(); as s) {
+  <section class="card" aria-labelledby="summary-title">
+    <h2 class="card-title" id="summary-title">{{ s.exam.name }}</h2>
+    <ul class="stat-strip">
+      <li class="badge">
+        {{ i18n.t('exams.summary.students', { count: countText(s.student_count) }) }}
+      </li>
+      <li class="badge">
+        {{ i18n.t('exams.summary.average', { value: percentText(s.average) }) }}
+      </li>
+      <li class="badge">{{ i18n.t('exams.summary.highest', { value: numberText(s.highest) }) }}</li>
+      <li class="badge badge-danger">
+        {{ i18n.t('exams.summary.failed', { count: countText(s.fail_count) }) }}
+      </li>
+    </ul>
+
+    @if (s.subjects.length) {
+      <div class="table-wrap">
+        <table class="exam-table" aria-labelledby="summary-title">
+          <caption class="sr-only">
+            {{
+              i18n.t('exams.summary.bySubject')
+            }}
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">{{ i18n.t('exams.summary.subject') }}</th>
+              <th scope="col" class="num">{{ i18n.t('exams.summary.avg') }}</th>
+              <th scope="col" class="num">{{ i18n.t('exams.summary.top') }}</th>
+              <th scope="col" class="num">{{ i18n.t('exams.summary.failCount') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sub of s.subjects; track sub.subject_id) {
+              <tr>
+                <td>{{ sub.name }}</td>
+                <td class="num">{{ percentText(sub.average) }}</td>
+                <td class="num">{{ numberText(sub.highest) }}</td>
+                <td class="num">{{ countText(sub.fail_count) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+} @else {
+  <p class="empty">{{ i18n.t('exams.summary.pickFirst') }}</p>
+}

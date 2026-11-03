@@ -9,7 +9,16 @@
       <h1 class="page-title">{{ i18n.t('students.list.profile.title') }}</h1>
     }
   </div>
-  <a class="btn btn-ghost" routerLink="/students">{{ i18n.t('students.list.profile.back') }}</a>
+  <span class="header-actions">
+    @if (student(); as s) {
+      @if (showResults()) {
+        <a class="btn btn-ghost" routerLink="/results" [queryParams]="{ student: s.id }">
+          {{ i18n.t('exams.results.openProfile') }}
+        </a>
+      }
+    }
+    <a class="btn btn-ghost" routerLink="/students">{{ i18n.t('students.list.profile.back') }}</a>
+  </span>
 </div>
 
 @if (loading()) {

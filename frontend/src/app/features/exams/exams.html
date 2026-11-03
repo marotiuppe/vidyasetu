@@ -1,0 +1,73 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('exams.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('exams.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-exams-nav />
+
+@if (!canConfigure) {
+  <p class="empty">{{ i18n.t('exams.setup.staffOnly') }}</p>
+} @else {
+  <div class="toolbar">
+    <sms-exam-branch-picker />
+    <label class="field">
+      {{ i18n.t('exams.year') }}
+      <select class="input" (change)="pickYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  <div class="tabs" role="tablist" [attr.aria-label]="i18n.t('exams.setup.tabs')">
+    @for (t of tabs; track t.id) {
+      <button
+        type="button"
+        role="tab"
+        class="tab"
+        [id]="'tab-' + t.id"
+        [attr.aria-selected]="current() === t.id"
+        [attr.tabindex]="current() === t.id ? 0 : -1"
+        [attr.aria-controls]="'panel-' + t.id"
+        (click)="select(t.id)"
+      >
+        {{ i18n.t(t.labelKey) }}
+      </button>
+    }
+  </div>
+
+  @if (scope.choiceNeeded() && current() !== 'grading') {
+    <p class="notice" role="status">{{ i18n.t('exams.branch.pickFirst') }}</p>
+  } @else if (yearId(); as year) {
+    <div
+      class="stack"
+      role="tabpanel"
+      [id]="'panel-' + current()"
+      [attr.aria-labelledby]="'tab-' + current()"
+    >
+      @switch (current()) {
+        @case ('terms') {
+          <sms-terms-config [yearId]="year" />
+        }
+        @case ('subjects') {
+          <sms-subjects-config />
+        }
+        @case ('class-subjects') {
+          <sms-class-subjects-config />
+        }
+        @case ('exams') {
+          <sms-exam-list-config [yearId]="year" />
+        }
+        @case ('grading') {
+          <sms-grading-config />
+        }
+        @case ('aspects') {
+          <sms-aspects-config />
+        }
+      }
+    </div>
+  }
+}

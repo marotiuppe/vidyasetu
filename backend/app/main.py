@@ -34,6 +34,9 @@ from app.modules.consent.router import router as consent_router
 from app.modules.consent.router import student_router as consent_student_router
 from app.modules.datarights.router import router as datarights_router
 from app.modules.datarights.router import student_router as datarights_student_router
+from app.modules.exams.entry_router import router as exams_entry_router
+from app.modules.exams.results_router import router as exams_results_router
+from app.modules.exams.router import router as exams_router
 from app.modules.fees.router import router as fees_router
 from app.modules.fees.tools_router import router as fees_tools_router
 from app.modules.notices.router import router as notices_router
@@ -168,6 +171,9 @@ api.include_router(attendance_router)
 api.include_router(notices_router)
 api.include_router(fees_router)
 api.include_router(fees_tools_router)
+api.include_router(exams_router)
+api.include_router(exams_entry_router)
+api.include_router(exams_results_router)
 api.include_router(admissions_router)
 api.include_router(admissions_public_router)
 api.include_router(promotion_router)

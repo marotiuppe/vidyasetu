@@ -9,10 +9,16 @@ from app.modules.academics.models import AcademicYear
 from app.modules.admissions.models import AdmissionApplication
 from app.modules.attendance.models import Holiday
 from app.modules.branches.models import Branch
+from app.modules.exams.models import GradeScale
 from app.modules.notices.models import Notice, TargetType
 from app.modules.promotion.models import PromotionBatch, PromotionItem
 from app.modules.students.models import Enrollment, Guardian, Student, StudentStatus
 from app.modules.users.models import Role, User
+
+# Staff who may read exam data of their school or branch (teachers enter marks; clerks read).
+EXAM_STAFF = frozenset(
+    {Role.SCHOOL_OWNER, Role.MANAGEMENT, Role.HEADMASTER, Role.TEACHER, Role.CLERK}
+)
 
 type AnySelect = Select[*tuple[Any, ...]]
 
@@ -63,6 +69,28 @@ def scope_admissions(stmt: AnySelect, user: User) -> AnySelect:
     if user.branch_id is None:
         return stmt.where(false())
     return stmt.where(AdmissionApplication.branch_id == user.branch_id)
+
+
+def scope_exams(stmt: AnySelect, model: Any, user: User) -> AnySelect:
+    """Exam data (terms, subjects, exams, marks, aspects, remarks) of a model with school_id and
+    branch_id. Only exam staff; the school owner sees the whole school, others their branch.
+    Parents, students and accountants get nothing here (families reach results through
+    `scope_students`)."""
+    if user.role not in EXAM_STAFF or user.school_id is None:
+        return stmt.where(false())
+    stmt = stmt.where(model.school_id == user.school_id)
+    if user.role == Role.SCHOOL_OWNER:
+        return stmt
+    if user.branch_id is None:
+        return stmt.where(false())
+    return stmt.where(model.branch_id == user.branch_id)
+
+
+def scope_grading(stmt: AnySelect, user: User) -> AnySelect:
+    """Grading scales are school-wide: any exam staff of the school may read them."""
+    if user.role not in EXAM_STAFF or user.school_id is None:
+        return stmt.where(false())
+    return stmt.where(GradeScale.school_id == user.school_id)
 
 
 def scope_users(stmt: AnySelect, user: User) -> AnySelect:

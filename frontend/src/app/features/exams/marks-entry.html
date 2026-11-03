@@ -1,0 +1,166 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('exams.marks.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('exams.marks.subtitle') }}</p>
+  </div>
+</div>
+
+<sms-exams-nav />
+
+<section class="card" aria-labelledby="marks-pick-title">
+  <h2 class="card-title" id="marks-pick-title">{{ i18n.t('exams.marks.pick') }}</h2>
+  <div class="toolbar" role="search">
+    <sms-exam-branch-picker />
+    <label class="field">
+      {{ i18n.t('exams.year') }}
+      <select class="input" (change)="pickYear($event)">
+        @for (y of years(); track y.id) {
+          <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.exam') }}
+      <select class="input" (change)="pickExam($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (e of exams(); track e.id) {
+          <option [value]="e.id" [selected]="e.id === examId()">{{ e.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.section') }}
+      <select class="input" (change)="pickSection($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (s of sectionList(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === sectionId()">{{ sectionLabel(s) }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('exams.marks.subject') }}
+      <select class="input" [disabled]="!sectionId()" (change)="pickSubject($event)">
+        <option value="0">{{ i18n.t('exams.choose') }}</option>
+        @for (s of subjectOptions(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === subjectId()">{{ s.name }}</option>
+        }
+      </select>
+      @if (sectionId() && !subjectOptions().length) {
+        <span class="row-sub">{{ i18n.t('exams.marks.noSubjects') }}</span>
+      }
+    </label>
+  </div>
+  @if (scope.choiceNeeded()) {
+    <p class="notice" role="status">{{ i18n.t('exams.branch.pickFirst') }}</p>
+  }
+</section>
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+} @else if (sheet(); as s) {
+  <section class="card" aria-labelledby="marks-grid-title">
+    <div class="card-head">
+      <h2 class="card-title" id="marks-grid-title">{{ s.exam.name }} · {{ s.subject.name }}</h2>
+      <span class="toggle-group">
+        <span class="badge" [class]="s.exam.published ? 'badge-success' : 'badge-muted'">
+          {{ i18n.t(s.exam.published ? 'exams.examList.published' : 'exams.examList.draft') }}
+        </span>
+        @if (s.exam.locked) {
+          <span class="badge badge-warn">{{ i18n.t('exams.examList.locked') }}</span>
+        }
+        <span class="badge">{{ i18n.t('exams.marks.outOf', { max: s.exam.max_marks }) }}</span>
+      </span>
+    </div>
+
+    @if (s.exam.locked) {
+      <p class="notice" role="status">{{ i18n.t('exams.marks.lockedNote') }}</p>
+    } @else if (!canEnter) {
+      <p class="notice" role="status">{{ i18n.t('exams.marks.readOnly') }}</p>
+    }
+
+    @if (rows().length) {
+      <form (ngSubmit)="save()" novalidate>
+        <div class="table-wrap">
+          <table class="exam-table marks-table" aria-labelledby="marks-grid-title">
+            <thead>
+              <tr>
+                <th scope="col" class="num">{{ i18n.t('exams.marks.roll') }}</th>
+                <th scope="col">{{ i18n.t('exams.marks.student') }}</th>
+                <th scope="col">{{ i18n.t('exams.marks.marks') }}</th>
+                <th scope="col">{{ i18n.t('exams.marks.absent') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.student_id; let i = $index) {
+                <tr [class.row-invalid]="problem(row)">
+                  <td class="num">{{ row.roll_no ?? '—' }}</td>
+                  <td>{{ row.name }}</td>
+                  <td>
+                    <input
+                      class="input cell-input"
+                      [id]="'mark-' + (i + 1)"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      [value]="row.text"
+                      [disabled]="!editable() || row.absent"
+                      [attr.aria-label]="
+                        i18n.t('exams.marks.marksFor', { name: row.name, max: s.exam.max_marks })
+                      "
+                      [attr.aria-invalid]="problem(row) ? 'true' : null"
+                      [attr.aria-describedby]="problem(row) ? 'mark-err-' + (i + 1) : null"
+                      (input)="setText(i, $event)"
+                      (keydown.enter)="next(i, $event)"
+                    />
+                    @if (problem(row); as msg) {
+                      <span class="field-error" [id]="'mark-err-' + (i + 1)">{{ msg }}</span>
+                    }
+                  </td>
+                  <td>
+                    <input
+                      class="mark-check"
+                      type="checkbox"
+                      [checked]="row.absent"
+                      [disabled]="!editable()"
+                      [attr.aria-label]="i18n.t('exams.marks.absentFor', { name: row.name })"
+                      (change)="setAbsent(i, $event)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (tooMany()) {
+          <p class="field-error" role="alert">
+            {{ i18n.t('exams.marks.tooMany', { limit: 200 }) }}
+          </p>
+        }
+
+        @if (editable()) {
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="saving() || problemCount() > 0 || tooMany()"
+            >
+              {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.marks.save') }}
+            </button>
+            @if (saved(); as count) {
+              <span class="notice" role="status">{{ i18n.t('exams.marks.saved', { count }) }}</span>
+            }
+          </div>
+        }
+      </form>
+    } @else {
+      <p class="empty">{{ i18n.t('exams.marks.noStudents') }}</p>
+    }
+  </section>
+} @else {
+  <p class="empty">{{ i18n.t('exams.marks.pickFirst') }}</p>
+}

@@ -1,0 +1,138 @@
+<section class="card" aria-labelledby="grading-title">
+  <h2 class="card-title" id="grading-title">{{ i18n.t('exams.grading.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('exams.grading.help') }}</p>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('exams.grading.name') }}
+          <input
+            class="input"
+            type="text"
+            formControlName="name"
+            maxlength="50"
+            autocomplete="off"
+          />
+          @if (fieldError(form.controls.name); as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('exams.grading.pass') }}
+          <input
+            class="input"
+            type="number"
+            min="0"
+            max="100"
+            inputmode="numeric"
+            formControlName="pass_percent"
+          />
+          <span class="row-sub">{{ i18n.t('exams.grading.passHelp') }}</span>
+          @if (fieldError(form.controls.pass_percent); as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+      </div>
+
+      <div class="table-wrap">
+        <table class="exam-table" aria-labelledby="grading-title">
+          <thead>
+            <tr>
+              <th scope="col" class="num">{{ i18n.t('exams.grading.minPercent') }}</th>
+              <th scope="col">{{ i18n.t('exams.grading.grade') }}</th>
+              <th scope="col" class="num">{{ i18n.t('exams.grading.point') }}</th>
+              <th scope="col">{{ i18n.t('exams.grading.remark') }}</th>
+              <th scope="col">
+                <span class="sr-only">{{ i18n.t('exams.actions') }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (band of bands.controls; track $index; let i = $index) {
+              <tr [formGroup]="band">
+                <td class="num">
+                  <input
+                    class="input cell-input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    inputmode="numeric"
+                    formControlName="min_percent"
+                    [attr.aria-label]="i18n.t('exams.grading.minPercentRow', { row: i + 1 })"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="input cell-input"
+                    type="text"
+                    maxlength="10"
+                    formControlName="grade"
+                    [attr.aria-label]="i18n.t('exams.grading.gradeRow', { row: i + 1 })"
+                  />
+                </td>
+                <td class="num">
+                  <input
+                    class="input cell-input"
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="0.1"
+                    inputmode="decimal"
+                    formControlName="grade_point"
+                    [attr.aria-label]="i18n.t('exams.grading.pointRow', { row: i + 1 })"
+                  />
+                </td>
+                <td>
+                  <input
+                    class="input cell-input text"
+                    type="text"
+                    maxlength="60"
+                    formControlName="remark"
+                    [attr.aria-label]="i18n.t('exams.grading.remarkRow', { row: i + 1 })"
+                  />
+                </td>
+                <td class="actions">
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [attr.aria-label]="i18n.t('exams.grading.removeRow', { row: i + 1 })"
+                    (click)="removeBand(i)"
+                  >
+                    {{ i18n.t('exams.remove') }}
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">{{ i18n.t('exams.grading.empty') }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      @if (!hasZeroBand()) {
+        <p class="field-error" role="alert">{{ i18n.t('exams.grading.needZero') }}</p>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="addBand()">
+          {{ i18n.t('exams.grading.addBand') }}
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.grading.save') }}
+        </button>
+        @if (saved()) {
+          <span class="notice" role="status">{{ i18n.t('exams.grading.saved') }}</span>
+        }
+      </div>
+    </form>
+  }
+</section>

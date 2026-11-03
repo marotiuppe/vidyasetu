@@ -1,0 +1,102 @@
+<section class="card" aria-labelledby="subjects-title">
+  <h2 class="card-title" id="subjects-title">{{ i18n.t('exams.subjects.title') }}</h2>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+  } @else if (subjects().length) {
+    <div class="table-wrap">
+      <table class="exam-table" aria-labelledby="subjects-title">
+        <thead>
+          <tr>
+            <th scope="col">{{ i18n.t('exams.subjects.name') }}</th>
+            <th scope="col">{{ i18n.t('exams.subjects.code') }}</th>
+            <th scope="col">{{ i18n.t('exams.subjects.kind') }}</th>
+            <th scope="col">{{ i18n.t('exams.subjects.status') }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ i18n.t('exams.actions') }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of subjects(); track s.id) {
+            <tr>
+              <td>{{ s.name }}</td>
+              <td>{{ s.code ?? '—' }}</td>
+              <td>{{ kindLabel(s.kind) }}</td>
+              <td>
+                <span class="badge" [class]="s.active ? 'badge-success' : 'badge-muted'">
+                  {{ i18n.t(s.active ? 'exams.subjects.active' : 'exams.subjects.inactive') }}
+                </span>
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('exams.editNamed', { name: s.name })"
+                  (click)="edit(s)"
+                >
+                  {{ i18n.t('exams.edit') }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="toggleActive(s)">
+                  {{ i18n.t(s.active ? 'exams.subjects.deactivate' : 'exams.subjects.activate') }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="empty">{{ i18n.t('exams.subjects.empty') }}</p>
+  }
+</section>
+
+<section class="card" aria-labelledby="subject-form-title">
+  <h2 class="card-title" id="subject-form-title">
+    {{ i18n.t(editing() ? 'exams.subjects.edit' : 'exams.subjects.add') }}
+  </h2>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <label class="field">
+        {{ i18n.t('exams.subjects.name') }}
+        <input class="input" type="text" formControlName="name" maxlength="80" autocomplete="off" />
+        @if (fieldError(form.controls.name); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.subjects.code') }}
+        <input class="input" type="text" formControlName="code" maxlength="20" autocomplete="off" />
+        @if (fieldError(form.controls.code); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.subjects.kind') }}
+        <select class="input" formControlName="kind">
+          @for (k of kinds; track k) {
+            <option [value]="k">{{ kindLabel(k) }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" formControlName="active" />
+      {{ i18n.t('exams.subjects.activeHelp') }}
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.save') }}
+      </button>
+      @if (editing()) {
+        <button type="button" class="btn btn-ghost" (click)="cancel()">
+          {{ i18n.t('exams.cancel') }}
+        </button>
+      }
+    </div>
+  </form>
+</section>

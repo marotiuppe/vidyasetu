@@ -1,0 +1,96 @@
+<section class="card" aria-labelledby="terms-title">
+  <h2 class="card-title" id="terms-title">{{ i18n.t('exams.terms.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('exams.terms.weightNote', { total: weightTotal() }) }}</p>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+  } @else if (terms().length) {
+    <div class="table-wrap">
+      <table class="exam-table" aria-labelledby="terms-title">
+        <thead>
+          <tr>
+            <th scope="col">{{ i18n.t('exams.terms.name') }}</th>
+            <th scope="col" class="num">{{ i18n.t('exams.terms.sequence') }}</th>
+            <th scope="col" class="num">{{ i18n.t('exams.terms.weight') }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ i18n.t('exams.actions') }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of terms(); track t.id) {
+            <tr>
+              <td>{{ t.name }}</td>
+              <td class="num">{{ t.sequence }}</td>
+              <td class="num">{{ t.weight_percent }}%</td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('exams.editNamed', { name: t.name })"
+                  (click)="edit(t)"
+                >
+                  {{ i18n.t('exams.edit') }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="empty">{{ i18n.t('exams.terms.empty') }}</p>
+  }
+</section>
+
+<section class="card" aria-labelledby="term-form-title">
+  <h2 class="card-title" id="term-form-title">
+    {{ i18n.t(editing() ? 'exams.terms.edit' : 'exams.terms.add') }}
+  </h2>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <label class="field">
+        {{ i18n.t('exams.terms.name') }}
+        <input class="input" type="text" formControlName="name" maxlength="60" autocomplete="off" />
+        @if (fieldError(form.controls.name); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.terms.sequence') }}
+        <input class="input" type="number" min="1" inputmode="numeric" formControlName="sequence" />
+        @if (fieldError(form.controls.sequence); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.terms.weight') }}
+        <input
+          class="input"
+          type="number"
+          min="0"
+          max="100"
+          inputmode="numeric"
+          formControlName="weight_percent"
+        />
+        @if (fieldError(form.controls.weight_percent); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.save') }}
+      </button>
+      @if (editing()) {
+        <button type="button" class="btn btn-ghost" (click)="cancel()">
+          {{ i18n.t('exams.cancel') }}
+        </button>
+      }
+    </div>
+  </form>
+</section>

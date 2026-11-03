@@ -47,3 +47,12 @@ export const PRIVACY_ADMIN_ROLES: Role[] = [
   'management',
   'headmaster',
 ];
+
+/** Exam setup: terms, subjects, class subjects, exams, grading scale, aspects and publish or lock (UX only). */
+export const EXAM_CONFIG_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
+/** Staff who enter marks and aspect grades: the setup roles plus teachers of the branch. */
+export const EXAM_MARK_ROLES: Role[] = [...EXAM_CONFIG_ROLES, 'teacher'];
+/** Staff who may read marks, aspects and class summaries (clerk is read-only). */
+export const EXAM_VIEW_ROLES: Role[] = [...EXAM_MARK_ROLES, 'clerk'];
+/** Report cards: staff (through a student's profile) and the family of that student. */
+export const EXAM_RESULT_ROLES: Role[] = [...EXAM_VIEW_ROLES, 'parent', 'student'];

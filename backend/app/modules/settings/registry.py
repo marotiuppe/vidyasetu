@@ -242,6 +242,23 @@ _school("portal.parent_sees_attendance", "bool", G, "Parents see attendance",
         "Show attendance to parents.", True)
 _school("portal.student_logins_enabled", "bool", G, "Student logins",
         "Allow students to have their own logins.", True)
+_school("portal.parent_sees_results", "bool", G, "Parents see results",
+        "Show published exam results and report cards to parents and students.", True)
+G = "Exams and report cards"
+_school("exams.report_format", "choice", G, "Report card format",
+        "CBSE-style marks card, or the holistic progress card with aspect sections.", "cbse",
+        choices=("cbse", "hpc"))
+_school("exams.report_sections", "string", G, "Aspect sections on report cards",
+        "Comma-separated sections shown on report cards: co_curricular, behavioural, "
+        "self_awareness, health.", "co_curricular,behavioural", max_len=200,
+        pattern=r"^\s*(co_curricular|behavioural|self_awareness|health)"
+        r"(\s*,\s*(co_curricular|behavioural|self_awareness|health))*\s*$")
+_school("exams.show_rank", "bool", G, "Show rank",
+        "Show the student's rank within the section on report cards.", False)
+_school("exams.principal_name", "string", G, "Principal name",
+        "Printed above the principal's signature line on report cards.", max_len=200)
+_school("exams.report_footer", "text", G, "Report card footer",
+        "Optional line printed at the bottom of report cards.", max_len=500)
 G = "Students and identifiers"
 _school("students.gov_ids_enabled", "bool", G, "Store PEN and APAAR IDs",
         "Allow staff to record the PEN and APAAR IDs of students. Aadhaar numbers are never "

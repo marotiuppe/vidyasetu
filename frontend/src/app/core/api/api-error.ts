@@ -16,6 +16,7 @@ const CODE_KEYS: Record<string, string> = {
   attendance_locked: 'error.attendance_locked',
   student_logins_disabled: 'error.student_logins_disabled',
   undo_blocked: 'promotion.error.undoBlocked',
+  exam_locked: 'exams.error.locked',
 };
 
 /** Translated text for a client-side error key; English only if the translator is not registered yet. */

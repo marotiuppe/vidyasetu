@@ -17,6 +17,7 @@ from app.modules.auth import models as _auth  # noqa: F401
 from app.modules.branches import models as _branches  # noqa: F401
 from app.modules.consent import models as _consent  # noqa: F401
 from app.modules.datarights import models as _datarights  # noqa: F401
+from app.modules.exams import models as _exams  # noqa: F401
 from app.modules.fees import models as _fees  # noqa: F401
 from app.modules.notices import models as _notices  # noqa: F401
 from app.modules.promotion import models as _promotion  # noqa: F401

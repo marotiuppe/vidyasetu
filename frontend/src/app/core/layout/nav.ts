@@ -1,5 +1,10 @@
 import { Role } from '../auth/auth.models';
-import { ADMISSION_ROLES, PRIVACY_ADMIN_ROLES, PROMOTION_ROLES } from '../auth/permissions';
+import {
+  ADMISSION_ROLES,
+  EXAM_VIEW_ROLES,
+  PRIVACY_ADMIN_ROLES,
+  PROMOTION_ROLES,
+} from '../auth/permissions';
 import { IconName } from '../ui/icon';
 
 export interface NavItem {
@@ -74,12 +79,20 @@ export const NAV_ITEMS: NavItem[] = [
     feature: 'attendance',
   },
   {
-    label: 'Academic progress',
-    labelKey: 'app.nav.progress',
-    path: '/progress',
+    label: 'Exams',
+    labelKey: 'exams.nav',
+    path: '/exams',
+    icon: 'book',
+    roles: EXAM_VIEW_ROLES,
+    feature: 'exams',
+  },
+  {
+    label: 'Results',
+    labelKey: 'exams.results.nav',
+    path: '/results',
     icon: 'chart',
-    roles: STAFF,
-    soon: true,
+    roles: ['parent', 'student'],
+    feature: 'exams',
   },
   {
     label: 'Noticeboard',

@@ -1,0 +1,151 @@
+<section class="card" aria-labelledby="exam-list-title">
+  <h2 class="card-title" id="exam-list-title">{{ i18n.t('exams.examList.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('exams.examList.help') }}</p>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('exams.loading') }}</p>
+  } @else if (exams().length) {
+    <div class="table-wrap">
+      <table class="exam-table" aria-labelledby="exam-list-title">
+        <thead>
+          <tr>
+            <th scope="col">{{ i18n.t('exams.examList.name') }}</th>
+            <th scope="col">{{ i18n.t('exams.examList.term') }}</th>
+            <th scope="col" class="num">{{ i18n.t('exams.examList.max') }}</th>
+            <th scope="col" class="num">{{ i18n.t('exams.examList.weight') }}</th>
+            <th scope="col">{{ i18n.t('exams.examList.status') }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ i18n.t('exams.actions') }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (e of exams(); track e.id) {
+            <tr>
+              <td>{{ e.name }}</td>
+              <td>{{ termName()(e.term_id) }}</td>
+              <td class="num">{{ e.max_marks }}</td>
+              <td class="num">{{ e.weight_percent }}%</td>
+              <td>
+                <span class="toggle-group">
+                  <span class="badge" [class]="e.published ? 'badge-success' : 'badge-muted'">
+                    {{ i18n.t(e.published ? 'exams.examList.published' : 'exams.examList.draft') }}
+                  </span>
+                  @if (e.locked) {
+                    <span class="badge badge-warn">{{ i18n.t('exams.examList.locked') }}</span>
+                  }
+                </span>
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('exams.editNamed', { name: e.name })"
+                  (click)="edit(e)"
+                >
+                  {{ i18n.t('exams.edit') }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="flip(e, 'published')">
+                  {{ i18n.t(e.published ? 'exams.examList.unpublish' : 'exams.examList.publish') }}
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" (click)="flip(e, 'locked')">
+                  {{ i18n.t(e.locked ? 'exams.examList.unlock' : 'exams.examList.lock') }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="empty">{{ i18n.t('exams.examList.empty') }}</p>
+  }
+</section>
+
+<section class="card" aria-labelledby="exam-form-title">
+  <h2 class="card-title" id="exam-form-title">
+    {{ i18n.t(editing() ? 'exams.examList.edit' : 'exams.examList.add') }}
+  </h2>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <label class="field">
+        {{ i18n.t('exams.examList.term') }}
+        <select
+          class="input"
+          [disabled]="!!editing() || !terms().length"
+          (change)="setTerm($event)"
+        >
+          @for (t of terms(); track t.id) {
+            <option [value]="t.id" [selected]="t.id === form.controls.term_id.value">
+              {{ t.name }}
+            </option>
+          }
+        </select>
+        @if (!terms().length && !loading()) {
+          <span class="row-sub">{{ i18n.t('exams.examList.noTerms') }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.examList.name') }}
+        <input class="input" type="text" formControlName="name" maxlength="80" autocomplete="off" />
+        @if (fieldError(form.controls.name); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.examList.max') }}
+        <input
+          class="input"
+          type="number"
+          min="1"
+          max="1000"
+          inputmode="numeric"
+          formControlName="max_marks"
+        />
+        @if (fieldError(form.controls.max_marks); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('exams.examList.weight') }}
+        <input
+          class="input"
+          type="number"
+          min="0"
+          max="100"
+          inputmode="numeric"
+          formControlName="weight_percent"
+        />
+        @if (fieldError(form.controls.weight_percent); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+    </div>
+    <label class="check">
+      <input type="checkbox" formControlName="published" />
+      {{ i18n.t('exams.examList.publishedHelp') }}
+    </label>
+    <label class="check">
+      <input type="checkbox" formControlName="locked" />
+      {{ i18n.t('exams.examList.lockedHelp') }}
+    </label>
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="saving() || (!editing() && !terms().length)"
+      >
+        {{ saving() ? i18n.t('exams.saving') : i18n.t('exams.save') }}
+      </button>
+      @if (editing()) {
+        <button type="button" class="btn btn-ghost" (click)="cancel()">
+          {{ i18n.t('exams.cancel') }}
+        </button>
+      }
+    </div>
+  </form>
+</section>

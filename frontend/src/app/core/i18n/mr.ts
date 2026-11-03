@@ -11,6 +11,7 @@ import { MR_ADMISSIONS } from './mr.admissions';
 import { MR_PROMOTION } from './mr.promotion';
 import { MR_FEES_TOOLS } from './mr.fees-tools';
 import { MR_TOOLS } from './mr.tools';
+import { MR_EXAMS } from './mr.exams';
 
 /** Marathi UI strings. Missing keys fall back to English. Server setting labels use `settings.<key>`. */
 export const MR: Record<string, string> = {
@@ -27,6 +28,7 @@ export const MR: Record<string, string> = {
   ...MR_PROMOTION,
   ...MR_FEES_TOOLS,
   ...MR_TOOLS,
+  ...MR_EXAMS,
   'nav.settings': 'सेटिंग्ज',
   'settings.choice.en': 'English',
   'settings.choice.mr': 'मराठी',

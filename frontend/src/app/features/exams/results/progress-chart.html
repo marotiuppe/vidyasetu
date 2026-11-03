@@ -1,0 +1,78 @@
+@if (data().subjects.length && data().terms.length) {
+  <figure class="chart">
+    <svg
+      class="chart-svg"
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      role="img"
+      [attr.aria-label]="summary()"
+    >
+      @for (g of gridLines; track g) {
+        <line
+          class="grid"
+          [attr.x1]="pad"
+          [attr.x2]="width - pad"
+          [attr.y1]="yOf(g)"
+          [attr.y2]="yOf(g)"
+        />
+        <text class="axis" x="4" [attr.y]="yOf(g) + 4">{{ g }}%</text>
+      }
+      @for (t of termLabels(); track t.id) {
+        <text class="axis" text-anchor="middle" [attr.x]="t.x" [attr.y]="height - 10">
+          {{ t.name }}
+        </text>
+      }
+      @for (l of lines(); track l.name) {
+        <polyline
+          fill="none"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+          [attr.points]="l.path"
+          [style.stroke]="l.color"
+        />
+        @for (d of l.dots; track $index) {
+          <circle [attr.cx]="d.x" [attr.cy]="d.y" r="4" [style.fill]="l.color" />
+        }
+      }
+    </svg>
+
+    <ul class="legend">
+      @for (l of lines(); track l.name) {
+        <li>
+          <span class="swatch" aria-hidden="true" [style.background]="l.color"></span>
+          {{ l.name }}
+        </li>
+      }
+    </ul>
+
+    <div class="table-wrap">
+      <table class="exam-table">
+        <caption class="sr-only">
+          {{
+            i18n.t('exams.progress.tableCaption')
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">{{ i18n.t('exams.results.subject') }}</th>
+            @for (t of data().terms; track t.id) {
+              <th scope="col" class="num">{{ t.name }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (s of data().subjects; track s.subject_id) {
+            <tr>
+              <th scope="row">{{ s.name }}</th>
+              @for (p of s.points; track p.term_id) {
+                <td class="num">{{ percentText(p.percent) }}</td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </figure>
+} @else {
+  <p class="empty">{{ i18n.t('exams.progress.none') }}</p>
+}

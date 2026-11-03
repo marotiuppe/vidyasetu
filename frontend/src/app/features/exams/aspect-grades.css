@@ -1,0 +1,22 @@
+.aspect-table td {
+  min-width: 150px;
+}
+
+.cell-remark {
+  margin-top: 6px;
+  font-size: 0.75rem;
+}
+
+.cell-remark summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.cell-remark .cell-input {
+  margin-top: 4px;
+  width: 100%;
+  min-width: 0;
+}

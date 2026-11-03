@@ -1,0 +1,96 @@
+/* Shared by the exam screens: plain data tables that scroll inside their card on small screens. */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.exam-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.exam-table th {
+  padding: 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.exam-table td {
+  padding: 8px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--border);
+}
+
+.exam-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.exam-table .actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.exam-table .wide {
+  min-width: 180px;
+}
+
+.cell-input {
+  width: 96px;
+  min-height: 44px;
+}
+
+.cell-input.text {
+  width: 100%;
+  min-width: 140px;
+}
+
+.cell-select {
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.toggle-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+@media (pointer: coarse), (max-width: 1023px) {
+  .exam-table .btn {
+    min-height: 44px;
+  }
+}
+
+.sub-title {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.subject-picks {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.subject-picks legend {
+  padding: 0;
+}

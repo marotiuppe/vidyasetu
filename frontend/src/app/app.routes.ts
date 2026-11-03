@@ -10,6 +10,8 @@ import {
 } from './core/auth/auth.guard';
 import {
   ADMISSION_ROLES,
+  EXAM_RESULT_ROLES,
+  EXAM_VIEW_ROLES,
   FEE_MANAGER_ROLES,
   FEE_VIEW_ROLES,
   PRIVACY_ADMIN_ROLES,
@@ -234,6 +236,39 @@ export const routes: Routes = [
         data: { title: 'Import fee structure', titleKey: 'fees.import.crumb' },
         canActivate: [roleGuard(...FEE_MANAGER_ROLES), moduleGuard('fees')],
         loadComponent: () => import('./features/fees/fee-import').then((m) => m.FeeImport),
+      },
+      {
+        path: 'exams',
+        data: { title: 'Exams', titleKey: 'exams.nav' },
+        canActivate: [roleGuard(...EXAM_VIEW_ROLES), moduleGuard('exams')],
+        loadComponent: () => import('./features/exams/exams').then((m) => m.ExamsPage),
+      },
+      {
+        path: 'exams/marks',
+        data: { title: 'Marks entry', titleKey: 'exams.crumb.marks' },
+        canActivate: [roleGuard(...EXAM_VIEW_ROLES), moduleGuard('exams')],
+        loadComponent: () => import('./features/exams/marks-entry').then((m) => m.MarksEntry),
+      },
+      {
+        path: 'exams/aspects',
+        data: { title: 'Aspect grades', titleKey: 'exams.crumb.aspects' },
+        canActivate: [roleGuard(...EXAM_VIEW_ROLES), moduleGuard('exams')],
+        loadComponent: () =>
+          import('./features/exams/aspect-grades').then((m) => m.AspectGradesPage),
+      },
+      {
+        path: 'exams/class-summary',
+        data: { title: 'Class summary', titleKey: 'exams.crumb.summary' },
+        canActivate: [roleGuard(...EXAM_VIEW_ROLES), moduleGuard('exams')],
+        loadComponent: () =>
+          import('./features/exams/class-summary').then((m) => m.ClassSummaryPage),
+      },
+      {
+        path: 'results',
+        data: { title: 'Results', titleKey: 'exams.results.nav' },
+        canActivate: [roleGuard(...EXAM_RESULT_ROLES), moduleGuard('exams')],
+        loadComponent: () =>
+          import('./features/exams/results/results-page').then((m) => m.ResultsPage),
       },
       {
         path: 'setup',

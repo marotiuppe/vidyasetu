@@ -1,0 +1,100 @@
+.sub-title {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 20px;
+  margin: 0 0 12px;
+}
+
+.facts dt {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.remark {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  background: var(--surface-tint);
+  border-radius: var(--radius-sm);
+  white-space: pre-line;
+}
+
+.tabs {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
+
+.exam-table th[scope='row'] {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.exam-table tfoot th,
+.exam-table tfoot td {
+  font-weight: 650;
+  border-bottom: 0;
+}
+
+.exam-table caption {
+  caption-side: top;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.exam-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.exam-table th,
+.exam-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.exam-table th {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.exam-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.exam-table .wide {
+  min-width: 180px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}

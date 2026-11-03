@@ -1,0 +1,15 @@
+.exam-tabs {
+  margin-bottom: 12px;
+}
+
+/* Anchors styled as the shared tab buttons. */
+.tab {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.tab[aria-current='page'] {
+  color: var(--accent-ink);
+  background: var(--accent);
+}
