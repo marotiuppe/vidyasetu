@@ -1,0 +1,57 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('timetable.title') }}</h1>
+    <p class="page-subtitle">{{ i18n.t('timetable.subtitle') }}</p>
+  </div>
+</div>
+
+<div class="toolbar">
+  <sms-exam-branch-picker />
+  <label class="field">
+    {{ i18n.t('exams.year') }}
+    <select class="input" (change)="pickYear($event)">
+      @for (y of years(); track y.id) {
+        <option [value]="y.id" [selected]="y.id === yearId()">{{ y.name }}</option>
+      }
+    </select>
+  </label>
+</div>
+
+<div class="tabs" role="tablist" [attr.aria-label]="i18n.t('timetable.tabs')">
+  @for (t of tabs; track t.id) {
+    <button
+      type="button"
+      role="tab"
+      class="tab"
+      [id]="'tt-tab-' + t.id"
+      [attr.aria-selected]="current() === t.id"
+      [attr.tabindex]="current() === t.id ? 0 : -1"
+      [attr.aria-controls]="'tt-panel-' + t.id"
+      (click)="select(t.id)"
+    >
+      {{ i18n.t(t.labelKey) }}
+    </button>
+  }
+</div>
+
+@if (scope.choiceNeeded()) {
+  <p class="notice" role="status">{{ i18n.t('timetable.branch.pickFirst') }}</p>
+} @else {
+  <div
+    class="stack"
+    role="tabpanel"
+    [id]="'tt-panel-' + current()"
+    [attr.aria-labelledby]="'tt-tab-' + current()"
+  >
+    @switch (current()) {
+      @case ('grid') {
+        @if (yearId(); as year) {
+          <sms-section-grid [yearId]="year" />
+        }
+      }
+      @case ('periods') {
+        <sms-periods-config />
+      }
+    }
+  </div>
+}

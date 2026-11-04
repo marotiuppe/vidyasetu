@@ -1,0 +1,118 @@
+/* Weekly grid: columns of equal-height cells on wide screens, day cards on phones. */
+.tt-grid {
+  display: grid;
+  grid-template-columns: 110px repeat(6, minmax(110px, 1fr));
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.tt-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.tt-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tt-today .tt-head {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.tt-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  height: 72px;
+  padding: 6px 8px;
+  overflow: hidden;
+  font-size: 0.75rem;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.tt-cell span,
+.tt-cell strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-btn {
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.tt-btn:hover,
+.tt-active {
+  border-color: var(--accent-ink);
+}
+
+.tt-filled {
+  background: var(--surface-tint);
+}
+
+.tt-break {
+  color: var(--muted);
+  background: var(--bg);
+  border-style: dashed;
+}
+
+.tt-plus {
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.tt-label {
+  background: transparent;
+  border-color: transparent;
+}
+
+.tt-period {
+  display: none;
+  color: var(--muted);
+}
+
+@media (max-width: 899px) {
+  .tt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tt-labels {
+    display: none;
+  }
+
+  .tt-col {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+
+  .tt-cell {
+    height: auto;
+    min-height: 56px;
+  }
+
+  .tt-btn {
+    min-height: 44px;
+  }
+
+  .tt-period {
+    display: block;
+  }
+}

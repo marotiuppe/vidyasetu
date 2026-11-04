@@ -56,3 +56,12 @@ export const EXAM_MARK_ROLES: Role[] = [...EXAM_CONFIG_ROLES, 'teacher'];
 export const EXAM_VIEW_ROLES: Role[] = [...EXAM_MARK_ROLES, 'clerk'];
 /** Report cards: staff (through a student's profile) and the family of that student. */
 export const EXAM_RESULT_ROLES: Role[] = [...EXAM_VIEW_ROLES, 'parent', 'student'];
+
+/** Timetable setup: periods, breaks and the weekly grid of each section (UX only). */
+export const TIMETABLE_CONFIG_ROLES: Role[] = ['school_owner', 'management', 'headmaster'];
+/** Roles that open the "My timetable" week: teachers and the family of a student. */
+export const TIMETABLE_MY_ROLES: Role[] = ['teacher', 'parent', 'student'];
+/** Homework: staff who read it (clerk read-only), teachers and setup roles write, families read. */
+export const HOMEWORK_STAFF_ROLES: Role[] = [...TIMETABLE_CONFIG_ROLES, 'teacher', 'clerk'];
+export const HOMEWORK_WRITE_ROLES: Role[] = [...TIMETABLE_CONFIG_ROLES, 'teacher'];
+export const HOMEWORK_ROLES: Role[] = [...HOMEWORK_STAFF_ROLES, 'parent', 'student'];

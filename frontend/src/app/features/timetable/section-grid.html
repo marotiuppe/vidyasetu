@@ -1,0 +1,153 @@
+<section class="card" aria-labelledby="grid-title">
+  <h2 class="card-title" id="grid-title">{{ i18n.t('timetable.grid.title') }}</h2>
+  <div class="toolbar">
+    <label class="field">
+      {{ i18n.t('timetable.class') }}
+      <select class="input" (change)="pickClass($event)">
+        <option value="0">{{ i18n.t('timetable.choose') }}</option>
+        @for (c of classes(); track c.id) {
+          <option [value]="c.id" [selected]="c.id === classChoice()">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('timetable.section') }}
+      <select class="input" (change)="pickSection($event)" [disabled]="!classChoice()">
+        <option value="0">{{ i18n.t('timetable.choose') }}</option>
+        @for (s of sections(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === sectionChoice()">{{ s.name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (!sectionChoice()) {
+    <p class="empty">{{ i18n.t('timetable.grid.pick') }}</p>
+  } @else if (loading() && !data()) {
+    <p class="empty" role="status">{{ i18n.t('timetable.loading') }}</p>
+  } @else if (data(); as d) {
+    @if (!periods().length) {
+      <p class="empty">{{ i18n.t('timetable.grid.noPeriods') }}</p>
+    } @else {
+      <p class="row-sub">{{ d.section.class_name }} {{ d.section.name }}</p>
+      <div class="tt-grid" role="group" [attr.aria-label]="i18n.t('timetable.grid.title')">
+        <div class="tt-col tt-labels" aria-hidden="true">
+          <div class="tt-head"></div>
+          @for (p of periods(); track p.id) {
+            <div class="tt-cell tt-label" [class.tt-break]="p.is_break">
+              <strong>{{ p.name }}</strong>
+              <span>{{ shortTime(p.start_time) }}–{{ shortTime(p.end_time) }}</span>
+            </div>
+          }
+        </div>
+        @for (day of days; track day) {
+          <div class="tt-col">
+            <div class="tt-head">{{ i18n.t(dayKey(day)) }}</div>
+            @for (p of periods(); track p.id) {
+              @if (p.is_break) {
+                <div class="tt-cell tt-break">
+                  <span class="tt-period">{{ p.name }}</span>
+                  <span>{{ i18n.t('timetable.periods.break') }}</span>
+                </div>
+              } @else {
+                @let entry = entryAt(day, p.id);
+                <button
+                  type="button"
+                  class="tt-cell tt-btn"
+                  [class.tt-filled]="entry"
+                  [class.tt-active]="isTarget(day, p.id)"
+                  [attr.aria-label]="
+                    i18n.t(dayKey(day)) +
+                    ' ' +
+                    p.name +
+                    ': ' +
+                    (entry?.subject_name ?? i18n.t('timetable.grid.empty'))
+                  "
+                  (click)="open(day, p)"
+                >
+                  <span class="tt-period"
+                    >{{ p.name }} · {{ shortTime(p.start_time) }}–{{ shortTime(p.end_time) }}</span
+                  >
+                  @if (entry) {
+                    <strong>{{ entry.subject_name }}</strong>
+                    <span
+                      >{{ entry.teacher_name ?? ''
+                      }}{{ entry.room ? ' · ' + entry.room : '' }}</span
+                    >
+                  } @else {
+                    <span class="tt-plus">+</span>
+                  }
+                </button>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</section>
+
+@if (target(); as t) {
+  <section class="card" aria-labelledby="cell-title">
+    <h2 class="card-title" id="cell-title">
+      {{ i18n.t(dayKey(t.weekday)) }} · {{ t.period.name }} ({{ shortTime(t.period.start_time) }}–{{
+        shortTime(t.period.end_time)
+      }})
+    </h2>
+    @if (cellError(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('timetable.subject') }}
+          <select class="input" formControlName="subject_id">
+            <option [ngValue]="0">{{ i18n.t('timetable.choose') }}</option>
+            @for (s of subjects(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+          @if (form.controls.subject_id.touched && form.controls.subject_id.invalid) {
+            <span class="field-error">{{ i18n.t('exams.form.required') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('timetable.teacher') }}
+          <select class="input" formControlName="teacher_id">
+            <option [ngValue]="0">{{ i18n.t('timetable.noTeacher') }}</option>
+            @for (u of teachers(); track u.id) {
+              <option [ngValue]="u.id">{{ u.full_name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('timetable.room') }}
+          <input
+            class="input"
+            type="text"
+            formControlName="room"
+            maxlength="30"
+            autocomplete="off"
+          />
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? i18n.t('timetable.saving') : i18n.t('timetable.save') }}
+        </button>
+        @if (t.entry) {
+          <button type="button" class="btn btn-ghost" [disabled]="saving()" (click)="clear()">
+            {{ i18n.t('timetable.grid.clear') }}
+          </button>
+        }
+        <button type="button" class="btn btn-ghost" (click)="close()">
+          {{ i18n.t('timetable.cancel') }}
+        </button>
+      </div>
+    </form>
+  </section>
+}

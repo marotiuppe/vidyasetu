@@ -1,0 +1,242 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('homework.title') }}</h1>
+    <p class="page-subtitle">
+      {{ i18n.t(selfService ? 'homework.subtitleChild' : 'homework.subtitle') }}
+    </p>
+  </div>
+  @if (canWrite && !formOpen() && !scope.choiceNeeded()) {
+    <button type="button" class="btn btn-primary" (click)="openNew()">
+      {{ i18n.t('homework.add') }}
+    </button>
+  }
+</div>
+
+<div class="toolbar">
+  @if (selfService) {
+    @if (children().length > 1) {
+      <label class="field">
+        {{ i18n.t('timetable.my.child') }}
+        <select class="input" (change)="pickChild($event)">
+          @for (c of children(); track c.id) {
+            <option [value]="c.id" [selected]="c.id === studentId()">{{ c.full_name }}</option>
+          }
+        </select>
+      </label>
+    }
+  } @else {
+    <sms-exam-branch-picker />
+    <label class="field">
+      {{ i18n.t('timetable.class') }}
+      <select class="input" (change)="pickClassFilter($event)">
+        <option value="0">{{ i18n.t('homework.all') }}</option>
+        @for (c of classes(); track c.id) {
+          <option [value]="c.id" [selected]="c.id === classFilter()">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('timetable.section') }}
+      <select class="input" (change)="pickSectionFilter($event)" [disabled]="!classFilter()">
+        <option value="0">{{ i18n.t('homework.all') }}</option>
+        @for (s of filterSections(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === sectionFilter()">{{ s.name }}</option>
+        }
+      </select>
+    </label>
+    <label class="field">
+      {{ i18n.t('timetable.subject') }}
+      <select class="input" (change)="pickSubjectFilter($event)">
+        <option value="0">{{ i18n.t('homework.all') }}</option>
+        @for (s of subjects(); track s.id) {
+          <option [value]="s.id" [selected]="s.id === subjectFilter()">{{ s.name }}</option>
+        }
+      </select>
+    </label>
+  }
+  <label class="field">
+    {{ i18n.t('homework.from') }}
+    <input class="input" type="date" [value]="from()" (change)="setFrom($event)" />
+  </label>
+  <label class="field">
+    {{ i18n.t('homework.to') }}
+    <input class="input" type="date" [value]="to()" (change)="setTo($event)" />
+  </label>
+</div>
+
+@if (formOpen()) {
+  <section class="card" aria-labelledby="hw-form-title">
+    <h2 class="card-title" id="hw-form-title">
+      {{ i18n.t(editing() ? 'homework.edit' : 'homework.add') }}
+    </h2>
+    @if (formError(); as message) {
+      <p class="form-error" role="alert">{{ message }}</p>
+    }
+    <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <div class="form-grid">
+        <label class="field">
+          {{ i18n.t('timetable.class') }}
+          <select class="input" (change)="pickFormClass($event)" [disabled]="!!editing()">
+            <option value="0">{{ i18n.t('timetable.choose') }}</option>
+            @for (c of classes(); track c.id) {
+              <option [value]="c.id" [selected]="c.id === formClass()">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field">
+          {{ i18n.t('timetable.section') }}
+          <select class="input" formControlName="section_id">
+            <option [ngValue]="0">{{ i18n.t('timetable.choose') }}</option>
+            @for (s of formSections(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+          @if (form.controls.section_id.touched && form.controls.section_id.invalid) {
+            <span class="field-error">{{ i18n.t('exams.form.required') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('timetable.subject') }}
+          <select class="input" formControlName="subject_id">
+            <option [ngValue]="0">{{ i18n.t('timetable.choose') }}</option>
+            @for (s of subjects(); track s.id) {
+              <option [ngValue]="s.id">{{ s.name }}</option>
+            }
+          </select>
+          @if (form.controls.subject_id.touched && form.controls.subject_id.invalid) {
+            <span class="field-error">{{ i18n.t('exams.form.required') }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('homework.form.title') }}
+          <input
+            class="input"
+            type="text"
+            formControlName="title"
+            maxlength="150"
+            autocomplete="off"
+          />
+          @if (fieldError(form.controls.title); as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('homework.form.assigned') }}
+          <input class="input" type="date" formControlName="assigned_on" />
+          @if (fieldError(form.controls.assigned_on); as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+        <label class="field">
+          {{ i18n.t('homework.form.due') }}
+          <input class="input" type="date" formControlName="due_date" />
+          @if (fieldError(form.controls.due_date); as msg) {
+            <span class="field-error">{{ msg }}</span>
+          }
+        </label>
+      </div>
+      <label class="field">
+        {{ i18n.t('homework.form.description') }}
+        <textarea class="input" rows="4" formControlName="description" maxlength="2000"></textarea>
+        @if (fieldError(form.controls.description); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          {{ saving() ? i18n.t('timetable.saving') : i18n.t('timetable.save') }}
+        </button>
+        <button type="button" class="btn btn-ghost" (click)="closeForm()">
+          {{ i18n.t('timetable.cancel') }}
+        </button>
+      </div>
+    </form>
+  </section>
+}
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (!selfService && scope.choiceNeeded()) {
+  <p class="notice" role="status">{{ i18n.t('homework.branch.pickFirst') }}</p>
+} @else if (selfService && childrenLoaded() && !studentId()) {
+  <p class="empty">{{ i18n.t('timetable.my.noChild') }}</p>
+} @else if (loading()) {
+  <p class="empty" role="status">{{ i18n.t('timetable.loading') }}</p>
+} @else if (!items().length) {
+  <section class="card">
+    <p class="empty">{{ i18n.t('homework.empty') }}</p>
+  </section>
+} @else {
+  @for (g of groups(); track g.date) {
+    <section class="card" [attr.aria-labelledby]="'hw-due-' + g.date">
+      <h2 class="card-title" [id]="'hw-due-' + g.date">
+        {{ i18n.t('homework.dueOn', { date: fmt(g.date) }) }}
+        @if (g.date < today) {
+          <span class="badge badge-danger">{{ i18n.t('homework.overdue') }}</span>
+        } @else if (g.date === today) {
+          <span class="badge">{{ i18n.t('homework.dueToday') }}</span>
+        }
+      </h2>
+      <ul class="rows">
+        @for (hw of g.items; track hw.id) {
+          <li class="row">
+            <div class="row-main">
+              <strong>{{ hw.title }}</strong>
+              <span class="row-sub"
+                >{{ hw.subject_name }}
+                @if (!selfService) {
+                  · {{ sectionText(hw) }}
+                }
+                @if (hw.teacher_name) {
+                  · {{ hw.teacher_name }}
+                }
+                · {{ i18n.t('homework.assignedOn', { date: fmt(hw.assigned_on) }) }}</span
+              >
+              @if (hw.description) {
+                <span>{{ hw.description }}</span>
+              }
+            </div>
+            @if (canWrite) {
+              <div class="row-actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('timetable.editNamed', { name: hw.title })"
+                  (click)="edit(hw)"
+                >
+                  {{ i18n.t('timetable.edit') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('timetable.deleteNamed', { name: hw.title })"
+                  (click)="remove(hw)"
+                >
+                  {{ i18n.t('timetable.delete') }}
+                </button>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+  @if (lastPage() > 1) {
+    <nav class="form-actions" [attr.aria-label]="i18n.t('homework.pages')">
+      <button type="button" class="btn btn-ghost" [disabled]="page() <= 1" (click)="go(page() - 1)">
+        {{ i18n.t('homework.prev') }}
+      </button>
+      <span class="row-sub">{{ page() }} / {{ lastPage() }}</span>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        [disabled]="page() >= lastPage()"
+        (click)="go(page() + 1)"
+      >
+        {{ i18n.t('homework.next') }}
+      </button>
+    </nav>
+  }
+}

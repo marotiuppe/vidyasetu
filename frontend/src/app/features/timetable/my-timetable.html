@@ -1,0 +1,85 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ i18n.t('timetable.my.title') }}</h1>
+    <p class="page-subtitle">
+      {{ i18n.t(selfService ? 'timetable.my.subtitleChild' : 'timetable.my.subtitleTeacher') }}
+    </p>
+  </div>
+</div>
+
+@if (selfService && children().length > 1) {
+  <div class="toolbar">
+    <label class="field">
+      {{ i18n.t('timetable.my.child') }}
+      <select class="input" (change)="pickChild($event)">
+        @for (c of children(); track c.id) {
+          <option [value]="c.id" [selected]="c.id === studentId()">{{ c.full_name }}</option>
+        }
+      </select>
+    </label>
+  </div>
+}
+
+@if (error(); as message) {
+  <p class="form-error" role="alert">{{ message }}</p>
+}
+
+@if (selfService && childrenLoaded() && !studentId()) {
+  <p class="empty">{{ i18n.t('timetable.my.noChild') }}</p>
+} @else if (loading() || !week()) {
+  @if (!error()) {
+    <p class="empty" role="status">{{ i18n.t('timetable.loading') }}</p>
+  }
+} @else if (!periods().length || !week()?.entries?.length) {
+  <section class="card">
+    <p class="empty">{{ i18n.t('timetable.my.empty') }}</p>
+  </section>
+} @else {
+  <section class="card" aria-labelledby="my-week-title">
+    <h2 class="card-title" id="my-week-title">{{ i18n.t('timetable.my.week') }}</h2>
+    <div class="tt-grid" role="group" [attr.aria-labelledby]="'my-week-title'">
+      <div class="tt-col tt-labels" aria-hidden="true">
+        <div class="tt-head"></div>
+        @for (p of periods(); track p.id) {
+          <div class="tt-cell tt-label" [class.tt-break]="p.is_break">
+            <strong>{{ p.name }}</strong>
+            <span>{{ shortTime(p.start_time) }}–{{ shortTime(p.end_time) }}</span>
+          </div>
+        }
+      </div>
+      @for (day of days; track day) {
+        <div class="tt-col" [class.tt-today]="day === today">
+          <div class="tt-head">
+            {{ i18n.t(dayKey(day)) }}
+            @if (day === today) {
+              <span class="badge">&nbsp;{{ i18n.t('timetable.my.today') }}</span>
+            }
+          </div>
+          @for (p of periods(); track p.id) {
+            @if (p.is_break) {
+              <div class="tt-cell tt-break">
+                <span class="tt-period">{{ p.name }}</span>
+                <span>{{ i18n.t('timetable.periods.break') }}</span>
+              </div>
+            } @else {
+              <div class="tt-cell" [class.tt-filled]="entryAt(day, p).length">
+                <span class="tt-period"
+                  >{{ p.name }} · {{ shortTime(p.start_time) }}–{{ shortTime(p.end_time) }}</span
+                >
+                @for (e of entryAt(day, p); track $index) {
+                  <strong>{{ e.subject_name }}</strong>
+                  <span
+                    >{{ selfService ? (e.teacher_name ?? '') : where(e)
+                    }}{{ selfService && e.room ? ' · ' + e.room : '' }}</span
+                  >
+                } @empty {
+                  <span>—</span>
+                }
+              </div>
+            }
+          }
+        </div>
+      }
+    </div>
+  </section>
+}

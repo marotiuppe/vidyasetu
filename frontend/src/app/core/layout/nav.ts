@@ -2,8 +2,11 @@ import { Role } from '../auth/auth.models';
 import {
   ADMISSION_ROLES,
   EXAM_VIEW_ROLES,
+  HOMEWORK_ROLES,
   PRIVACY_ADMIN_ROLES,
   PROMOTION_ROLES,
+  TIMETABLE_CONFIG_ROLES,
+  TIMETABLE_MY_ROLES,
 } from '../auth/permissions';
 import { IconName } from '../ui/icon';
 
@@ -93,6 +96,30 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'chart',
     roles: ['parent', 'student'],
     feature: 'exams',
+  },
+  {
+    label: 'Timetable',
+    labelKey: 'timetable.nav',
+    path: '/timetable',
+    icon: 'calendar',
+    roles: TIMETABLE_CONFIG_ROLES,
+    feature: 'timetable',
+  },
+  {
+    label: 'My timetable',
+    labelKey: 'timetable.my.nav',
+    path: '/timetable/my',
+    icon: 'calendar',
+    roles: TIMETABLE_MY_ROLES,
+    feature: 'timetable',
+  },
+  {
+    label: 'Homework',
+    labelKey: 'homework.nav',
+    path: '/homework',
+    icon: 'book',
+    roles: HOMEWORK_ROLES,
+    feature: 'homework',
   },
   {
     label: 'Noticeboard',

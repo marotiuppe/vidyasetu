@@ -39,6 +39,7 @@ from app.modules.exams.results_router import router as exams_results_router
 from app.modules.exams.router import router as exams_router
 from app.modules.fees.router import router as fees_router
 from app.modules.fees.tools_router import router as fees_tools_router
+from app.modules.homework.router import router as homework_router
 from app.modules.notices.router import router as notices_router
 from app.modules.promotion.router import router as promotion_router
 from app.modules.public.router import router as public_router
@@ -48,6 +49,7 @@ from app.modules.search.router import router as search_router
 from app.modules.settings.router import router as settings_router
 from app.modules.students.router import parents_router
 from app.modules.students.router import router as students_router
+from app.modules.timetable.router import router as timetable_router
 from app.modules.users.identity import suggest_username
 from app.modules.users.models import Role, User
 from app.modules.users.router import router as users_router
@@ -174,6 +176,8 @@ api.include_router(fees_tools_router)
 api.include_router(exams_router)
 api.include_router(exams_entry_router)
 api.include_router(exams_results_router)
+api.include_router(timetable_router)
+api.include_router(homework_router)
 api.include_router(admissions_router)
 api.include_router(admissions_public_router)
 api.include_router(promotion_router)

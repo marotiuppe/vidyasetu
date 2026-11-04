@@ -38,6 +38,7 @@ FEATURES = (
     "fees",
     "exams",
     "timetable",
+    "homework",
     "staff",
     "extras",
     "admissions",

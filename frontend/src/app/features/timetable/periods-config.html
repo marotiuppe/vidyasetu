@@ -1,0 +1,114 @@
+<section class="card" aria-labelledby="periods-title">
+  <h2 class="card-title" id="periods-title">{{ i18n.t('timetable.periods.title') }}</h2>
+  <p class="row-sub">{{ i18n.t('timetable.periods.note') }}</p>
+
+  @if (error(); as message) {
+    <p class="form-error" role="alert">{{ message }}</p>
+  }
+
+  @if (loading()) {
+    <p class="empty" role="status">{{ i18n.t('timetable.loading') }}</p>
+  } @else if (periods().length) {
+    <div class="table-wrap">
+      <table class="exam-table" aria-labelledby="periods-title">
+        <thead>
+          <tr>
+            <th scope="col" class="num">{{ i18n.t('timetable.periods.sequence') }}</th>
+            <th scope="col">{{ i18n.t('timetable.periods.name') }}</th>
+            <th scope="col">{{ i18n.t('timetable.periods.time') }}</th>
+            <th scope="col">{{ i18n.t('timetable.periods.type') }}</th>
+            <th scope="col">
+              <span class="sr-only">{{ i18n.t('timetable.actions') }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of periods(); track p.id) {
+            <tr>
+              <td class="num">{{ p.sequence }}</td>
+              <td>{{ p.name }}</td>
+              <td>{{ shortTime(p.start_time) }} – {{ shortTime(p.end_time) }}</td>
+              <td>
+                <span class="badge">{{
+                  i18n.t(p.is_break ? 'timetable.periods.break' : 'timetable.periods.lesson')
+                }}</span>
+              </td>
+              <td class="actions">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('timetable.editNamed', { name: p.name })"
+                  (click)="edit(p)"
+                >
+                  {{ i18n.t('timetable.edit') }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  [attr.aria-label]="i18n.t('timetable.deleteNamed', { name: p.name })"
+                  (click)="remove(p)"
+                >
+                  {{ i18n.t('timetable.delete') }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="empty">{{ i18n.t('timetable.periods.empty') }}</p>
+  }
+</section>
+
+<section class="card" aria-labelledby="period-form-title">
+  <h2 class="card-title" id="period-form-title">
+    {{ i18n.t(editing() ? 'timetable.periods.edit' : 'timetable.periods.add') }}
+  </h2>
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <div class="form-grid">
+      <label class="field">
+        {{ i18n.t('timetable.periods.name') }}
+        <input class="input" type="text" formControlName="name" maxlength="40" autocomplete="off" />
+        @if (fieldError(form.controls.name); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('timetable.periods.sequence') }}
+        <input class="input" type="number" min="1" inputmode="numeric" formControlName="sequence" />
+        @if (fieldError(form.controls.sequence); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('timetable.periods.start') }}
+        <input class="input" type="time" formControlName="start_time" />
+        @if (fieldError(form.controls.start_time); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="field">
+        {{ i18n.t('timetable.periods.end') }}
+        <input class="input" type="time" formControlName="end_time" />
+        @if (fieldError(form.controls.end_time); as msg) {
+          <span class="field-error">{{ msg }}</span>
+        }
+      </label>
+      <label class="check">
+        <input type="checkbox" formControlName="is_break" />
+        {{ i18n.t('timetable.periods.isBreak') }}
+      </label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? i18n.t('timetable.saving') : i18n.t('timetable.save') }}
+      </button>
+      @if (editing()) {
+        <button type="button" class="btn btn-ghost" (click)="cancel()">
+          {{ i18n.t('timetable.cancel') }}
+        </button>
+      }
+    </div>
+  </form>
+</section>

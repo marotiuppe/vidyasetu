@@ -14,9 +14,12 @@ import {
   EXAM_VIEW_ROLES,
   FEE_MANAGER_ROLES,
   FEE_VIEW_ROLES,
+  HOMEWORK_ROLES,
   PRIVACY_ADMIN_ROLES,
   PROMOTION_ROLES,
   STUDENT_WRITER_ROLES,
+  TIMETABLE_CONFIG_ROLES,
+  TIMETABLE_MY_ROLES,
 } from './core/auth/permissions';
 import { moduleGuard } from './core/api/module.guard';
 
@@ -269,6 +272,24 @@ export const routes: Routes = [
         canActivate: [roleGuard(...EXAM_RESULT_ROLES), moduleGuard('exams')],
         loadComponent: () =>
           import('./features/exams/results/results-page').then((m) => m.ResultsPage),
+      },
+      {
+        path: 'timetable',
+        data: { title: 'Timetable', titleKey: 'timetable.nav' },
+        canActivate: [roleGuard(...TIMETABLE_CONFIG_ROLES), moduleGuard('timetable')],
+        loadComponent: () => import('./features/timetable/timetable').then((m) => m.TimetablePage),
+      },
+      {
+        path: 'timetable/my',
+        data: { title: 'My timetable', titleKey: 'timetable.my.nav' },
+        canActivate: [roleGuard(...TIMETABLE_MY_ROLES), moduleGuard('timetable')],
+        loadComponent: () => import('./features/timetable/my-timetable').then((m) => m.MyTimetable),
+      },
+      {
+        path: 'homework',
+        data: { title: 'Homework', titleKey: 'homework.nav' },
+        canActivate: [roleGuard(...HOMEWORK_ROLES), moduleGuard('homework')],
+        loadComponent: () => import('./features/homework/homework').then((m) => m.HomeworkPage),
       },
       {
         path: 'setup',
